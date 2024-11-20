@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="..\..\src\Calibration\export.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\Calibration\Calibration.cpp" />
+    <ClCompile Include="..\..\src\Calibration\CameraBlock.cpp" />
+    <ClCompile Include="..\..\src\Calibration\CameraOptimizer.cpp" />
+    <ClCompile Include="..\..\src\Calibration\CameraPose.cpp" />
+    <ClCompile Include="..\..\src\Calibration\CameraView.cpp" />
+    <ClCompile Include="..\..\src\inl.cpp" />
+  </ItemGroup>
+</Project>
