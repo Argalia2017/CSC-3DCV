@@ -10,7 +10,7 @@ public:
 	}
 } ;
 
-exports AutoRef<ConfigHolder> ConfigHolder::create () {
+exports DLLEXTERN AutoRef<ConfigHolder> DLLAPI ConfigHolder::create () {
 	return AutoRef<ConfigImplHolder>::make () ;
 }
 } ;

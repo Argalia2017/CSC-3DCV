@@ -1,9 +1,8 @@
 #include "../util.h"
 
 namespace CSC3DCV {
-struct CameraViewHolder implement Interface {
-	DLLEXPORT
-	imports AutoRef<CameraViewHolder> create () ;
+struct CameraViewHolder implement Interface {	
+	imports DLLEXTERN AutoRef<CameraViewHolder> DLLAPI create () ;
 
 	virtual void initialize () = 0 ;
 } ;
@@ -24,8 +23,7 @@ public:
 } ;
 
 struct CameraPoseHolder implement Interface {
-	DLLEXPORT
-	imports AutoRef<CameraPoseHolder> create () ;
+	imports DLLEXTERN AutoRef<CameraPoseHolder> DLLAPI create () ;
 
 	virtual void initialize () = 0 ;
 } ;
@@ -45,9 +43,8 @@ public:
 	}
 } ;
 
-struct CameraBlockHolder implement Interface {
-	DLLEXPORT
-	imports AutoRef<CameraBlockHolder> create () ;
+struct CameraBlockHolder implement Interface {	
+	imports DLLEXTERN AutoRef<CameraBlockHolder> DLLAPI create () ;
 
 	virtual void initialize () = 0 ;
 } ;
@@ -68,8 +65,7 @@ public:
 } ;
 
 struct CameraOptimizerHolder implement Interface {
-	DLLEXPORT
-	imports AutoRef<CameraOptimizerHolder> create () ;
+	imports DLLEXTERN AutoRef<CameraOptimizerHolder> DLLAPI create () ;
 
 	virtual void initialize () = 0 ;
 } ;
@@ -89,9 +85,8 @@ public:
 	}
 } ;
 
-struct CalibrationHolder implement Interface {
-	DLLEXPORT
-	imports AutoRef<CalibrationHolder> create () ;
+struct CalibrationHolder implement Interface {	
+	imports DLLEXTERN AutoRef<CalibrationHolder> DLLAPI create () ;
 
 	virtual void initialize () = 0 ;
 	virtual void execute () = 0 ;

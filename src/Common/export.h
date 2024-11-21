@@ -1,15 +1,8 @@
-#include "util.h"
-
-#include "Detection/export.h"
-#include "Calibration/export.h"
-#include "Rendering/export.h"
-#include "Registration/export.h"
-#include "Meshing/export.h"
-#include "System/export.h"
+#include "../util.h"
 
 namespace CSC3DCV {
-struct ConfigHolder implement Interface {
-	imports AutoRef<ConfigHolder> create () ;
+struct ConfigHolder implement Interface {	
+	imports DLLEXTERN AutoRef<ConfigHolder> DLLAPI create () ;
 
 	virtual void initialize () = 0 ;
 } ;

@@ -76,17 +76,33 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\Config.cpp" />
     <ClCompile Include="..\..\src\inl.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\export.h" />
+    <ClInclude Include="..\..\dependencies\CSC\include\csc.hpp" />
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_array.hpp" />
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_basic.hpp" />
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_begin.h" />
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_core.hpp" />
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_end.h" />
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_image.hpp" />
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_math.hpp" />
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_matrix.eigen.fix.h" />
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_matrix.hpp" />
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_runtime.hpp" />
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_stream.hpp" />
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_string.hpp" />
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_thread.hpp" />
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_type.hpp" />
     <ClInclude Include="..\..\src\util.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Calibration\Calibration.vcxproj">
       <Project>{351b2912-591b-4ea5-84e7-a66b13b19e4b}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Common\Common.vcxproj">
+      <Project>{f9aad400-b1a2-4fed-81b2-1ebd1a7324bf}</Project>
     </ProjectReference>
     <ProjectReference Include="..\Detection\Detection.vcxproj">
       <Project>{fbc21750-2e3f-40d6-82a2-8bd6d601385b}</Project>
@@ -103,6 +119,27 @@
     <ProjectReference Include="..\System\System.vcxproj">
       <Project>{46754ffb-35ba-4a5d-b22c-ccd3976123f5}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\dependencies\CSC\include\cpp.hint" />
+    <None Include="..\..\dependencies\CSC\include\csc_array.inl" />
+    <None Include="..\..\dependencies\CSC\include\csc_basic.inl" />
+    <None Include="..\..\dependencies\CSC\include\csc_core.inl" />
+    <None Include="..\..\dependencies\CSC\include\csc_image.inl" />
+    <None Include="..\..\dependencies\CSC\include\csc_image.opencv.inl" />
+    <None Include="..\..\dependencies\CSC\include\csc_math.cache.inl" />
+    <None Include="..\..\dependencies\CSC\include\csc_math.inl" />
+    <None Include="..\..\dependencies\CSC\include\csc_matrix.eigen.inl" />
+    <None Include="..\..\dependencies\CSC\include\csc_matrix.inl" />
+    <None Include="..\..\dependencies\CSC\include\csc_runtime.inl" />
+    <None Include="..\..\dependencies\CSC\include\csc_runtime.linux.inl" />
+    <None Include="..\..\dependencies\CSC\include\csc_runtime.windows.inl" />
+    <None Include="..\..\dependencies\CSC\include\csc_stream.inl" />
+    <None Include="..\..\dependencies\CSC\include\csc_string.inl" />
+    <None Include="..\..\dependencies\CSC\include\csc_thread.inl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\dependencies\CSC\include\cpp.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

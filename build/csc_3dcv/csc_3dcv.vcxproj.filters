@@ -1,12 +1,115 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\src\Config.cpp" />
-    <ClCompile Include="..\..\src\inl.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
+    <ClCompile Include="..\..\src\inl.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\export.h" />
     <ClInclude Include="..\..\src\util.h" />
+    <ClInclude Include="..\..\dependencies\CSC\include\csc.hpp">
+      <Filter>csc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_array.hpp">
+      <Filter>csc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_basic.hpp">
+      <Filter>csc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_begin.h">
+      <Filter>csc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_core.hpp">
+      <Filter>csc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_end.h">
+      <Filter>csc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_image.hpp">
+      <Filter>csc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_math.hpp">
+      <Filter>csc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_matrix.eigen.fix.h">
+      <Filter>csc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_matrix.hpp">
+      <Filter>csc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_runtime.hpp">
+      <Filter>csc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_stream.hpp">
+      <Filter>csc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_string.hpp">
+      <Filter>csc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_thread.hpp">
+      <Filter>csc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dependencies\CSC\include\csc_type.hpp">
+      <Filter>csc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="csc">
+      <UniqueIdentifier>{0fae85e1-73c9-4f79-9d0f-1bb3535037f1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\dependencies\CSC\include\cpp.hint">
+      <Filter>csc</Filter>
+    </None>
+    <None Include="..\..\dependencies\CSC\include\csc_array.inl">
+      <Filter>csc</Filter>
+    </None>
+    <None Include="..\..\dependencies\CSC\include\csc_basic.inl">
+      <Filter>csc</Filter>
+    </None>
+    <None Include="..\..\dependencies\CSC\include\csc_core.inl">
+      <Filter>csc</Filter>
+    </None>
+    <None Include="..\..\dependencies\CSC\include\csc_image.inl">
+      <Filter>csc</Filter>
+    </None>
+    <None Include="..\..\dependencies\CSC\include\csc_image.opencv.inl">
+      <Filter>csc</Filter>
+    </None>
+    <None Include="..\..\dependencies\CSC\include\csc_math.cache.inl">
+      <Filter>csc</Filter>
+    </None>
+    <None Include="..\..\dependencies\CSC\include\csc_math.inl">
+      <Filter>csc</Filter>
+    </None>
+    <None Include="..\..\dependencies\CSC\include\csc_matrix.eigen.inl">
+      <Filter>csc</Filter>
+    </None>
+    <None Include="..\..\dependencies\CSC\include\csc_matrix.inl">
+      <Filter>csc</Filter>
+    </None>
+    <None Include="..\..\dependencies\CSC\include\csc_runtime.inl">
+      <Filter>csc</Filter>
+    </None>
+    <None Include="..\..\dependencies\CSC\include\csc_runtime.linux.inl">
+      <Filter>csc</Filter>
+    </None>
+    <None Include="..\..\dependencies\CSC\include\csc_runtime.windows.inl">
+      <Filter>csc</Filter>
+    </None>
+    <None Include="..\..\dependencies\CSC\include\csc_stream.inl">
+      <Filter>csc</Filter>
+    </None>
+    <None Include="..\..\dependencies\CSC\include\csc_string.inl">
+      <Filter>csc</Filter>
+    </None>
+    <None Include="..\..\dependencies\CSC\include\csc_thread.inl">
+      <Filter>csc</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\dependencies\CSC\include\cpp.natvis">
+      <Filter>csc</Filter>
+    </Natvis>
   </ItemGroup>
 </Project>

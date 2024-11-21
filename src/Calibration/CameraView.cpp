@@ -12,8 +12,7 @@ public:
 
 } ;
 
-DLLEXPORT
-exports AutoRef<CameraViewHolder> CameraViewHolder::create () {
+exports DLLEXTERN AutoRef<CameraViewHolder> DLLAPI CameraViewHolder::create () {
 	return AutoRef<CameraViewImplHolder>::make () ;
 }
 } ;

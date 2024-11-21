@@ -12,8 +12,7 @@ public:
 
 } ;
 
-DLLEXPORT
-exports AutoRef<CameraBlockHolder> CameraBlockHolder::create () {
+exports DLLEXTERN AutoRef<CameraBlockHolder> DLLAPI CameraBlockHolder::create () {
 	return AutoRef<CameraBlockImplHolder>::make () ;
 }
 } ;

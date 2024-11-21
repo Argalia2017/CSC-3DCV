@@ -13,9 +13,8 @@
 #include <csc_runtime.hpp>
 #include <csc_thread.hpp>
 
-#ifndef DLLEXPORT
-#define DLLEXPORT __declspec (dllexport)
-#define DLLIMPORT __declspec (dllimport)
+#ifndef DLLEXTERN
+#define DLLEXTERN __declspec (dllexport)
 #define DLLAPI __stdcall
 #endif
 

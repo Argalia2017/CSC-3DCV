@@ -1,4 +1,12 @@
-﻿#include "export.h"
+﻿#include "util.h"
+
+#include "Common/export.h"
+#include "Detection/export.h"
+#include "Calibration/export.h"
+#include "Rendering/export.h"
+#include "Registration/export.h"
+#include "Meshing/export.h"
+#include "System/export.h"
 
 using namespace CSC3DCV ;
 
