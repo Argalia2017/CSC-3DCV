@@ -14,9 +14,10 @@
 namespace CSC {
 struct StreamProcImplLayout ;
 
-struct StreamProcLayout implement ThisLayout<AutoRef<StreamProcImplLayout>> {} ;
+struct StreamProcLayout implement ThisLayout<Ref<StreamProcImplLayout>> {} ;
 
 struct StreamProcHolder implement Interface {
+	imports CREF<StreamProcLayout> instance () ;
 	imports VFat<StreamProcHolder> hold (VREF<StreamProcLayout> that) ;
 	imports CFat<StreamProcHolder> hold (CREF<StreamProcLayout> that) ;
 
@@ -26,6 +27,7 @@ struct StreamProcHolder implement Interface {
 	virtual BOOL is_space (CREF<STRU32> str) const = 0 ;
 	virtual BOOL is_endline (CREF<STRU32> str) const = 0 ;
 	virtual BOOL is_punct (CREF<STRU32> str) const = 0 ;
+	virtual BOOL is_hyphen (CREF<STRU32> str) const = 0 ;
 	virtual BOOL is_alpha (CREF<STRU32> str) const = 0 ;
 	virtual STRU32 alpha_lower (CREF<STRU32> str) const = 0 ;
 	virtual STRU32 alpha_upper (CREF<STRU32> str) const = 0 ;
@@ -44,77 +46,82 @@ protected:
 	using StreamProcLayout::mThis ;
 
 public:
-	imports CREF<StreamProc> instance () {
-		return memorize ([&] () {
-			StreamProc ret ;
-			StreamProcHolder::hold (ret)->initialize () ;
-			return move (ret) ;
-		}) ;
+	static CREF<StreamProc> instance () {
+		return keep[TYPE<StreamProc>::expr] (StreamProcHolder::instance ()) ;
 	}
 
-	imports BOOL big_endian () {
+	static BOOL big_endian () {
 		return StreamProcHolder::hold (instance ())->big_endian () ;
 	}
 
-	imports BOOL is_blank (CREF<STRU32> str) {
+	static BOOL is_blank (CREF<STRU32> str) {
 		return StreamProcHolder::hold (instance ())->is_blank (str) ;
 	}
 
-	imports BOOL is_space (CREF<STRU32> str) {
+	static BOOL is_space (CREF<STRU32> str) {
 		return StreamProcHolder::hold (instance ())->is_space (str) ;
 	}
 
-	imports BOOL is_endline (CREF<STRU32> str) {
+	static BOOL is_endline (CREF<STRU32> str) {
 		return StreamProcHolder::hold (instance ())->is_endline (str) ;
 	}
 
-	imports BOOL is_punct (CREF<STRU32> str) {
+	static BOOL is_punct (CREF<STRU32> str) {
 		return StreamProcHolder::hold (instance ())->is_punct (str) ;
 	}
 
-	imports BOOL is_alpha (CREF<STRU32> str) {
+	static BOOL is_hyphen (CREF<STRU32> str) {
+		return StreamProcHolder::hold (instance ())->is_hyphen (str) ;
+	}
+
+	static BOOL is_alpha (CREF<STRU32> str) {
 		return StreamProcHolder::hold (instance ())->is_alpha (str) ;
 	}
 
-	imports STRU32 alpha_lower (CREF<STRU32> str) {
+	static STRU32 alpha_lower (CREF<STRU32> str) {
 		return StreamProcHolder::hold (instance ())->alpha_lower (str) ;
 	}
 
-	imports STRU32 alpha_upper (CREF<STRU32> str) {
+	static STRU32 alpha_upper (CREF<STRU32> str) {
 		return StreamProcHolder::hold (instance ())->alpha_upper (str) ;
 	}
 
-	imports BOOL is_digit (CREF<STRU32> str) {
+	static BOOL is_digit (CREF<STRU32> str) {
 		return StreamProcHolder::hold (instance ())->is_digit (str) ;
 	}
 
-	imports BOOL is_hex_digit (CREF<STRU32> str) {
+	static BOOL is_hex_digit (CREF<STRU32> str) {
 		return StreamProcHolder::hold (instance ())->is_hex_digit (str) ;
 	}
 
-	imports INDEX hex_from_str (CREF<STRU32> str) {
+	static INDEX hex_from_str (CREF<STRU32> str) {
 		return StreamProcHolder::hold (instance ())->hex_from_str (str) ;
 	}
 
-	imports STRU32 str_from_hex (CREF<INDEX> hex) {
+	static STRU32 str_from_hex (CREF<INDEX> hex) {
 		return StreamProcHolder::hold (instance ())->str_from_hex (hex) ;
 	}
 
-	imports BOOL is_word (CREF<STRU32> str) {
+	static BOOL is_word (CREF<STRU32> str) {
 		return StreamProcHolder::hold (instance ())->is_word (str) ;
 	}
 
-	imports BOOL is_ctrl (CREF<STRU32> str) {
+	static BOOL is_ctrl (CREF<STRU32> str) {
 		return StreamProcHolder::hold (instance ())->is_ctrl (str) ;
 	}
 
-	imports STRU32 word_from_ctrl (CREF<STRU32> str) {
+	static STRU32 word_from_ctrl (CREF<STRU32> str) {
 		return StreamProcHolder::hold (instance ())->word_from_ctrl (str) ;
 	}
 
-	imports STRU32 ctrl_from_word (CREF<STRU32> str) {
+	static STRU32 ctrl_from_word (CREF<STRU32> str) {
 		return StreamProcHolder::hold (instance ())->ctrl_from_word (str) ;
 	}
+} ;
+
+struct StreamShape {
+	INDEX mRead ;
+	INDEX mWrite ;
 } ;
 
 static constexpr auto CLS = TYPE<PlaceHolder<RANK1>>::expr ;
@@ -141,9 +148,10 @@ template <class A>
 using HAS_FRIEND_READ = typename HAS_FRIEND_READ_HELP<A ,ALWAYS>::RET ;
 
 struct ReaderFriend implement Interface {
+	virtual void reset () = 0 ;
+	virtual void reset (CREF<StreamShape> shape) = 0 ;
+	virtual StreamShape backup () const = 0 ;
 	virtual BOOL good () const = 0 ;
-	virtual void backup () = 0 ;
-	virtual void recover () = 0 ;
 	virtual void read (VREF<BOOL> item) = 0 ;
 	virtual void read (VREF<VAL32> item) = 0 ;
 	virtual void read (VREF<VAL64> item) = 0 ;
@@ -172,22 +180,26 @@ struct ReaderFriend implement Interface {
 } ;
 
 template <class A>
-class ReaderFriendBinder implement Fat<ReaderFriend ,A> {
+class ReaderFriendBinder final implement Fat<ReaderFriend ,A> {
 public:
-	imports VFat<ReaderFriend> create (VREF<A> that) {
+	static VFat<ReaderFriend> create (VREF<A> that) {
 		return VFat<ReaderFriend> (ReaderFriendBinder () ,that) ;
+	}
+
+	void reset () override {
+		return thiz.fake.reset () ;
+	}
+
+	void reset (CREF<StreamShape> shape) override {
+		return thiz.fake.reset (shape) ;
+	}
+
+	StreamShape backup () const override {
+		return thiz.fake.backup () ;
 	}
 
 	BOOL good () const override {
 		return thiz.fake.good () ;
-	}
-
-	void backup () override {
-		return thiz.fake.backup () ;
-	}
-
-	void recover () override {
-		return thiz.fake.recover () ;
 	}
 
 	void read (VREF<BOOL> item) override {
@@ -276,8 +288,6 @@ struct ByteReaderLayout {
 	Function<VREF<ByteReaderLayout>> mOverflow ;
 	INDEX mRead ;
 	INDEX mWrite ;
-	INDEX mBackupRead ;
-	INDEX mBackupWrite ;
 } ;
 
 struct ByteReaderHolder implement Interface {
@@ -289,10 +299,9 @@ struct ByteReaderHolder implement Interface {
 	virtual LENGTH size () const = 0 ;
 	virtual LENGTH length () const = 0 ;
 	virtual void reset () = 0 ;
-	virtual void reset (CREF<INDEX> read_ ,CREF<INDEX> write_) = 0 ;
+	virtual void reset (CREF<StreamShape> shape) = 0 ;
+	virtual StreamShape backup () const = 0 ;
 	virtual BOOL good () const = 0 ;
-	virtual void backup () = 0 ;
-	virtual void recover () = 0 ;
 	virtual void read (VREF<BOOL> item) = 0 ;
 	virtual void read (VREF<VAL32> item) = 0 ;
 	virtual void read (VREF<VAL64> item) = 0 ;
@@ -318,10 +327,9 @@ struct ByteReaderHolder implement Interface {
 class ByteReader implement ByteReaderLayout {
 protected:
 	using ByteReaderLayout::mStream ;
+	using ByteReaderLayout::mOverflow ;
 	using ByteReaderLayout::mRead ;
 	using ByteReaderLayout::mWrite ;
-	using ByteReaderLayout::mBackupRead ;
-	using ByteReaderLayout::mBackupWrite ;
 
 public:
 	implicit ByteReader () = default ;
@@ -346,20 +354,16 @@ public:
 		return ByteReaderHolder::hold (thiz)->reset () ;
 	}
 
-	void reset (CREF<INDEX> read_ ,CREF<INDEX> write_) {
-		return ByteReaderHolder::hold (thiz)->reset (read_ ,write_) ;
+	void reset (CREF<StreamShape> shape) {
+		return ByteReaderHolder::hold (thiz)->reset (shape) ;
+	}
+
+	StreamShape backup () const {
+		return ByteReaderHolder::hold (thiz)->backup () ;
 	}
 
 	BOOL good () const {
 		return ByteReaderHolder::hold (thiz)->good () ;
-	}
-
-	void backup () {
-		return ByteReaderHolder::hold (thiz)->backup () ;
-	}
-
-	void recover () {
-		return ByteReaderHolder::hold (thiz)->recover () ;
 	}
 
 	template <class ARG1>
@@ -566,8 +570,6 @@ struct TextReaderLayout {
 	Function<VREF<TextReaderLayout>> mOverflow ;
 	INDEX mRead ;
 	INDEX mWrite ;
-	INDEX mBackupRead ;
-	INDEX mBackupWrite ;
 } ;
 
 struct TextReaderHolder implement Interface {
@@ -579,10 +581,9 @@ struct TextReaderHolder implement Interface {
 	virtual LENGTH size () const = 0 ;
 	virtual LENGTH length () const = 0 ;
 	virtual void reset () = 0 ;
-	virtual void reset (CREF<INDEX> read_ ,CREF<INDEX> write_) = 0 ;
+	virtual void reset (CREF<StreamShape> shape) = 0 ;
+	virtual StreamShape backup () const = 0 ;
 	virtual BOOL good () const = 0 ;
-	virtual void backup () = 0 ;
-	virtual void recover () = 0 ;
 	virtual void read (VREF<BOOL> item) = 0 ;
 	virtual void read (VREF<VAL32> item) = 0 ;
 	virtual void read (VREF<VAL64> item) = 0 ;
@@ -608,10 +609,9 @@ struct TextReaderHolder implement Interface {
 class TextReader implement TextReaderLayout {
 protected:
 	using TextReaderLayout::mStream ;
+	using TextReaderLayout::mOverflow ;
 	using TextReaderLayout::mRead ;
 	using TextReaderLayout::mWrite ;
-	using TextReaderLayout::mBackupRead ;
-	using TextReaderLayout::mBackupWrite ;
 
 public:
 	implicit TextReader () = default ;
@@ -636,20 +636,16 @@ public:
 		return TextReaderHolder::hold (thiz)->reset () ;
 	}
 
-	void reset (CREF<INDEX> read_ ,CREF<INDEX> write_) {
-		return TextReaderHolder::hold (thiz)->reset (read_ ,write_) ;
+	void reset (CREF<StreamShape> shape) {
+		return TextReaderHolder::hold (thiz)->reset (shape) ;
+	}
+
+	StreamShape backup () const {
+		return TextReaderHolder::hold (thiz)->backup () ;
 	}
 
 	BOOL good () const {
 		return TextReaderHolder::hold (thiz)->good () ;
-	}
-
-	void backup () {
-		return TextReaderHolder::hold (thiz)->backup () ;
-	}
-
-	void recover () {
-		return TextReaderHolder::hold (thiz)->recover () ;
 	}
 
 	template <class ARG1>
@@ -870,9 +866,10 @@ template <class A>
 using HAS_FRIEND_WRITE = typename HAS_FRIEND_WRITE_HELP<A ,ALWAYS>::RET ;
 
 struct WriterFriend implement Interface {
+	virtual void reset () = 0 ;
+	virtual void reset (CREF<StreamShape> shape) = 0 ;
+	virtual StreamShape backup () const = 0 ;
 	virtual BOOL good () const = 0 ;
-	virtual void backup () = 0 ;
-	virtual void recover () = 0 ;
 	virtual void write (CREF<BOOL> item) = 0 ;
 	virtual void write (CREF<VAL32> item) = 0 ;
 	virtual void write (CREF<VAL64> item) = 0 ;
@@ -901,22 +898,26 @@ struct WriterFriend implement Interface {
 } ;
 
 template <class A>
-class WriterFriendBinder implement Fat<WriterFriend ,A> {
+class WriterFriendBinder final implement Fat<WriterFriend ,A> {
 public:
-	imports VFat<WriterFriend> create (VREF<A> that) {
+	static VFat<WriterFriend> create (VREF<A> that) {
 		return VFat<WriterFriend> (WriterFriendBinder () ,that) ;
+	}
+
+	void reset () override {
+		return thiz.fake.reset () ;
+	}
+
+	void reset (CREF<StreamShape> shape) override {
+		return thiz.fake.reset (shape) ;
+	}
+
+	StreamShape backup () const override {
+		return thiz.fake.backup () ;
 	}
 
 	BOOL good () const override {
 		return thiz.fake.good () ;
-	}
-
-	void backup () override {
-		return thiz.fake.backup () ;
-	}
-
-	void recover () override {
-		return thiz.fake.recover () ;
 	}
 
 	void write (CREF<BOOL> item) override {
@@ -1005,8 +1006,6 @@ struct ByteWriterLayout {
 	Function<VREF<ByteWriterLayout>> mOverflow ;
 	INDEX mRead ;
 	INDEX mWrite ;
-	INDEX mBackupRead ;
-	INDEX mBackupWrite ;
 } ;
 
 struct ByteWriterHolder implement Interface {
@@ -1018,10 +1017,9 @@ struct ByteWriterHolder implement Interface {
 	virtual LENGTH size () const = 0 ;
 	virtual LENGTH length () const = 0 ;
 	virtual void reset () = 0 ;
-	virtual void reset (CREF<INDEX> read_ ,CREF<INDEX> write_) = 0 ;
+	virtual void reset (CREF<StreamShape> shape) = 0 ;
+	virtual StreamShape backup () const = 0 ;
 	virtual BOOL good () const = 0 ;
-	virtual void backup () = 0 ;
-	virtual void recover () = 0 ;
 	virtual void write (CREF<BOOL> item) = 0 ;
 	virtual void write (CREF<VAL32> item) = 0 ;
 	virtual void write (CREF<VAL64> item) = 0 ;
@@ -1047,10 +1045,9 @@ struct ByteWriterHolder implement Interface {
 class ByteWriter implement ByteWriterLayout {
 protected:
 	using ByteWriterLayout::mStream ;
+	using ByteWriterLayout::mOverflow ;
 	using ByteWriterLayout::mRead ;
 	using ByteWriterLayout::mWrite ;
-	using ByteWriterLayout::mBackupRead ;
-	using ByteWriterLayout::mBackupWrite ;
 
 public:
 	implicit ByteWriter () = default ;
@@ -1075,20 +1072,16 @@ public:
 		return ByteWriterHolder::hold (thiz)->reset () ;
 	}
 
-	void reset (CREF<INDEX> read_ ,CREF<INDEX> write_) {
-		return ByteWriterHolder::hold (thiz)->reset (read_ ,write_) ;
+	void reset (CREF<StreamShape> shape) {
+		return ByteWriterHolder::hold (thiz)->reset (shape) ;
+	}
+
+	StreamShape backup () const {
+		return ByteWriterHolder::hold (thiz)->backup () ;
 	}
 
 	BOOL good () const {
 		return ByteWriterHolder::hold (thiz)->good () ;
-	}
-
-	void backup () {
-		return ByteWriterHolder::hold (thiz)->backup () ;
-	}
-
-	void recover () {
-		return ByteWriterHolder::hold (thiz)->recover () ;
 	}
 
 	void write (CREF<BOOL> item) {
@@ -1288,8 +1281,6 @@ struct TextWriterLayout {
 	Function<VREF<TextWriterLayout>> mOverflow ;
 	INDEX mRead ;
 	INDEX mWrite ;
-	INDEX mBackupRead ;
-	INDEX mBackupWrite ;
 } ;
 
 struct TextWriterHolder implement Interface {
@@ -1301,10 +1292,9 @@ struct TextWriterHolder implement Interface {
 	virtual LENGTH size () const = 0 ;
 	virtual LENGTH length () const = 0 ;
 	virtual void reset () = 0 ;
-	virtual void reset (CREF<INDEX> read_ ,CREF<INDEX> write_) = 0 ;
+	virtual void reset (CREF<StreamShape> shape) = 0 ;
+	virtual StreamShape backup () const = 0 ;
 	virtual BOOL good () const = 0 ;
-	virtual void backup () = 0 ;
-	virtual void recover () = 0 ;
 	virtual void write (CREF<BOOL> item) = 0 ;
 	virtual void write (CREF<VAL32> item) = 0 ;
 	virtual void write (CREF<VAL64> item) = 0 ;
@@ -1330,10 +1320,9 @@ struct TextWriterHolder implement Interface {
 class TextWriter implement TextWriterLayout {
 protected:
 	using TextWriterLayout::mStream ;
+	using TextWriterLayout::mOverflow ;
 	using TextWriterLayout::mRead ;
 	using TextWriterLayout::mWrite ;
-	using TextWriterLayout::mBackupRead ;
-	using TextWriterLayout::mBackupWrite ;
 
 public:
 	implicit TextWriter () = default ;
@@ -1358,20 +1347,16 @@ public:
 		return TextWriterHolder::hold (thiz)->reset () ;
 	}
 
-	void reset (CREF<INDEX> read_ ,CREF<INDEX> write_) {
-		return TextWriterHolder::hold (thiz)->reset (read_ ,write_) ;
+	void reset (CREF<StreamShape> shape) {
+		return TextWriterHolder::hold (thiz)->reset (shape) ;
+	}
+
+	StreamShape backup () const {
+		return TextWriterHolder::hold (thiz)->backup () ;
 	}
 
 	BOOL good () const {
 		return TextWriterHolder::hold (thiz)->good () ;
-	}
-
-	void backup () {
-		return TextWriterHolder::hold (thiz)->backup () ;
-	}
-
-	void recover () {
-		return TextWriterHolder::hold (thiz)->recover () ;
 	}
 
 	void write (CREF<BOOL> item) {
@@ -1569,12 +1554,12 @@ public:
 template <class A>
 class StringParse implement Proxy {
 public:
-	imports A make (CREF<Slice> text) {
+	static A make (CREF<Slice> text) {
 		return make (String<STR> (text)) ;
 	}
 
 	template <class ARG1>
-	imports A make (CREF<String<ARG1>> text) {
+	static A make (CREF<String<ARG1>> text) {
 		A ret ;
 		auto rax = TextReader (text.borrow ()) ;
 		rax >> ret ;
@@ -1587,7 +1572,7 @@ template <class A>
 class StringBuild implement Proxy {
 public:
 	template <class...ARG1>
-	imports String<A> make (CREF<ARG1>...params) {
+	static String<A> make (CREF<ARG1>...params) {
 		String<A> ret = String<A> (SLICE_MAX_SIZE::expr) ;
 		auto rax = TextWriter (ret.borrow ()) ;
 		make_impl (rax ,params...) ;
@@ -1595,12 +1580,12 @@ public:
 		return move (ret) ;
 	}
 
-	imports forceinline void make_impl (VREF<TextWriter> writer) {
+	forceinline static void make_impl (VREF<TextWriter> writer) {
 		noop () ;
 	}
 
 	template <class ARG1 ,class...ARG2>
-	imports forceinline void make_impl (VREF<TextWriter> writer ,CREF<ARG1> params1 ,CREF<ARG2>...params2) {
+	forceinline static void make_impl (VREF<TextWriter> writer ,CREF<ARG1> params1 ,CREF<ARG2>...params2) {
 		writer << params1 ;
 		make_impl (writer ,params2...) ;
 	}
@@ -1611,9 +1596,9 @@ struct FormatFriend implement Interface {
 } ;
 
 template <class A>
-class FormatFriendBinder implement Fat<FormatFriend ,A> {
+class FormatFriendBinder final implement Fat<FormatFriend ,A> {
 public:
-	imports CFat<FormatFriend> create (CREF<A> that) {
+	static CFat<FormatFriend> create (CREF<A> that) {
 		return CFat<FormatFriend> (FormatFriendBinder () ,that) ;
 	}
 
@@ -1624,7 +1609,7 @@ public:
 
 struct FormatLayout {
 	Slice mFormat ;
-	Pin<BufferX<FatLayout>> mParams ;
+	BufferX<Pin<FatLayout>> mParams ;
 	Pin<INDEX> mWrite ;
 
 public:
@@ -1692,9 +1677,10 @@ inline Format PrintFormat (CREF<ARG1>...params) {
 	return move (ret) ;
 }
 
-struct StreamTextProcLayout implement ThisLayout<AutoRefLayout> {} ;
+struct StreamTextProcLayout implement ThisLayout<RefLayout> {} ;
 
 struct StreamTextProcHolder implement Interface {
+	imports CREF<StreamTextProcLayout> instance () ;
 	imports VFat<StreamTextProcHolder> hold (VREF<StreamTextProcLayout> that) ;
 	imports CFat<StreamTextProcHolder> hold (CREF<StreamTextProcLayout> that) ;
 
@@ -1713,39 +1699,35 @@ protected:
 	using StreamTextProcLayout::mThis ;
 
 public:
-	imports CREF<StreamTextProc> instance () {
-		return memorize ([&] () {
-			StreamTextProc ret ;
-			StreamTextProcHolder::hold (ret)->initialize () ;
-			return move (ret) ;
-		}) ;
+	static CREF<StreamTextProc> instance () {
+		return keep[TYPE<StreamTextProc>::expr] (StreamTextProcHolder::instance ()) ;
 	}
 
-	imports void read_keyword (VREF<ReaderFriend> reader ,VREF<String<STRU8>> item) {
+	static void read_keyword (VREF<ReaderFriend> reader ,VREF<String<STRU8>> item) {
 		return StreamTextProcHolder::hold (instance ())->read_keyword (reader ,item) ;
 	}
 
-	imports void read_scalar (VREF<ReaderFriend> reader ,VREF<String<STRU8>> item) {
+	static void read_scalar (VREF<ReaderFriend> reader ,VREF<String<STRU8>> item) {
 		return StreamTextProcHolder::hold (instance ())->read_scalar (reader ,item) ;
 	}
 
-	imports void read_escape (VREF<ReaderFriend> reader ,VREF<String<STRU8>> item) {
+	static void read_escape (VREF<ReaderFriend> reader ,VREF<String<STRU8>> item) {
 		return StreamTextProcHolder::hold (instance ())->read_escape (reader ,item) ;
 	}
 
-	imports void write_escape (VREF<WriterFriend> writer ,CREF<String<STRU8>> item) {
+	static void write_escape (VREF<WriterFriend> writer ,CREF<String<STRU8>> item) {
 		return StreamTextProcHolder::hold (instance ())->write_escape (writer ,item) ;
 	}
 
-	imports void read_blank (VREF<ReaderFriend> reader ,VREF<String<STRU8>> item) {
+	static void read_blank (VREF<ReaderFriend> reader ,VREF<String<STRU8>> item) {
 		return StreamTextProcHolder::hold (instance ())->read_blank (reader ,item) ;
 	}
 
-	imports void read_endline (VREF<ReaderFriend> reader ,VREF<String<STRU8>> item) {
+	static void read_endline (VREF<ReaderFriend> reader ,VREF<String<STRU8>> item) {
 		return StreamTextProcHolder::hold (instance ())->read_endline (reader ,item) ;
 	}
 
-	imports void write_aligned (VREF<WriterFriend> writer ,CREF<VAL64> number ,CREF<LENGTH> align) {
+	static void write_aligned (VREF<WriterFriend> writer ,CREF<VAL64> number ,CREF<LENGTH> align) {
 		return StreamTextProcHolder::hold (instance ())->write_aligned (writer ,number ,align) ;
 	}
 } ;
@@ -1755,7 +1737,7 @@ protected:
 	String<STRU8> mThat ;
 
 public:
-	imports VREF<KeywordText> from (VREF<String<STRU8>> that) {
+	static VREF<KeywordText> from (VREF<String<STRU8>> that) {
 		return Pointer::from (that) ;
 	}
 
@@ -1770,7 +1752,7 @@ protected:
 	String<STRU8> mThat ;
 
 public:
-	imports VREF<ScalarText> from (VREF<String<STRU8>> that) {
+	static VREF<ScalarText> from (VREF<String<STRU8>> that) {
 		return Pointer::from (that) ;
 	}
 
@@ -1785,15 +1767,15 @@ protected:
 	String<STRU8> mThat ;
 
 public:
-	imports VREF<EscapeText> from (VREF<String<STRU8>> that) {
+	static VREF<EscapeText> from (VREF<String<STRU8>> that) {
 		return Pointer::from (that) ;
 	}
 
-	imports CREF<EscapeText> from (CREF<String<STRU8>> that) {
+	static CREF<EscapeText> from (CREF<String<STRU8>> that) {
 		return Pointer::from (that) ;
 	}
 
-	imports CREF<EscapeText> from (RREF<String<STRU8>> that) = delete ;
+	static CREF<EscapeText> from (RREF<String<STRU8>> that) = delete ;
 
 	template <class ARG1>
 	void friend_read (VREF<ARG1> reader) {
@@ -1811,7 +1793,7 @@ protected:
 	String<STRU8> mThat ;
 
 public:
-	imports VREF<BlankText> from (VREF<String<STRU8>> that) {
+	static VREF<BlankText> from (VREF<String<STRU8>> that) {
 		return Pointer::from (that) ;
 	}
 
@@ -1826,7 +1808,7 @@ protected:
 	String<STRU8> mThat ;
 
 public:
-	imports VREF<EndlineText> from (VREF<String<STRU8>> that) {
+	static VREF<EndlineText> from (VREF<String<STRU8>> that) {
 		return Pointer::from (that) ;
 	}
 
@@ -1836,15 +1818,10 @@ public:
 	}
 } ;
 
-struct AlignedTextLayout {
+class AlignedText {
+protected:
 	VAL64 mNumber ;
 	LENGTH mAlign ;
-} ;
-
-class AlignedText implement AlignedTextLayout {
-protected:
-	using AlignedTextLayout::mNumber ;
-	using AlignedTextLayout::mAlign ;
 
 public:
 	implicit AlignedText () = delete ;
@@ -1908,6 +1885,39 @@ public:
 
 	void tight () const {
 		return CommaHolder::hold (thiz)->tight () ;
+	}
+} ;
+
+struct RegexImplLayout ;
+
+struct RegexLayout implement ThisLayout<AutoRef<RegexImplLayout>> {} ;
+
+struct RegexHolder implement Interface {
+	imports VFat<RegexHolder> hold (VREF<RegexLayout> that) ;
+	imports CFat<RegexHolder> hold (CREF<RegexLayout> that) ;
+
+	virtual void initialize (CREF<String<STR>> format) = 0 ;
+	virtual INDEX search (CREF<String<STR>> text ,CREF<INDEX> offset) = 0 ;
+	virtual String<STR> match (CREF<INDEX> index) const = 0 ;
+} ;
+
+class Regex implement RegexLayout {
+protected:
+	using RegexLayout::mThis ;
+
+public:
+	implicit Regex () = default ;
+
+	explicit Regex (CREF<String<STR>> format) {
+		RegexHolder::hold (thiz)->initialize (format) ;
+	}
+
+	INDEX search (CREF<String<STR>> text ,CREF<INDEX> offset) {
+		return RegexHolder::hold (thiz)->search (text ,offset) ;
+	}
+
+	String<STR> match (CREF<INDEX> index) const {
+		return RegexHolder::hold (thiz)->match (index) ;
 	}
 } ;
 } ;

@@ -11,7 +11,7 @@
 #include "csc_begin.h"
 
 namespace CSC {
-class MathProcImplHolder implement Fat<MathProcHolder ,MathProcLayout> {
+class MathProcImplHolder final implement Fat<MathProcHolder ,MathProcLayout> {
 public:
 	void initialize () override {
 		noop () ;
@@ -321,7 +321,7 @@ public:
 		if (!a)
 			return FALSE ;
 		auto &&rax = keep[TYPE<Wrapper<BOOL>>::expr] (Pointer::from (b)) ;
-		for (auto &&i : iter (0 ,b.mRank)) {
+		for (auto &&i : iter (0 ,rax.rank ())) {
 			if (!rax[i])
 				return FALSE ;
 		}
@@ -332,7 +332,7 @@ public:
 		if (a)
 			return TRUE ;
 		auto &&rax = keep[TYPE<Wrapper<BOOL>>::expr] (Pointer::from (b)) ;
-		for (auto &&i : iter (0 ,b.mRank)) {
+		for (auto &&i : iter (0 ,rax.rank ())) {
 			if (rax[i])
 				return TRUE ;
 		}
@@ -356,10 +356,10 @@ public:
 	}
 
 	template <class ARG1>
-	ARG1 max_of_impl (CREF<ARG1> a ,CREF<WrapperLayout> b) const {
+	forceinline ARG1 max_of_impl (CREF<ARG1> a ,CREF<WrapperLayout> b) const {
 		ARG1 ret = a ;
 		auto &&rax = keep[TYPE<Wrapper<ARG1>>::expr] (Pointer::from (b)) ;
-		for (auto &&i : iter (0 ,b.mRank)) {
+		for (auto &&i : iter (0 ,rax.rank ())) {
 			if (ret >= rax[i])
 				continue ;
 			ret = rax[i] ;
@@ -384,10 +384,10 @@ public:
 	}
 
 	template <class ARG1>
-	ARG1 min_of_impl (CREF<ARG1> a ,CREF<WrapperLayout> b) const {
+	forceinline ARG1 min_of_impl (CREF<ARG1> a ,CREF<WrapperLayout> b) const {
 		ARG1 ret = a ;
 		auto &&rax = keep[TYPE<Wrapper<ARG1>>::expr] (Pointer::from (b)) ;
-		for (auto &&i : iter (0 ,b.mRank)) {
+		for (auto &&i : iter (0 ,rax.rank ())) {
 			if (ret <= rax[i])
 				continue ;
 			ret = rax[i] ;
@@ -395,6 +395,14 @@ public:
 		return move (ret) ;
 	}
 } ;
+
+exports CREF<MathProcLayout> MathProcHolder::instance () {
+	return memorize ([&] () {
+		MathProcLayout ret ;
+		MathProcHolder::hold (ret)->initialize () ;
+		return move (ret) ;
+	}) ;
+}
 
 exports VFat<MathProcHolder> MathProcHolder::hold (VREF<MathProcLayout> that) {
 	return VFat<MathProcHolder> (MathProcImplHolder () ,that) ;
@@ -404,7 +412,7 @@ exports CFat<MathProcHolder> MathProcHolder::hold (CREF<MathProcLayout> that) {
 	return CFat<MathProcHolder> (MathProcImplHolder () ,that) ;
 }
 
-class NormalErrorImplHolder implement Fat<NormalErrorHolder ,NormalErrorLayout> {
+class NormalErrorImplHolder final implement Fat<NormalErrorHolder ,NormalErrorLayout> {
 public:
 	void update (CREF<FLT64> error) override {
 		const auto r1x = FLT64 (fake.mCount) ;
@@ -426,7 +434,7 @@ exports CFat<NormalErrorHolder> NormalErrorHolder::hold (CREF<NormalErrorLayout>
 	return CFat<NormalErrorHolder> (NormalErrorImplHolder () ,that) ;
 }
 
-class FloatProcImplHolder implement Fat<FloatProcHolder ,FloatProcLayout> {
+class FloatProcImplHolder final implement Fat<FloatProcHolder ,FloatProcLayout> {
 public:
 	void initialize () override {
 		noop () ;
@@ -671,6 +679,14 @@ public:
 	}
 } ;
 
+exports CREF<FloatProcLayout> FloatProcHolder::instance () {
+	return memorize ([&] () {
+		FloatProcLayout ret ;
+		FloatProcHolder::hold (ret)->initialize () ;
+		return move (ret) ;
+	}) ;
+}
+
 exports VFat<FloatProcHolder> FloatProcHolder::hold (VREF<FloatProcLayout> that) {
 	return VFat<FloatProcHolder> (FloatProcImplHolder () ,that) ;
 }
@@ -681,25 +697,41 @@ exports CFat<FloatProcHolder> FloatProcHolder::hold (CREF<FloatProcLayout> that)
 
 template class External<FEXP2CacheHolder ,FEXP2CacheLayout> ;
 
+exports CREF<FEXP2CacheLayout> FEXP2CacheHolder::instance () {
+	return memorize ([&] () {
+		FEXP2CacheLayout ret ;
+		FEXP2CacheHolder::hold (ret)->initialize () ;
+		return move (ret) ;
+	}) ;
+}
+
 exports VFat<FEXP2CacheHolder> FEXP2CacheHolder::hold (VREF<FEXP2CacheLayout> that) {
-	return VFat<FEXP2CacheHolder> (External<FEXP2CacheHolder ,FEXP2CacheLayout>::instance () ,that) ;
+	return VFat<FEXP2CacheHolder> (External<FEXP2CacheHolder ,FEXP2CacheLayout>::linkage () ,that) ;
 }
 
 exports CFat<FEXP2CacheHolder> FEXP2CacheHolder::hold (CREF<FEXP2CacheLayout> that) {
-	return CFat<FEXP2CacheHolder> (External<FEXP2CacheHolder ,FEXP2CacheLayout>::instance () ,that) ;
+	return CFat<FEXP2CacheHolder> (External<FEXP2CacheHolder ,FEXP2CacheLayout>::linkage () ,that) ;
 }
 
-template class External<FEXP10CacheHolder ,FEXP10CacheHolder> ;
+template class External<FEXP10CacheHolder ,FEXP10CacheLayout> ;
+
+exports CREF<FEXP10CacheLayout> FEXP10CacheHolder::instance () {
+	return memorize ([&] () {
+		FEXP10CacheLayout ret ;
+		FEXP10CacheHolder::hold (ret)->initialize () ;
+		return move (ret) ;
+	}) ;
+}
 
 exports VFat<FEXP10CacheHolder> FEXP10CacheHolder::hold (VREF<FEXP10CacheLayout> that) {
-	return VFat<FEXP10CacheHolder> (External<FEXP10CacheHolder ,FEXP10CacheLayout>::instance () ,that) ;
+	return VFat<FEXP10CacheHolder> (External<FEXP10CacheHolder ,FEXP10CacheLayout>::linkage () ,that) ;
 }
 
 exports CFat<FEXP10CacheHolder> FEXP10CacheHolder::hold (CREF<FEXP10CacheLayout> that) {
-	return CFat<FEXP10CacheHolder> (External<FEXP10CacheHolder ,FEXP10CacheLayout>::instance () ,that) ;
+	return CFat<FEXP10CacheHolder> (External<FEXP10CacheHolder ,FEXP10CacheLayout>::linkage () ,that) ;
 }
 
-class ByteProcImplHolder implement Fat<ByteProcHolder ,ByteProcLayout> {
+class ByteProcImplHolder final implement Fat<ByteProcHolder ,ByteProcLayout> {
 public:
 	void initialize () override {
 		noop () ;
@@ -806,45 +838,53 @@ public:
 	LENGTH popcount (CREF<BYTE> a) const override {
 		static const ARR<VAL32 ,ENUM<256>> mCache {
 			0 ,1 ,1 ,2 ,1 ,2 ,2 ,3 ,1 ,2 ,2 ,3 ,2 ,3 ,3 ,4 ,
-				1 ,2 ,2 ,3 ,2 ,3 ,3 ,4 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,
-				1 ,2 ,2 ,3 ,2 ,3 ,3 ,4 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,
-				2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,
-				1 ,2 ,2 ,3 ,2 ,3 ,3 ,4 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,
-				2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,
-				2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,
-				3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,4 ,5 ,5 ,6 ,5 ,6 ,6 ,7 ,
-				1 ,2 ,2 ,3 ,2 ,3 ,3 ,4 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,
-				2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,
-				2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,
-				3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,4 ,5 ,5 ,6 ,5 ,6 ,6 ,7 ,
-				2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,
-				3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,4 ,5 ,5 ,6 ,5 ,6 ,6 ,7 ,
-				3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,4 ,5 ,5 ,6 ,5 ,6 ,6 ,7 ,
-				4 ,5 ,5 ,6 ,5 ,6 ,6 ,7 ,5 ,6 ,6 ,7 ,6 ,7 ,7 ,8} ;
+			1 ,2 ,2 ,3 ,2 ,3 ,3 ,4 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,
+			1 ,2 ,2 ,3 ,2 ,3 ,3 ,4 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,
+			2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,
+			1 ,2 ,2 ,3 ,2 ,3 ,3 ,4 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,
+			2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,
+			2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,
+			3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,4 ,5 ,5 ,6 ,5 ,6 ,6 ,7 ,
+			1 ,2 ,2 ,3 ,2 ,3 ,3 ,4 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,
+			2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,
+			2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,
+			3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,4 ,5 ,5 ,6 ,5 ,6 ,6 ,7 ,
+			2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,
+			3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,4 ,5 ,5 ,6 ,5 ,6 ,6 ,7 ,
+			3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,4 ,5 ,5 ,6 ,5 ,6 ,6 ,7 ,
+			4 ,5 ,5 ,6 ,5 ,6 ,6 ,7 ,5 ,6 ,6 ,7 ,6 ,7 ,7 ,8} ;
 		return LENGTH (mCache[INDEX (a)]) ;
 	}
 
 	LENGTH lowcount (CREF<BYTE> a) const override {
 		static const ARR<VAL32 ,ENUM<256>> mCache {
 			8 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
-				4 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
-				5 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
-				4 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
-				6 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
-				4 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
-				5 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
-				4 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
-				7 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
-				4 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
-				5 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
-				4 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
-				6 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
-				4 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
-				5 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
-				4 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0} ;
+			4 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
+			5 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
+			4 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
+			6 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
+			4 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
+			5 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
+			4 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
+			7 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
+			4 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
+			5 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
+			4 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
+			6 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
+			4 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
+			5 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,
+			4 ,0 ,1 ,0 ,2 ,0 ,1 ,0 ,3 ,0 ,1 ,0 ,2 ,0 ,1 ,0} ;
 		return LENGTH (mCache[INDEX (a)]) ;
 	}
 } ;
+
+exports CREF<ByteProcLayout> ByteProcHolder::instance () {
+	return memorize ([&] () {
+		ByteProcLayout ret ;
+		ByteProcHolder::hold (ret)->initialize () ;
+		return move (ret) ;
+	}) ;
+}
 
 exports VFat<ByteProcHolder> ByteProcHolder::hold (VREF<ByteProcLayout> that) {
 	return VFat<ByteProcHolder> (ByteProcImplHolder () ,that) ;
@@ -854,11 +894,17 @@ exports CFat<ByteProcHolder> ByteProcHolder::hold (CREF<ByteProcLayout> that) {
 	return CFat<ByteProcHolder> (ByteProcImplHolder () ,that) ;
 }
 
-class IntegerImplHolder implement Fat<IntegerHolder ,IntegerLayout> {
+class IntegerImplHolder final implement Fat<IntegerHolder ,IntegerLayout> {
 public:
 	void initialize (CREF<LENGTH> size_ ,CREF<VAL64> item) override {
 		fake.mInteger = RefBuffer<BYTE> (size_) ;
 		store (item) ;
+	}
+
+	void initialize (CREF<IntegerLayout> that) override {
+		fake.mInteger = RefBuffer<BYTE> (that.mInteger.size ()) ;
+		for (auto &&i : iter (0 ,that.mInteger.size ()))
+			fake.mInteger[i] = that.mInteger[i] ;
 	}
 
 	LENGTH size () const override {
@@ -885,7 +931,7 @@ public:
 
 	VAL64 fetch () const override {
 		VAL64 ret = 0 ;
-		const auto r1x = MathProc::min_of (fake.mInteger.size () ,SIZE_OF<VAL64>::expr) ;
+		const auto r1x = MathProc::min_of (fake.mInteger.size () ,LENGTH (SIZE_OF<VAL64>::expr)) ;
 		for (auto &&i : iter (0 ,r1x)) {
 			const auto r2x = QUAD (fake.mInteger[i]) << (i * 8) ;
 			ret = VAL64 (QUAD (ret) | r2x) ;
@@ -894,7 +940,7 @@ public:
 	}
 
 	void store (CREF<VAL64> item) override {
-		const auto r1x = MathProc::min_of (fake.mInteger.size () ,SIZE_OF<VAL64>::expr) ;
+		const auto r1x = MathProc::min_of (fake.mInteger.size () ,LENGTH (SIZE_OF<VAL64>::expr)) ;
 		const auto r2x = QUAD (item) ;
 		for (auto &&i : iter (0 ,r1x)) {
 			const auto r3x = BYTE (r2x >> (i * 8)) ;
@@ -1061,11 +1107,19 @@ public:
 		return Integer (fake.mInteger.size () ,rax) ;
 	}
 
-	IntegerLayout plus () const override {
+	IntegerLayout sabs () const override {
 		IntegerLayout ret ;
-		ret.mInteger = RefBuffer<BYTE> (fake.mInteger.size ()) ;
-		for (auto &&i : iter (0 ,fake.mInteger.size ()))
-			ret.mInteger[i] = fake.mInteger[i] ;
+		INDEX ix = fake.mInteger.size () - 1 ;
+		const auto r1x = fake.mInteger[ix] & BYTE (0X80) ;
+		auto act = TRUE ;
+		if ifdo (act) {
+			if (r1x != BYTE (0X00))
+				discard ;
+			IntegerHolder::hold (ret)->initialize (fake) ;
+		}
+		if ifdo (act) {
+			ret = minus () ;
+		}
 		return move (ret) ;
 	}
 
@@ -1111,7 +1165,7 @@ exports CFat<IntegerHolder> IntegerHolder::hold (CREF<IntegerLayout> that) {
 	return CFat<IntegerHolder> (IntegerImplHolder () ,that) ;
 }
 
-class HashProcImplHolder implement Fat<HashProcHolder ,HashProcLayout> {
+class HashProcImplHolder final implement Fat<HashProcHolder ,HashProcLayout> {
 public:
 	void initialize () override {
 		noop () ;
@@ -1178,6 +1232,14 @@ public:
 		return move (ret) ;
 	}
 } ;
+
+exports CREF<HashProcLayout> HashProcHolder::instance () {
+	return memorize ([&] () {
+		HashProcLayout ret ;
+		HashProcHolder::hold (ret)->initialize () ;
+		return move (ret) ;
+	}) ;
+}
 
 exports VFat<HashProcHolder> HashProcHolder::hold (VREF<HashProcLayout> that) {
 	return VFat<HashProcHolder> (HashProcImplHolder () ,that) ;

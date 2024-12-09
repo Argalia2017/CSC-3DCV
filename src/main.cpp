@@ -11,12 +11,11 @@
 using namespace CSC3DCV ;
 
 int main () {
-	if ifdo (TRUE) {
-		Singleton<Console>::instance ().start () ;
-	}
-	if ifdo (TRUE) {
-		auto rax = Calibration () ;
-		rax.execute () ;
-	}
+	Singleton<Console>::instance ().start () ;
+	Singleton<Console>::instance ().open (slice (".")) ;
+	Singleton<Console>::instance ().info (slice ("library_name = ") ,RuntimeProc::library_name ()) ;
+	Singleton<Console>::instance ().info (slice ("heap_address = ") ,QUAD (address (Heap::instance ()))) ;
+
+	GlobalRoot::instance ().shutdown () ;
 	return 0 ;
 }

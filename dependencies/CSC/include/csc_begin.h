@@ -1,4 +1,5 @@
-﻿#ifdef __CSC_COMPILER_MSVC__
+﻿
+#ifdef __CSC_COMPILER_MSVC__
 #pragma warning (pop)
 #endif
 

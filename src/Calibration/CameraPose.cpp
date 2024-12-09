@@ -12,7 +12,7 @@ public:
 
 } ;
 
-exports DLLEXTERN AutoRef<CameraPoseHolder> DLLAPI CameraPoseHolder::create () {
+exports DLLEXTERN AutoRef<CameraPoseHolder> CameraPoseHolder::create () {
 	return AutoRef<CameraPoseImplHolder>::make () ;
 }
 } ;

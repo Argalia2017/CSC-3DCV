@@ -18,9 +18,10 @@ static constexpr auto MATH_R = MATH_PI / FLT64 (180) ;
 static constexpr auto MATH_LN2 = FLT64 (0.693147180559945309417) ;
 static constexpr auto MATH_LN10 = FLT64 (2.30258509299404568402) ;
 
-struct MathProcLayout implement ThisLayout<AutoRefLayout> {} ;
+struct MathProcLayout implement ThisLayout<RefLayout> {} ;
 
 struct MathProcHolder implement Interface {
+	imports CREF<MathProcLayout> instance () ;
 	imports VFat<MathProcHolder> hold (VREF<MathProcLayout> that) ;
 	imports CFat<MathProcHolder> hold (CREF<MathProcLayout> that) ;
 
@@ -102,151 +103,147 @@ protected:
 	using MathProcLayout::mThis ;
 
 public:
-	imports CREF<MathProc> instance () {
-		return memorize ([&] () {
-			MathProc ret ;
-			MathProcHolder::hold (ret)->initialize () ;
-			return move (ret) ;
-		}) ;
+	static CREF<MathProc> instance () {
+		return keep[TYPE<MathProc>::expr] (MathProcHolder::instance ()) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports BOOL is_inf (CREF<ARG1> a) {
+	static BOOL is_inf (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->is_inf (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_SCALAR<ARG1>>>
-	imports ARG1 step (CREF<ARG1> a) {
+	static ARG1 step (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->step (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_SCALAR<ARG1>>>
-	imports ARG1 sign (CREF<ARG1> a) {
+	static ARG1 sign (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->sign (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_SCALAR<ARG1>>>
-	imports ARG1 square (CREF<ARG1> a) {
+	static ARG1 square (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->square (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports ARG1 sqrt (CREF<ARG1> a) {
+	static ARG1 sqrt (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->sqrt (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_SCALAR<ARG1>>>
-	imports ARG1 cubic (CREF<ARG1> a) {
+	static ARG1 cubic (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->cubic (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports ARG1 cbrt (CREF<ARG1> a) {
+	static ARG1 cbrt (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->cbrt (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_SCALAR<ARG1>>>
-	imports ARG1 abs (CREF<ARG1> a) {
+	static ARG1 abs (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->abs (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports ARG1 inverse (CREF<ARG1> a) {
+	static ARG1 inverse (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->inverse (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports ARG1 floor (CREF<ARG1> a ,CREF<ARG1> b) {
+	static ARG1 floor (CREF<ARG1> a ,CREF<ARG1> b) {
 		return MathProcHolder::hold (instance ())->floor (a ,b) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports ARG1 round (CREF<ARG1> a ,CREF<ARG1> b) {
+	static ARG1 round (CREF<ARG1> a ,CREF<ARG1> b) {
 		return MathProcHolder::hold (instance ())->round (a ,b) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports ARG1 ceil (CREF<ARG1> a ,CREF<ARG1> b) {
+	static ARG1 ceil (CREF<ARG1> a ,CREF<ARG1> b) {
 		return MathProcHolder::hold (instance ())->ceil (a ,b) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_SCALAR<ARG1>>>
-	imports ARG1 clamp (CREF<ARG1> a ,CREF<ARG1> lb ,CREF<ARG1> rb) {
+	static ARG1 clamp (CREF<ARG1> a ,CREF<ARG1> lb ,CREF<ARG1> rb) {
 		return MathProcHolder::hold (instance ())->clamp (a ,lb ,rb) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_VALUE<ARG1>>>
-	imports ARG1 lerp (CREF<FLT64> a ,CREF<ARG1> lb ,CREF<ARG1> rb) {
+	static ARG1 lerp (CREF<FLT64> a ,CREF<ARG1> lb ,CREF<ARG1> rb) {
 		return MathProcHolder::hold (instance ())->lerp (a ,lb ,rb) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports ARG1 cos (CREF<ARG1> a) {
+	static ARG1 cos (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->cos (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports ARG1 sin (CREF<ARG1> a) {
+	static ARG1 sin (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->sin (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports ARG1 tan (CREF<ARG1> a) {
+	static ARG1 tan (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->tan (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports ARG1 arccos (CREF<ARG1> a) {
+	static ARG1 arccos (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->arccos (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports ARG1 arcsin (CREF<ARG1> a) {
+	static ARG1 arcsin (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->arcsin (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports ARG1 arctan (CREF<ARG1> y ,CREF<ARG1> x) {
+	static ARG1 arctan (CREF<ARG1> y ,CREF<ARG1> x) {
 		return MathProcHolder::hold (instance ())->arctan (y ,x) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports ARG1 exp (CREF<ARG1> a) {
+	static ARG1 exp (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->exp (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports ARG1 log (CREF<ARG1> a) {
+	static ARG1 log (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->log (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports ARG1 pdf (CREF<ARG1> a) {
+	static ARG1 pdf (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->pdf (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	imports ARG1 cbf (CREF<ARG1> a) {
+	static ARG1 cbf (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->cbf (a) ;
 	}
 
 	template <class ARG1 ,class...ARG2 ,class = REQUIRE<IS_BOOL<ARG1>> ,class = REQUIRE<ENUM_ALL<IS_SAME<ARG1 ,ARG2>...>>>
-	imports BOOL all_of (CREF<ARG1> a ,CREF<ARG2>...b) {
+	static BOOL all_of (CREF<ARG1> a ,CREF<ARG2>...b) {
 		return MathProcHolder::hold (instance ())->all_of (a ,MakeWrapper (b...)) ;
 	}
 
 	template <class ARG1 ,class...ARG2 ,class = REQUIRE<IS_BOOL<ARG1>> ,class = REQUIRE<ENUM_ALL<IS_SAME<ARG1 ,ARG2>...>>>
-	imports BOOL any_of (CREF<ARG1> a ,CREF<ARG2>...b) {
+	static BOOL any_of (CREF<ARG1> a ,CREF<ARG2>...b) {
 		return MathProcHolder::hold (instance ())->any_of (a ,MakeWrapper (b...)) ;
 	}
 
 	template <class ARG1 ,class...ARG2 ,class = REQUIRE<IS_SCALAR<ARG1>> ,class = REQUIRE<ENUM_ALL<IS_SAME<ARG1 ,ARG2>...>>>
-	imports ARG1 max_of (CREF<ARG1> a ,CREF<ARG2>...b) {
+	static ARG1 max_of (CREF<ARG1> a ,CREF<ARG2>...b) {
 		return MathProcHolder::hold (instance ())->max_of (a ,MakeWrapper (b...)) ;
 	}
 
 	template <class ARG1 ,class...ARG2 ,class = REQUIRE<IS_SCALAR<ARG1>> ,class = REQUIRE<ENUM_ALL<IS_SAME<ARG1 ,ARG2>...>>>
-	imports ARG1 min_of (CREF<ARG1> a ,CREF<ARG2>...b) {
+	static ARG1 min_of (CREF<ARG1> a ,CREF<ARG2>...b) {
 		return MathProcHolder::hold (instance ())->min_of (a ,MakeWrapper (b...)) ;
 	}
 } ;
@@ -305,9 +302,10 @@ struct Notation {
 	VAL64 mExponent ;
 } ;
 
-struct FEXP2CacheLayout implement ThisLayout<AutoRefLayout> {} ;
+struct FEXP2CacheLayout implement ThisLayout<RefLayout> {} ;
 
 struct FEXP2CacheHolder implement Interface {
+	imports CREF<FEXP2CacheLayout> instance () ;
 	imports VFat<FEXP2CacheHolder> hold (VREF<FEXP2CacheLayout> that) ;
 	imports CFat<FEXP2CacheHolder> hold (CREF<FEXP2CacheLayout> that) ;
 
@@ -317,12 +315,8 @@ struct FEXP2CacheHolder implement Interface {
 
 class FEXP2Cache implement FEXP2CacheLayout {
 public:
-	imports CREF<FEXP2Cache> instance () {
-		return memorize ([&] () {
-			FEXP2Cache ret ;
-			FEXP2CacheHolder::hold (ret)->initialize () ;
-			return move (ret) ;
-		}) ;
+	static CREF<FEXP2Cache> instance () {
+		return keep[TYPE<FEXP2Cache>::expr] (FEXP2CacheHolder::instance ()) ;
 	}
 
 	forceinline Notation operator[] (CREF<VAL64> index) const {
@@ -332,9 +326,10 @@ public:
 	}
 } ;
 
-struct FEXP10CacheLayout implement ThisLayout<AutoRefLayout> {} ;
+struct FEXP10CacheLayout implement ThisLayout<RefLayout> {} ;
 
 struct FEXP10CacheHolder implement Interface {
+	imports CREF<FEXP10CacheLayout> instance () ;
 	imports VFat<FEXP10CacheHolder> hold (VREF<FEXP10CacheLayout> that) ;
 	imports CFat<FEXP10CacheHolder> hold (CREF<FEXP10CacheLayout> that) ;
 
@@ -344,12 +339,8 @@ struct FEXP10CacheHolder implement Interface {
 
 class FEXP10Cache implement FEXP10CacheLayout {
 public:
-	imports CREF<FEXP10Cache> instance () {
-		return memorize ([&] () {
-			FEXP10Cache ret ;
-			FEXP10CacheHolder::hold (ret)->initialize () ;
-			return move (ret) ;
-		}) ;
+	static CREF<FEXP10Cache> instance () {
+		return keep[TYPE<FEXP10Cache>::expr] (FEXP10CacheHolder::instance ()) ;
 	}
 
 	forceinline Notation operator[] (CREF<VAL64> index) const {
@@ -359,9 +350,10 @@ public:
 	}
 } ;
 
-struct FloatProcLayout implement ThisLayout<AutoRefLayout> {} ;
+struct FloatProcLayout implement ThisLayout<RefLayout> {} ;
 
 struct FloatProcHolder implement Interface {
+	imports CREF<FloatProcLayout> instance () ;
 	imports VFat<FloatProcHolder> hold (VREF<FloatProcLayout> that) ;
 	imports CFat<FloatProcHolder> hold (CREF<FloatProcLayout> that) ;
 
@@ -379,42 +371,39 @@ protected:
 	using FloatProcLayout::mThis ;
 
 public:
-	imports CREF<FloatProc> instance () {
-		return memorize ([&] () {
-			FloatProc ret ;
-			FloatProcHolder::hold (ret)->initialize () ;
-			return move (ret) ;
-		}) ;
+	static CREF<FloatProc> instance () {
+		return keep[TYPE<FloatProc>::expr] (FloatProcHolder::instance ()) ;
 	}
 
-	imports LENGTH value_precision () {
+	static LENGTH value_precision () {
 		return FloatProcHolder::hold (instance ())->value_precision () ;
 	}
 
-	imports LENGTH float_precision () {
+	static LENGTH float_precision () {
 		return FloatProcHolder::hold (instance ())->float_precision () ;
 	}
 
-	imports FLT64 encode (CREF<Notation> fexp2) {
+	static FLT64 encode (CREF<Notation> fexp2) {
 		return FloatProcHolder::hold (instance ())->encode (fexp2) ;
 	}
 
-	imports Notation decode (CREF<FLT64> float_) {
+	static Notation decode (CREF<FLT64> float_) {
 		return FloatProcHolder::hold (instance ())->decode (float_) ;
 	}
 
-	imports Notation fexp2_from_fexp10 (CREF<Notation> fexp10) {
+	static Notation fexp2_from_fexp10 (CREF<Notation> fexp10) {
 		return FloatProcHolder::hold (instance ())->fexp2_from_fexp10 (fexp10) ;
 	}
 
-	imports Notation fexp10_from_fexp2 (CREF<Notation> fexp2) {
+	static Notation fexp10_from_fexp2 (CREF<Notation> fexp2) {
 		return FloatProcHolder::hold (instance ())->fexp10_from_fexp2 (fexp2) ;
 	}
 } ;
 
-struct ByteProcLayout implement ThisLayout<AutoRefLayout> {} ;
+struct ByteProcLayout implement ThisLayout<RefLayout> {} ;
 
 struct ByteProcHolder implement Interface {
+	imports CREF<ByteProcLayout> instance () ;
 	imports VFat<ByteProcHolder> hold (VREF<ByteProcLayout> that) ;
 	imports CFat<ByteProcHolder> hold (CREF<ByteProcLayout> that) ;
 
@@ -450,85 +439,81 @@ protected:
 	using ByteProcLayout::mThis ;
 
 public:
-	imports CREF<ByteProc> instance () {
-		return memorize ([&] () {
-			ByteProc ret ;
-			ByteProcHolder::hold (ret)->initialize () ;
-			return move (ret) ;
-		}) ;
+	static CREF<ByteProc> instance () {
+		return keep[TYPE<ByteProc>::expr] (ByteProcHolder::instance ()) ;
 	}
 
-	imports BYTE bit_low (CREF<WORD> a) {
+	static BYTE bit_low (CREF<WORD> a) {
 		return ByteProcHolder::hold (instance ())->bit_low (a) ;
 	}
 
-	imports WORD bit_low (CREF<CHAR> a) {
+	static WORD bit_low (CREF<CHAR> a) {
 		return ByteProcHolder::hold (instance ())->bit_low (a) ;
 	}
 
-	imports CHAR bit_low (CREF<QUAD> a) {
+	static CHAR bit_low (CREF<QUAD> a) {
 		return ByteProcHolder::hold (instance ())->bit_low (a) ;
 	}
 
-	imports BYTE bit_high (CREF<WORD> a) {
+	static BYTE bit_high (CREF<WORD> a) {
 		return ByteProcHolder::hold (instance ())->bit_high (a) ;
 	}
 
-	imports WORD bit_high (CREF<CHAR> a) {
+	static WORD bit_high (CREF<CHAR> a) {
 		return ByteProcHolder::hold (instance ())->bit_high (a) ;
 	}
 
-	imports CHAR bit_high (CREF<QUAD> a) {
+	static CHAR bit_high (CREF<QUAD> a) {
 		return ByteProcHolder::hold (instance ())->bit_high (a) ;
 	}
 
-	imports WORD bit_merge (CREF<BYTE> high ,CREF<BYTE> low) {
+	static WORD bit_merge (CREF<BYTE> high ,CREF<BYTE> low) {
 		return ByteProcHolder::hold (instance ())->bit_merge (high ,low) ;
 	}
 
-	imports CHAR bit_merge (CREF<WORD> high ,CREF<WORD> low) {
+	static CHAR bit_merge (CREF<WORD> high ,CREF<WORD> low) {
 		return ByteProcHolder::hold (instance ())->bit_merge (high ,low) ;
 	}
 
-	imports QUAD bit_merge (CREF<CHAR> high ,CREF<CHAR> low) {
+	static QUAD bit_merge (CREF<CHAR> high ,CREF<CHAR> low) {
 		return ByteProcHolder::hold (instance ())->bit_merge (high ,low) ;
 	}
 
 	template <class ARG1 ,class ARG2 ,class = REQUIRE<IS_BYTE<ARG1>>>
-	imports BOOL bit_any (CREF<ARG1> curr ,CREF<ARG2> mask) {
+	static BOOL bit_any (CREF<ARG1> curr ,CREF<ARG2> mask) {
 		return ByteProcHolder::hold (instance ())->bit_any (curr ,ARG1 (mask)) ;
 	}
 
 	template <class ARG1 ,class ARG2 ,class = REQUIRE<IS_BYTE<ARG1>>>
-	imports BOOL bit_all (CREF<ARG1> curr ,CREF<ARG2> mask) {
+	static BOOL bit_all (CREF<ARG1> curr ,CREF<ARG2> mask) {
 		return ByteProcHolder::hold (instance ())->bit_all (curr ,ARG1 (mask)) ;
 	}
 
-	imports BYTE bit_reverse (CREF<BYTE> a) {
+	static BYTE bit_reverse (CREF<BYTE> a) {
 		return ByteProcHolder::hold (instance ())->bit_reverse (a) ;
 	}
 
-	imports WORD bit_reverse (CREF<WORD> a) {
+	static WORD bit_reverse (CREF<WORD> a) {
 		return ByteProcHolder::hold (instance ())->bit_reverse (a) ;
 	}
 
-	imports CHAR bit_reverse (CREF<CHAR> a) {
+	static CHAR bit_reverse (CREF<CHAR> a) {
 		return ByteProcHolder::hold (instance ())->bit_reverse (a) ;
 	}
 
-	imports QUAD bit_reverse (CREF<QUAD> a) {
+	static QUAD bit_reverse (CREF<QUAD> a) {
 		return ByteProcHolder::hold (instance ())->bit_reverse (a) ;
 	}
 
-	imports INDEX bit_pow (CREF<LENGTH> nth) {
+	static INDEX bit_pow (CREF<LENGTH> nth) {
 		return ByteProcHolder::hold (instance ())->bit_pow (nth) ;
 	}
 
-	imports LENGTH popcount (CREF<BYTE> a) {
+	static LENGTH popcount (CREF<BYTE> a) {
 		return ByteProcHolder::hold (instance ())->popcount (a) ;
 	}
 
-	imports LENGTH lowcount (CREF<BYTE> a) {
+	static LENGTH lowcount (CREF<BYTE> a) {
 		return ByteProcHolder::hold (instance ())->lowcount (a) ;
 	}
 } ;
@@ -542,6 +527,7 @@ struct IntegerHolder implement Interface {
 	imports CFat<IntegerHolder> hold (CREF<IntegerLayout> that) ;
 
 	virtual void initialize (CREF<LENGTH> size_ ,CREF<VAL64> item) = 0 ;
+	virtual void initialize (CREF<IntegerLayout> that) = 0 ;
 	virtual LENGTH size () const = 0 ;
 	virtual LENGTH precision () const = 0 ;
 	virtual VAL64 fetch () const = 0 ;
@@ -555,7 +541,7 @@ struct IntegerHolder implement Interface {
 	virtual IntegerLayout smul (CREF<VAL64> scale) const = 0 ;
 	virtual IntegerLayout sdiv (CREF<VAL64> scale) const = 0 ;
 	virtual IntegerLayout smod (CREF<VAL64> scale) const = 0 ;
-	virtual IntegerLayout plus () const = 0 ;
+	virtual IntegerLayout sabs () const = 0 ;
 	virtual IntegerLayout minus () const = 0 ;
 	virtual void increase () = 0 ;
 	virtual void decrease () = 0 ;
@@ -571,6 +557,18 @@ public:
 	explicit Integer (CREF<LENGTH> size_ ,CREF<VAL64> item) {
 		IntegerHolder::hold (thiz)->initialize (size_ ,item) ;
 	}
+
+	implicit Integer (CREF<Integer> that) {
+		IntegerHolder::hold (thiz)->initialize (that) ;
+	}
+
+	forceinline VREF<Integer> operator= (CREF<Integer> that) {
+		return assign (thiz ,that) ;
+	}
+
+	implicit Integer (RREF<Integer> that) = default ;
+
+	forceinline VREF<Integer> operator= (RREF<Integer> that) = default ;
 
 	LENGTH size () const {
 		return IntegerHolder::hold (thiz)->size () ;
@@ -706,13 +704,9 @@ public:
 		thiz = smod (scale) ;
 	}
 
-	Integer plus () const {
-		IntegerLayout ret = IntegerHolder::hold (thiz)->plus () ;
+	Integer sabs () const {
+		IntegerLayout ret = IntegerHolder::hold (thiz)->sabs () ;
 		return move (keep[TYPE<Integer>::expr] (ret)) ;
-	}
-
-	forceinline Integer operator+ () const {
-		return plus () ;
 	}
 
 	Integer minus () const {
@@ -741,9 +735,10 @@ public:
 	}
 } ;
 
-struct HashProcLayout implement ThisLayout<AutoRefLayout> {} ;
+struct HashProcLayout implement ThisLayout<RefLayout> {} ;
 
 struct HashProcHolder implement Interface {
+	imports CREF<HashProcLayout> instance () ;
 	imports VFat<HashProcHolder> hold (VREF<HashProcLayout> that) ;
 	imports CFat<HashProcHolder> hold (CREF<HashProcLayout> that) ;
 
@@ -760,43 +755,39 @@ struct HashProcHolder implement Interface {
 
 class HashProc implement HashProcLayout {
 public:
-	imports CREF<HashProc> instance () {
-		return memorize ([&] () {
-			HashProc ret ;
-			HashProcHolder::hold (ret)->initialize () ;
-			return move (ret) ;
-		}) ;
+	static CREF<HashProc> instance () {
+		return keep[TYPE<HashProc>::expr] (HashProcHolder::instance ()) ;
 	}
 
-	imports CHAR fnvhash32 (CREF<Pointer> src ,CREF<LENGTH> size_) {
+	static CHAR fnvhash32 (CREF<Pointer> src ,CREF<LENGTH> size_) {
 		return HashProcHolder::hold (instance ())->fnvhash32 (src ,size_) ;
 	}
 
-	imports CHAR fnvhash32 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<CHAR> curr) {
+	static CHAR fnvhash32 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<CHAR> curr) {
 		return HashProcHolder::hold (instance ())->fnvhash32 (src ,size_ ,curr) ;
 	}
 
-	imports QUAD fnvhash64 (CREF<Pointer> src ,CREF<LENGTH> size_) {
+	static QUAD fnvhash64 (CREF<Pointer> src ,CREF<LENGTH> size_) {
 		return HashProcHolder::hold (instance ())->fnvhash64 (src ,size_) ;
 	}
 
-	imports QUAD fnvhash64 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<QUAD> curr) {
+	static QUAD fnvhash64 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<QUAD> curr) {
 		return HashProcHolder::hold (instance ())->fnvhash64 (src ,size_ ,curr) ;
 	}
 
-	imports BYTE crchash8 (CREF<Pointer> src ,CREF<LENGTH> size_) {
+	static BYTE crchash8 (CREF<Pointer> src ,CREF<LENGTH> size_) {
 		return HashProcHolder::hold (instance ())->crchash8 (src ,size_) ;
 	}
 
-	imports BYTE crchash8 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<BYTE> curr) {
+	static BYTE crchash8 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<BYTE> curr) {
 		return HashProcHolder::hold (instance ())->crchash8 (src ,size_ ,curr) ;
 	}
 
-	imports WORD crchash16 (CREF<Pointer> src ,CREF<LENGTH> size_) {
+	static WORD crchash16 (CREF<Pointer> src ,CREF<LENGTH> size_) {
 		return HashProcHolder::hold (instance ())->crchash16 (src ,size_) ;
 	}
 
-	imports WORD crchash16 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<WORD> curr) {
+	static WORD crchash16 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<WORD> curr) {
 		return HashProcHolder::hold (instance ())->crchash16 (src ,size_ ,curr) ;
 	}
 } ;

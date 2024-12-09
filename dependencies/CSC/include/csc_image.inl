@@ -7,18 +7,19 @@
 #include "csc_image.hpp"
 
 namespace CSC {
-class ImageImplHolder implement Fat<ImageHolder ,ImageLayout> {
+class ImageImplHolder final implement Fat<ImageHolder ,ImageLayout> {
 public:
 	void initialize (CREF<Unknown> holder ,RREF<ImageLayout> that) override {
 		const auto r1x = RFat<ReflectSize> (holder) ;
 		const auto r2x = r1x->type_size () ;
 		noop (r2x) ;
-		assume (r2x == that.mWidth.mStep) ;
 		assume (r2x == that.mImage.step ()) ;
 		fake = move (that) ;
 	}
 
 	void initialize (CREF<Unknown> holder ,CREF<LENGTH> cx_ ,CREF<LENGTH> cy_ ,CREF<LENGTH> step_) override {
+		assert (cx_ > 0) ;
+		assert (cy_ > 0) ;
 		const auto r1x = RFat<ReflectSize> (holder) ;
 		const auto r2x = r1x->type_size () ;
 		const auto r3x = cx_ * cy_ * step_ ;
@@ -27,9 +28,8 @@ public:
 		RefBufferHolder::hold (rax)->initialize (holder ,r4x) ;
 		rax.mSize = cx_ * cy_ ;
 		rax.mStep = step_ ;
-		fake.mWidth.mCX = cx_ ;
-		fake.mWidth.mCY = cy_ ;
-		fake.mWidth.mStep = step_ ;
+		fake.mWidth = cx_ ;
+		fake.mStride = cx_ ;
 		reset () ;
 	}
 
@@ -41,8 +41,8 @@ public:
 		splice (0 ,0 ,that) ;
 	}
 
-	BOOL exist () const override {
-		return fake.mImage.exist () ;
+	BOOL fixed () const override {
+		return fake.mImage.fixed () ;
 	}
 
 	LENGTH size () const override {
@@ -51,6 +51,22 @@ public:
 
 	LENGTH step () const override {
 		return fake.mImage.step () ;
+	}
+
+	LENGTH stride () const override {
+		if (!fake.mImage.exist ())
+			return 0 ;
+		return fake.mStride ;
+	}
+
+	BOOL continous () const override {
+		if (bx () != 0)
+			return FALSE ;
+		if (by () != 0)
+			return FALSE ;
+		if (cx () != stride ())
+			return FALSE ;
+		return TRUE ;
 	}
 
 	LENGTH bx () const override {
@@ -88,11 +104,25 @@ public:
 	void reset () override {
 		fake.mBX = 0 ;
 		fake.mBY = 0 ;
-		fake.mCX = fake.mWidth.mCX ;
-		fake.mCY = fake.mWidth.mCY ;
+		fake.mCX = 0 ;
+		fake.mCY = 0 ;
+		if (fake.mImage.size () == 0)
+			return ;
+		const auto r1x = inline_max (fake.mStride ,1) ;
+		const auto r2x = fake.mImage.size () / r1x ;
+		reset (0 ,0 ,fake.mWidth ,r2x) ;
 	}
 
-	void reset (CREF<INDEX> bx_ ,CREF<INDEX> by_ ,CREF<INDEX> cx_ ,CREF<INDEX> cy_) override {
+	void reset (CREF<LENGTH> bx_ ,CREF<LENGTH> by_ ,CREF<LENGTH> cx_ ,CREF<LENGTH> cy_) override {
+		assert (fake.mImage.size () > 0) ;
+		assert (cx_ > 0) ;
+		assert (cy_ > 0) ;
+		const auto r1x = bx_ + cx_ - 1 ;
+		const auto r2x = by_ + cy_ - 1 ;
+		assert (r1x < fake.mStride) ;
+		const auto r3x = r1x + r2x * fake.mStride ;
+		noop (r3x) ;
+		assert (r3x < fake.mImage.size ()) ;
 		fake.mBX = bx_ ;
 		fake.mBY = by_ ;
 		fake.mCX = cx_ ;
@@ -110,28 +140,29 @@ public:
 	VREF<Pointer> at (CREF<INDEX> x ,CREF<INDEX> y) leftvalue override {
 		assert (inline_between (x ,0 ,cx ())) ;
 		assert (inline_between (y ,0 ,cy ())) ;
-		INDEX ix = (x + fake.mBX) + (y + fake.mBY) * fake.mWidth.mCX ;
+		INDEX ix = (x + fake.mBX) + (y + fake.mBY) * fake.mStride ;
 		return fake.mImage.at (ix) ;
 	}
 
 	CREF<Pointer> at (CREF<INDEX> x ,CREF<INDEX> y) const leftvalue override {
 		assert (inline_between (x ,0 ,cx ())) ;
 		assert (inline_between (y ,0 ,cy ())) ;
-		INDEX ix = (x + fake.mBX) + (y + fake.mBY) * fake.mWidth.mCX ;
+		INDEX ix = (x + fake.mBX) + (y + fake.mBY) * fake.mStride ;
 		return fake.mImage.at (ix) ;
 	}
 
 	void fill (CREF<Pointer> item) override {
+		const auto r1x = step () ;
 		if ifdo (TRUE) {
 			if (cy () == 0)
 				discard ;
 			for (auto &&i : iter (0 ,cx ())) {
-				inline_memcpy (at (i ,0) ,item ,fake.mWidth.mStep) ;
+				inline_memcpy (at (i ,0) ,item ,r1x) ;
 			}
 		}
-		const auto r1x = cx () * fake.mWidth.mStep ;
+		const auto r2x = cx () * r1x ;
 		for (auto &&i : iter (1 ,cy ())) {
-			inline_memcpy (at (0 ,i) ,at (0 ,0) ,r1x) ;
+			inline_memcpy (at (0 ,i) ,at (0 ,0) ,r2x) ;
 		}
 	}
 
@@ -146,12 +177,13 @@ public:
 		assert (inline_between (y ,0 ,cy ())) ;
 		assert (x + r1x <= cx ()) ;
 		assert (y + r2x <= cy ()) ;
-		assert (fake.mWidth.mStep == item.mWidth.mStep) ;
-		const auto r3x = r1x * fake.mWidth.mStep ;
+		const auto r3x = ImageHolder::hold (item)->step () ;
+		assert (step () == r3x) ;
+		const auto r4x = r1x * r3x ;
 		for (auto &&i : iter (0 ,r2x)) {
 			INDEX ix = x + 0 ;
 			INDEX iy = y + i ;
-			inline_memcpy (at (ix ,iy) ,ImageHolder::hold (item)->at (0 ,i) ,r3x) ;
+			inline_memcpy (at (ix ,iy) ,ImageHolder::hold (item)->at (0 ,i) ,r4x) ;
 		}
 	}
 } ;
@@ -166,15 +198,238 @@ exports CFat<ImageHolder> ImageHolder::hold (CREF<ImageLayout> that) {
 
 template class External<ImageProcHolder ,ImageProcLayout> ;
 
+exports CREF<ImageProcLayout> ImageProcHolder::instance () {
+	return memorize ([&] () {
+		ImageProcLayout ret ;
+		ImageProcHolder::hold (ret)->initialize () ;
+		return move (ret) ;
+	}) ;
+}
+
 exports VFat<ImageProcHolder> ImageProcHolder::hold (VREF<ImageProcLayout> that) {
-	return VFat<ImageProcHolder> (External<ImageProcHolder ,ImageProcLayout>::instance () ,that) ;
+	return VFat<ImageProcHolder> (External<ImageProcHolder ,ImageProcLayout>::linkage () ,that) ;
 }
 
 exports CFat<ImageProcHolder> ImageProcHolder::hold (CREF<ImageProcLayout> that) {
-	return CFat<ImageProcHolder> (External<ImageProcHolder ,ImageProcLayout>::instance () ,that) ;
+	return CFat<ImageProcHolder> (External<ImageProcHolder ,ImageProcLayout>::linkage () ,that) ;
 }
 
-class SparseImplHolder implement Fat<SparseHolder ,SparseLayout> {
+struct ReflectTensorCopy implement Interface {
+	virtual void xcopy (VREF<Pointer> dst ,CREF<Pointer> src) const = 0 ;
+
+	forceinline static consteval FLAG expr_m () noexcept {
+		return 501 ;
+	}
+} ;
+
+template <class A ,class B>
+class ReflectTensorCopyBinder implement ReflectTensorCopy {
+public:
+	void xcopy (VREF<Pointer> dst ,CREF<Pointer> src) const override {
+		auto &&rax = keep[TYPE<A>::expr] (dst) ;
+		auto &&rbx = keep[TYPE<B>::expr] (src) ;
+		rax = A (rbx) ;
+	}
+} ;
+
+class TensorImplHolder final implement Fat<TensorHolder ,TensorLayout> {
+public:
+	void initialize (CREF<LENGTH> size_ ,CREF<Just<TensorDataType>> type_) override {
+		const auto r1x = size_of_tensor_type (type_) ;
+		const auto r2x = size_ * r1x ;
+		const auto r3x = inline_alignas (r2x ,SIZE_OF<QUAD>::expr) ;
+		fake.mTensor = RefBuffer<BYTE> (r3x) ;
+		const auto r4x = address (fake.mTensor[0]) ;
+		fake.mOffset = inline_alignas (r4x ,8) - r4x ;
+		fake.mWidth = size_ ;
+		fake.mType = type_ ;
+		reset () ;
+	}
+
+	LENGTH size_of_tensor_type (CREF<Just<TensorDataType>> type_) const {
+		if (type_ == TensorDataType::Val32)
+			return 4 ;
+		if (type_ == TensorDataType::Val64)
+			return 8 ;
+		if (type_ == TensorDataType::Flt32)
+			return 4 ;
+		if (type_ == TensorDataType::Flt64)
+			return 8 ;
+		return 0 ;
+	}
+
+	LENGTH size () const override {
+		if (!fake.mTensor.exist ())
+			return 0 ;
+		return fake.mWidth ;
+	}
+
+	Just<TensorDataType> type () const override {
+		return fake.mType ;
+	}
+
+	LENGTH cx () const override {
+		if (!fake.mTensor.exist ())
+			return 0 ;
+		return fake.mCX ;
+	}
+
+	LENGTH cy () const override {
+		if (!fake.mTensor.exist ())
+			return 0 ;
+		return fake.mCY ;
+	}
+
+	LENGTH cz () const override {
+		if (!fake.mTensor.exist ())
+			return 0 ;
+		return fake.mCZ ;
+	}
+
+	LENGTH cw () const override {
+		if (!fake.mTensor.exist ())
+			return 0 ;
+		return fake.mCW ;
+	}
+
+	TensorLayout recast (CREF<Just<TensorDataType>> type_) override {
+		TensorLayout ret ;
+		auto act = TRUE ;
+		if ifdo (act) {
+			if (!fake.mTensor.exist ())
+				discard ;
+			if (type () == type_)
+				discard ;
+			const auto r1x = size () ;
+			TensorHolder::hold (ret)->initialize (r1x ,type_) ;
+			const auto r2x = choose_tensor_copy (type_ ,type ()) ;
+			const auto r3x = RFat<ReflectTensorCopy> (r2x) ;
+			const auto r6x = address (ret.mTensor[ret.mOffset]) ;
+			const auto r7x = address (fake.mTensor[fake.mOffset]) ;
+			for (auto &&i : iter (0 ,r1x)) {
+				const auto r4x = r6x + i * ret.mSX ;
+				const auto r5x = r7x + i * fake.mSX ;
+				r3x->xcopy (Pointer::make (r4x) ,Pointer::make (r5x)) ;
+			}
+		}
+		if ifdo (act) {
+			ret = move (fake) ;
+		}
+		return move (ret) ;
+	}
+
+	Unknown choose_tensor_copy (CREF<Just<TensorDataType>> dst ,CREF<Just<TensorDataType>> src) const {
+		if (dst == TensorDataType::Val32)
+			if (src == TensorDataType::Val32)
+				return SimpleUnknownBinder<ReflectTensorCopyBinder<VAL32 ,VAL32>> () ;
+		if (dst == TensorDataType::Val32)
+			if (src == TensorDataType::Val64)
+				return SimpleUnknownBinder<ReflectTensorCopyBinder<VAL32 ,VAL64>> () ;
+		if (dst == TensorDataType::Val32)
+			if (src == TensorDataType::Flt32)
+				return SimpleUnknownBinder<ReflectTensorCopyBinder<VAL32 ,FLT32>> () ;
+		if (dst == TensorDataType::Val32)
+			if (src == TensorDataType::Flt64)
+				return SimpleUnknownBinder<ReflectTensorCopyBinder<VAL32 ,FLT64>> () ;
+		if (dst == TensorDataType::Val64)
+			if (src == TensorDataType::Val32)
+				return SimpleUnknownBinder<ReflectTensorCopyBinder<VAL64 ,VAL32>> () ;
+		if (dst == TensorDataType::Val64)
+			if (src == TensorDataType::Val64)
+				return SimpleUnknownBinder<ReflectTensorCopyBinder<VAL64 ,VAL64>> () ;
+		if (dst == TensorDataType::Val64)
+			if (src == TensorDataType::Flt32)
+				return SimpleUnknownBinder<ReflectTensorCopyBinder<VAL64 ,FLT32>> () ;
+		if (dst == TensorDataType::Val64)
+			if (src == TensorDataType::Flt64)
+				return SimpleUnknownBinder<ReflectTensorCopyBinder<VAL64 ,FLT64>> () ;
+		if (dst == TensorDataType::Flt32)
+			if (src == TensorDataType::Val32)
+				return SimpleUnknownBinder<ReflectTensorCopyBinder<FLT32 ,VAL32>> () ;
+		if (dst == TensorDataType::Flt32)
+			if (src == TensorDataType::Val64)
+				return SimpleUnknownBinder<ReflectTensorCopyBinder<FLT32 ,VAL64>> () ;
+		if (dst == TensorDataType::Flt32)
+			if (src == TensorDataType::Flt32)
+				return SimpleUnknownBinder<ReflectTensorCopyBinder<FLT32 ,FLT32>> () ;
+		if (dst == TensorDataType::Flt32)
+			if (src == TensorDataType::Flt64)
+				return SimpleUnknownBinder<ReflectTensorCopyBinder<FLT32 ,FLT64>> () ;
+		if (dst == TensorDataType::Flt64)
+			if (src == TensorDataType::Val32)
+				return SimpleUnknownBinder<ReflectTensorCopyBinder<FLT64 ,VAL32>> () ;
+		if (dst == TensorDataType::Flt64)
+			if (src == TensorDataType::Val64)
+				return SimpleUnknownBinder<ReflectTensorCopyBinder<FLT64 ,VAL64>> () ;
+		if (dst == TensorDataType::Flt64)
+			if (src == TensorDataType::Flt32)
+				return SimpleUnknownBinder<ReflectTensorCopyBinder<FLT64 ,FLT32>> () ;
+		if (dst == TensorDataType::Flt64)
+			if (src == TensorDataType::Flt64)
+				return SimpleUnknownBinder<ReflectTensorCopyBinder<FLT64 ,FLT64>> () ;
+		assume (FALSE) ;
+		return Unknown (ZERO) ;
+	}
+
+	void reset () override {
+		fake.mSX = 0 ;
+		fake.mSY = 0 ;
+		fake.mSZ = 0 ;
+		fake.mSW = 0 ;
+		fake.mCX = 0 ;
+		fake.mCY = 0 ;
+		fake.mCZ = 0 ;
+		fake.mCW = 0 ;
+		if (fake.mTensor.size () == 0)
+			return ;
+		reset (size () ,1 ,1 ,1) ;
+	}
+
+	void reset (CREF<LENGTH> cx_ ,CREF<LENGTH> cy_ ,CREF<LENGTH> cz_ ,CREF<LENGTH> cw_) override {
+		assert (fake.mTensor.size () > 0) ;
+		assert (cx_ > 0) ;
+		assert (cy_ > 0) ;
+		assert (cz_ > 0) ;
+		assert (cw_ > 0) ;
+		const auto r1x = cx_ * cy_ * cz_ * cw_ ;
+		noop (r1x) ;
+		assert (r1x == size ()) ;
+		fake.mCX = cx_ ;
+		fake.mCY = cy_ ;
+		fake.mCZ = cz_ ;
+		fake.mCW = cz_ ;
+		fake.mSX = size_of_tensor_type (type ()) ;
+		fake.mSY = fake.mSX * fake.mCX ;
+		fake.mSZ = fake.mSY * fake.mCY ;
+		fake.mSW = fake.mSZ * fake.mCZ ;
+	}
+
+	VREF<Pointer> self_m () leftvalue override {
+		return RefBufferHolder::hold (fake.mTensor)->self ;
+	}
+
+	CREF<Pointer> self_m () const leftvalue override {
+		return RefBufferHolder::hold (fake.mTensor)->self ;
+	}
+
+	Ref<RefBuffer<BYTE>> borrow () leftvalue override {
+		return Ref<RefBuffer<BYTE>>::reference (fake.mTensor) ;
+	}
+
+	Ref<RefBuffer<BYTE>> borrow () const leftvalue override {
+		return Ref<RefBuffer<BYTE>>::reference (fake.mTensor) ;
+	}
+} ;
+
+exports VFat<TensorHolder> TensorHolder::hold (VREF<TensorLayout> that) {
+	return VFat<TensorHolder> (TensorImplHolder () ,that) ;
+}
+
+exports CFat<TensorHolder> TensorHolder::hold (CREF<TensorLayout> that) {
+	return CFat<TensorHolder> (TensorImplHolder () ,that) ;
+}
+
+class DisjointImplHolder final implement Fat<DisjointHolder ,DisjointLayout> {
 public:
 	void initialize (CREF<LENGTH> size_) override {
 		fake.mTable = Array<INDEX> (size_) ;
@@ -185,112 +440,7 @@ public:
 		return fake.mTable.size () ;
 	}
 
-	void joint (CREF<INDEX> from_ ,CREF<INDEX> to_) override {
-		INDEX ix = fake.mEdge.insert () ;
-		fake.mEdge[ix].mSrc = from_ ;
-		fake.mEdge[ix].mSrcNext = fake.mTable[from_] ;
-		fake.mTable[from_] = ix ;
-		fake.mEdge[ix].mDst = to_ ;
-		fake.mEdge[ix].mDstNext = fake.mTable[to_] ;
-		fake.mTable[to_] = ix ;
-	}
-
-	BOOL edge (CREF<INDEX> from_ ,CREF<INDEX> to_) const override {
-		INDEX ix = fake.mTable[from_] ;
-		while (TRUE) {
-			if (ix == NONE)
-				break ;
-			auto act = TRUE ;
-			if ifdo (act) {
-				if (fake.mEdge[ix].mSrc != from_)
-					discard ;
-				if (fake.mEdge[ix].mDst == to_)
-					return TRUE ;
-				ix = fake.mEdge[ix].mSrcNext ;
-			}
-			if ifdo (act) {
-				if (fake.mEdge[ix].mDst != from_)
-					discard ;
-				if (fake.mEdge[ix].mSrc == to_)
-					return TRUE ;
-				ix = fake.mEdge[ix].mDstNext ;
-			}
-		}
-		return FALSE ;
-	}
-
-	LENGTH depth (CREF<INDEX> from_) const override {
-		LENGTH ret = 0 ;
-		INDEX ix = fake.mTable[from_] ;
-		while (TRUE) {
-			if (ix == NONE)
-				break ;
-			auto act = TRUE ;
-			if ifdo (act) {
-				if (fake.mEdge[ix].mSrc != from_)
-					discard ;
-				ret++ ;
-				ix = fake.mEdge[ix].mSrcNext ;
-			}
-			if ifdo (act) {
-				if (fake.mEdge[ix].mDst != from_)
-					discard ;
-				ret++ ;
-				ix = fake.mEdge[ix].mDstNext ;
-			}
-		}
-		return move (ret) ;
-	}
-
-	Deque<INDEX> cluster (CREF<INDEX> from_) const override {
-		Deque<INDEX> ret ;
-		INDEX ix = fake.mTable[from_] ;
-		while (TRUE) {
-			if (ix == NONE)
-				break ;
-			auto act = TRUE ;
-			if ifdo (act) {
-				if (fake.mEdge[ix].mSrc != from_)
-					discard ;
-				ret.add (fake.mEdge[ix].mDst) ;
-				ix = fake.mEdge[ix].mSrcNext ;
-			}
-			if ifdo (act) {
-				if (fake.mEdge[ix].mDst != from_)
-					discard ;
-				ret.add (fake.mEdge[ix].mSrc) ;
-				ix = fake.mEdge[ix].mDstNext ;
-			}
-		}
-		return move (ret) ;
-	}
-} ;
-
-exports VFat<SparseHolder> SparseHolder::hold (VREF<SparseLayout> that) {
-	return VFat<SparseHolder> (SparseImplHolder () ,that) ;
-}
-
-exports CFat<SparseHolder> SparseHolder::hold (CREF<SparseLayout> that) {
-	return CFat<SparseHolder> (SparseImplHolder () ,that) ;
-}
-
-struct DisjointImplLayout {
-	Array<INDEX> mTable ;
-} ;
-
-class DisjointImplHolder implement Fat<DisjointHolder ,DisjointLayout> {
-public:
-	void initialize (CREF<LENGTH> size_) override {
-		fake.mThis = SharedRef<DisjointImplLayout>::make () ;
-		fake.mThis->mTable = Array<INDEX> (size_) ;
-		fake.mThis->mTable.fill (NONE) ;
-	}
-
-	LENGTH size () const override {
-		return fake.mThis->mTable.size () ;
-	}
-
-	INDEX lead (CREF<INDEX> from_) const override {
+	INDEX lead (CREF<INDEX> from_) override {
 		INDEX ix = from_ ;
 		while (TRUE) {
 			if (ix == NONE)
@@ -307,7 +457,7 @@ public:
 				if (ix == NONE)
 					break ;
 				iy = parent (ix) ;
-				fake.mThis->mTable[ix] = ret ;
+				fake.mTable[ix] = ret ;
 				ix = iy ;
 			}
 		}
@@ -315,25 +465,25 @@ public:
 	}
 
 	INDEX parent (CREF<INDEX> curr) const {
-		if (curr == fake.mThis->mTable[curr])
+		if (curr == fake.mTable[curr])
 			return NONE ;
-		return fake.mThis->mTable[curr] ;
+		return fake.mTable[curr] ;
 	}
 
 	void joint (CREF<INDEX> from_ ,CREF<INDEX> to_) override {
 		INDEX ix = lead (from_) ;
 		INDEX iy = lead (to_) ;
-		fake.mThis->mTable[ix] = ix ;
-		fake.mThis->mTable[iy] = ix ;
+		fake.mTable[ix] = ix ;
+		fake.mTable[iy] = ix ;
 	}
 
-	BOOL edge (CREF<INDEX> from_ ,CREF<INDEX> to_) const override {
+	BOOL edge (CREF<INDEX> from_ ,CREF<INDEX> to_) override {
 		INDEX ix = lead (from_) ;
 		INDEX iy = lead (to_) ;
 		return ix == iy ;
 	}
 
-	LENGTH depth (CREF<INDEX> from_) const override {
+	LENGTH depth (CREF<INDEX> from_) override {
 		LENGTH ret = 0 ;
 		INDEX ix = from_ ;
 		while (TRUE) {
@@ -345,7 +495,7 @@ public:
 		return move (ret) ;
 	}
 
-	Deque<INDEX> cluster (CREF<INDEX> from_) const override {
+	Deque<INDEX> cluster (CREF<INDEX> from_) override {
 		Deque<INDEX> ret ;
 		INDEX ix = from_ ;
 		while (TRUE) {
@@ -357,10 +507,10 @@ public:
 		return move (ret) ;
 	}
 
-	Array<INDEX> jump (CREF<INDEX> from_) const override {
-		Array<INDEX> ret = Array<INDEX> (fake.mThis->mTable.size ()) ;
+	Array<INDEX> jump (CREF<INDEX> from_) override {
+		Array<INDEX> ret = Array<INDEX> (fake.mTable.size ()) ;
 		ret.fill (NONE) ;
-		for (auto &&i : iter (0 ,fake.mThis->mTable.size ())) {
+		for (auto &&i : iter (0 ,fake.mTable.size ())) {
 			INDEX ix = lead (i) ;
 			if (ix == NONE)
 				continue ;
@@ -379,26 +529,32 @@ exports CFat<DisjointHolder> DisjointHolder::hold (CREF<DisjointLayout> that) {
 	return CFat<DisjointHolder> (DisjointImplHolder () ,that) ;
 }
 
-class KMMatchImplHolder implement Fat<KMMatchHolder ,KMMatchLayout> {
+class KMMatchImplHolder final implement Fat<KMMatchHolder ,KMMatchLayout> {
 public:
 	void initialize (CREF<LENGTH> size_) override {
 		fake.mSize = size_ ;
 		fake.mInfinity = VAL32_MAX ;
 		fake.mUser = Array<VAL32> (fake.mSize) ;
-		fake.mUser.fill (0) ;
 		fake.mWork = Array<VAL32> (fake.mSize) ;
-		fake.mWork.fill (0) ;
 		fake.mUserVisit = BitSet (fake.mSize) ;
 		fake.mWorkVisit = BitSet (fake.mSize) ;
 		fake.mMatch = Array<INDEX> (fake.mSize) ;
-		fake.mMatch.fill (NONE) ;
 		fake.mLack = Array<VAL32> (fake.mSize) ;
-		fake.mLack.fill (0) ;
+	}
+
+	LENGTH size () const override {
+		return fake.mSize ;
 	}
 
 	Array<INDEX> sort (CREF<Array<VAL32>> love) override {
 		assert (fake.mMatch.size () > 0) ;
 		assert (love.size () == MathProc::square (fake.mSize)) ;
+		fake.mUser.fill (0) ;
+		fake.mWork.fill (0) ;
+		fake.mUserVisit.clear () ;
+		fake.mWorkVisit.clear () ;
+		fake.mMatch.fill (NONE) ;
+		fake.mLack.fill (0) ;
 		solve () ;
 		return fake.mMatch ;
 	}

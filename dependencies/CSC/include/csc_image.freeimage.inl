@@ -11,94 +11,137 @@
 #include "csc_image.hpp"
 
 #include "csc_end.h"
-#ifdef __CSC_VER_DEBUG__
-#define CV_IGNORE_DEBUG_BUILD_GUARD
-#endif
-
-#include <opencv2/opencv.hpp>
+#include <FreeImage.h>
 #include "csc_begin.h"
 
+using HFIBITMAP = CSC::DEF<FIBITMAP *> ;
+
 namespace CSC {
+struct ImageProcImplLayout {
+	UniqueRef<BOOL> mContext ;
+} ;
+
 class ImageProcImplHolder final implement Fat<ImageProcHolder ,ImageProcLayout> {
 public:
 	void initialize () override {
-		noop () ;
+		auto rax = ImageProcImplLayout () ;
+		rax.mContext = UniqueRef<BOOL> ([&] (VREF<BOOL> me) {
+			FreeImage_Initialise () ;
+			me = TRUE ;
+		} ,[&] (VREF<BOOL> me) {
+			FreeImage_DeInitialise () ;
+		}) ;
+		fake.mThis = Ref<ImageProcImplLayout>::make (move (rax)) ;
 	}
 
 	ImageLayout make_image (RREF<BoxLayout> image) const override {
 		ImageLayout ret ;
-		auto &&rax = keep[TYPE<Box<cv::Mat>>::expr] (image).self ;
-		const auto r1x = rax.size () ;
-		const auto r2x = LENGTH (rax.depth ()) ;
-		const auto r3x = align_of_cvmat_depth (r2x) ;
-		const auto r4x = choose_cvmat_unknown (r3x) ;
-		const auto r5x = r3x * rax.channels () ;
-		const auto r6x = LENGTH (rax.step[0]) ;
-		assume (r6x % r5x == 0) ;
-		const auto r7x = r6x / r5x ;
-		const auto r8x = FLAG (rax.data) ;
-		const auto r9x = r7x * LENGTH (r1x.height) ;
-		const auto r10x = Slice (r8x ,r9x ,r5x) ;
-		RefBufferHolder::hold (ret.mImage)->initialize (r4x ,r10x ,Box<Pin<cv::Mat>>::make ()) ;
-		auto &&rbx = keep[TYPE<Box<cv::Mat>>::expr] (RefBufferHolder::hold (ret.mImage)->raw ()).self ;
-		assign (rbx ,rax) ;
-		ret.mWidth = LENGTH (r1x.width) ;
-		ret.mStride = r7x ;
+		auto &&rax = keep[TYPE<Box<UniqueRef<HFIBITMAP>>>::expr] (image).self ;
+		const auto r1x = LENGTH (FreeImage_GetWidth (rax)) ;
+		const auto r2x = LENGTH (FreeImage_GetHeight (rax)) ;
+		const auto r3x = align_of_fibitmap_type (FreeImage_GetImageType (rax)) ;
+		const auto r4x = choose_fibitmap_unknown (r3x) ;
+		if ifdo (TRUE) {
+			const auto r5x = LENGTH (FreeImage_GetBPP (rax)) / 8 ;
+			const auto r6x = LENGTH (FreeImage_GetPitch (rax)) ;
+			if (r6x % r5x == 0)
+				discard ;
+			const auto r7x = inline_alignas (r1x ,8) ;
+			const auto r8x = r5x * 8 ;
+			auto rbx = UniqueRef<HFIBITMAP> ([&] (VREF<HFIBITMAP> me) {
+				me = FreeImage_Allocate (VAL32 (r7x) ,VAL32 (r2x) ,VAL32 (r8x)) ;
+				assume (me != NULL) ;
+			} ,[&] (VREF<HFIBITMAP> me) {
+				FreeImage_Unload (me) ;
+			}) ;
+			const auto r9x = FreeImage_GetBits (rbx) ;
+			const auto r10x = LENGTH (FreeImage_GetPitch (rbx)) ;
+			FreeImage_ConvertToRawBits (r9x ,rax ,VAL32 (r10x) ,VAL32 (r8x) ,0 ,0 ,0) ;			
+			swap (rax ,rbx) ;
+		}
+		const auto r11x = LENGTH (FreeImage_GetBPP (rax)) / 8 ;
+		const auto r12x = LENGTH (FreeImage_GetPitch (rax)) ;
+		assume (r12x % r11x == 0) ;
+		const auto r13x = r12x / r11x ;
+		const auto r14x = FLAG (FreeImage_GetBits (rax)) ;
+		const auto r15x = r13x * r2x ;
+		const auto r16x = Slice (r14x ,r15x ,r11x) ;
+		RefBufferHolder::hold (ret.mImage)->initialize (r4x ,r16x ,move (image)) ;
+		ret.mWidth = r1x ;
+		ret.mStride = r13x ;
 		ImageHolder::hold (ret)->reset () ;
 		return move (ret) ;
 	}
 
 	ImageLayout make_image (CREF<ImageWidth> width) const override {
-		auto rax = Box<Pin<cv::Mat>>::make () ;
-		const auto r1x = CV_MAKE_TYPE (CV_8U ,VAL32 (width.mStep)) ;
-		auto rbx = cv::Mat (cv::Size (VAL32 (width.mCX) ,VAL32 (width.mCY)) ,r1x) ;
-		rax->set (rbx) ;
+		auto rax = Box<UniqueRef<HFIBITMAP>>::make () ;
+		const auto r1x = width.mStep * 8 ;
+		rax.self = UniqueRef<HFIBITMAP> ([&] (VREF<HFIBITMAP> me) {
+			me = FreeImage_Allocate (VAL32 (width.mCX) ,VAL32 (width.mCY) ,VAL32 (r1x)) ;
+			assume (me != NULL) ;
+		} ,[&] (VREF<HFIBITMAP> me) {
+			FreeImage_Unload (me) ;
+		}) ;
 		return make_image (move (rax)) ;
 	}
 
 	ImageLayout make_image (CREF<ImageWidth> width ,CREF<Clazz> clazz ,CREF<LENGTH> channel) const override {
-		auto rax = Box<Pin<cv::Mat>>::make () ;
-		const auto r1x = cvmat_depth_of_clazz (clazz) ;
-		const auto r2x = CV_MAKE_TYPE (VAL32 (r1x) ,VAL32 (channel)) ;
-		auto rbx = cv::Mat (cv::Size (VAL32 (width.mCX) ,VAL32 (width.mCY)) ,r2x) ;
-		rax->set (rbx) ;
+		auto rax = Box<UniqueRef<HFIBITMAP>>::make () ;
+		const auto r1x = fibitmap_type_of_clazz (clazz) ;
+		const auto r2x = align_of_fibitmap_type (r1x) * channel * 8 ;
+		rax.self = UniqueRef<HFIBITMAP> ([&] (VREF<HFIBITMAP> me) {
+			me = FreeImage_AllocateT (r1x ,VAL32 (width.mCX) ,VAL32 (width.mCY) ,VAL32 (r2x)) ;
+			assume (me != NULL) ;
+		} ,[&] (VREF<HFIBITMAP> me) {
+			FreeImage_Unload (me) ;
+		}) ;
 		return make_image (move (rax)) ;
 	}
 
-	LENGTH cvmat_depth_of_clazz (CREF<Clazz> clazz) const {
+	FREE_IMAGE_TYPE fibitmap_type_of_clazz (CREF<Clazz> clazz) const {
 		if (clazz.type_align () == 1)
-			return CV_8U ;
+			return FIT_BITMAP ;
 		if (clazz.type_align () == 2)
-			return CV_16U ;
+			return FIT_RGBA16 ;
 		if (clazz == Clazz (TYPE<FLT32>::expr))
-			return CV_32F ;
+			return FIT_FLOAT ;
 		if (clazz == Clazz (TYPE<FLT64>::expr))
-			return CV_64F ;
+			return FIT_DOUBLE ;
 		assume (FALSE) ;
-		return CV_8U ;
+		return FIT_UNKNOWN ;
 	}
 
-	LENGTH align_of_cvmat_depth (CREF<LENGTH> depth) const {
-		if (depth == CV_8U)
-			return 1 ;
-		if (depth == CV_8S)
-			return 1 ;
-		if (depth == CV_16U)
-			return 2 ;
-		if (depth == CV_16S)
-			return 2 ;
-		if (depth == CV_32S)
-			return 4 ;
-		if (depth == CV_32F)
-			return 4 ;
-		if (depth == CV_64F)
+	LENGTH align_of_fibitmap_type (CREF<Just<FREE_IMAGE_TYPE>> type_) const {
+		if (type_ == FIT_UNKNOWN)
 			return 8 ;
-		if (depth == CV_16F)
+		if (type_ == FIT_BITMAP)
+			return 1 ;
+		if (type_ == FIT_UINT16)
 			return 2 ;
+		if (type_ == FIT_INT16)
+			return 2 ;
+		if (type_ == FIT_UINT32)
+			return 4 ;
+		if (type_ == FIT_INT32)
+			return 4 ;
+		if (type_ == FIT_FLOAT)
+			return 4 ;
+		if (type_ == FIT_DOUBLE)
+			return 8 ;
+		if (type_ == FIT_COMPLEX)
+			return 8 ;
+		if (type_ == FIT_RGB16)
+			return 2 ;
+		if (type_ == FIT_RGBA16)
+			return 2 ;
+		if (type_ == FIT_RGBF)
+			return 4 ;
+		if (type_ == FIT_RGBAF)
+			return 4 ;
 		return 0 ;
 	}
 
-	Unknown choose_cvmat_unknown (CREF<LENGTH> align) const {
+	Unknown choose_fibitmap_unknown (CREF<LENGTH> align) const {
 		if (align == SIZE_OF<BYTE>::expr)
 			return BufferUnknownBinder<BYTE> () ;
 		if (align == SIZE_OF<WORD>::expr)
@@ -113,35 +156,46 @@ public:
 
 	VREF<Pointer> peek_image (VREF<ImageLayout> image) const override {
 		assert (ImageHolder::hold (image)->fixed ()) ;
-		auto &&rax = keep[TYPE<Box<Pin<cv::Mat>>>::expr] (ImageHolder::hold (image)->raw ()) ;
-		return rax.self ;
+		auto &&rax = keep[TYPE<Box<UniqueRef<HFIBITMAP>>>::expr] (ImageHolder::hold (image)->raw ()) ;
+		return Pointer::from (rax.self) ;
 	}
 
 	CREF<Pointer> peek_image (CREF<ImageLayout> image) const override {
 		assert (ImageHolder::hold (image)->fixed ()) ;
-		auto &&rax = keep[TYPE<Box<Pin<cv::Mat>>>::expr] (ImageHolder::hold (image)->raw ()) ;
-		return rax.self ;
+		auto &&rax = keep[TYPE<Box<UniqueRef<HFIBITMAP>>>::expr] (ImageHolder::hold (image)->raw ()) ;
+		return Pointer::from (rax.self) ;
 	}
 
 	ImageLayout load_image (CREF<String<STR>> file) const override {
-		auto rax = Box<Pin<cv::Mat>>::make () ;
+		auto rax = Box<UniqueRef<HFIBITMAP>>::make () ;
 		const auto r1x = StringProc::stra_from_strs (file) ;
-		auto rbx = cv::imread (r1x.self ,cv::IMREAD_UNCHANGED) ;
-		assume (!rbx.empty ()) ;
-		rax->set (rbx) ;
+		const auto r2x = FreeImage_GetFIFFromFilename (r1x.self) ;
+		assume (r2x != FIF_UNKNOWN) ;
+		rax.self = UniqueRef<HFIBITMAP> ([&] (VREF<HFIBITMAP> me) {
+			me = FreeImage_Load (r2x ,r1x.self) ;
+			assume (me != NULL) ;
+		} ,[&] (VREF<HFIBITMAP> me) {
+			FreeImage_Unload (me) ;
+		}) ;
 		return make_image (move (rax)) ;
 	}
 
 	void save_image (CREF<String<STR>> file ,CREF<ImageLayout> image) const override {
 		const auto r1x = StringProc::stra_from_strs (file) ;
-		const auto r2x = ImageHolder::hold (image)->bx () ;
-		const auto r3x = ImageHolder::hold (image)->by () ;
-		const auto r4x = ImageHolder::hold (image)->cx () ;
-		const auto r5x = ImageHolder::hold (image)->cy () ;
-		auto &&rax = keep[TYPE<Box<cv::Mat>>::expr] (image.mImage.raw ()).self ;
-		const auto r6x = cv::Rect (VAL32 (r2x) ,VAL32 (r3x) ,VAL32 (r4x) ,VAL32 (r5x)) ;
-		auto rbx = rax (r6x) ;
-		cv::imwrite (r1x.self ,rbx) ;
+		const auto r2x = FreeImage_GetFIFFromFilename (r1x.self) ;
+		assume (r2x != FIF_UNKNOWN) ;
+		const auto r3x = ImageHolder::hold (image)->bx () ;
+		const auto r4x = ImageHolder::hold (image)->by () ;
+		const auto r5x = r3x + ImageHolder::hold (image)->cx () ;
+		const auto r6x = r4x + ImageHolder::hold (image)->cy () ;
+		auto &&rax = keep[TYPE<Box<UniqueRef<HFIBITMAP>>>::expr] (image.mImage.raw ()).self ;
+		auto rbx = UniqueRef<HFIBITMAP> ([&] (VREF<HFIBITMAP> me) {
+			me = FreeImage_CreateView (rax ,VAL32 (r3x) ,VAL32 (r4x) ,VAL32 (r5x) ,VAL32 (r6x)) ;
+			assume (me != NULL) ;
+		} ,[&] (VREF<HFIBITMAP> me) {
+			FreeImage_Unload (me) ;
+		}) ;
+		FreeImage_Save (r2x ,rbx ,r1x.self) ;
 	}
 
 	Color1B sampler (CREF<Image<Color1B>> image ,CREF<FLT64> x ,CREF<FLT64> y) const override {

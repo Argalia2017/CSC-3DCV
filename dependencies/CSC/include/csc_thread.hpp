@@ -22,9 +22,9 @@ struct CoroutineFriend implement Interface {
 } ;
 
 template <class A>
-class CoroutineFriendBinder implement Fat<CoroutineFriend ,A> {
+class CoroutineFriendBinder final implement Fat<CoroutineFriend ,A> {
 public:
-	imports VFat<CoroutineFriend> create (VREF<A> that) {
+	static VFat<CoroutineFriend> create (VREF<A> that) {
 		return VFat<CoroutineFriend> (CoroutineFriendBinder () ,that) ;
 	}
 
@@ -53,8 +53,7 @@ struct WorkThreadHolder implement Interface {
 	virtual void set_thread_size (CREF<LENGTH> size_) const = 0 ;
 	virtual void set_queue_size (CREF<LENGTH> size_) const = 0 ;
 	virtual void start (CREF<Function<CREF<INDEX>>> func) const = 0 ;
-	virtual void post (CREF<INDEX> item) const = 0 ;
-	virtual void post (CREF<Array<INDEX>> item) const = 0 ;
+	virtual void post (CREF<INDEX> begin_ ,CREF<INDEX> end_) const = 0 ;
 	virtual void join () const = 0 ;
 	virtual BOOL join (CREF<Time> interval ,CREF<Function<VREF<BOOL>>> predicate) const = 0 ;
 	virtual void stop () const = 0 ;
@@ -83,12 +82,8 @@ public:
 		return WorkThreadHolder::hold (thiz)->start (func) ;
 	}
 
-	void post (CREF<INDEX> item) const {
-		return WorkThreadHolder::hold (thiz)->post (item) ;
-	}
-
-	void post (CREF<Array<INDEX>> item) const {
-		return WorkThreadHolder::hold (thiz)->post (item) ;
+	void post (CREF<INDEX> begin_ ,CREF<INDEX> end_) const {
+		return WorkThreadHolder::hold (thiz)->post (begin_ ,end_) ;
 	}
 
 	void join () const {
@@ -120,9 +115,10 @@ struct CalcThreadHolder implement Interface {
 
 	virtual void initialize () = 0 ;
 	virtual void set_thread_size (CREF<LENGTH> size_) const = 0 ;
+	virtual void set_base_input (CREF<BitSet> base) const = 0 ;
 	virtual void start (CREF<Function<CREF<CalcSolution> ,VREF<CalcSolution>>> func) const = 0 ;
-	virtual CalcSolution best () const = 0 ;
-	virtual void join () const = 0 ;
+	virtual BOOL ready () const = 0 ;
+	virtual CalcSolution poll () const = 0 ;
 	virtual void suspend () const = 0 ;
 	virtual void resume () const = 0 ;
 	virtual void stop () const = 0 ;
@@ -143,16 +139,20 @@ public:
 		return CalcThreadHolder::hold (thiz)->set_thread_size (size_) ;
 	}
 
+	void set_base_input (CREF<BitSet> base) const {
+		return CalcThreadHolder::hold (thiz)->set_base_input (base) ;
+	}
+
 	void start (CREF<Function<CREF<CalcSolution> ,VREF<CalcSolution>>> func) const {
 		return CalcThreadHolder::hold (thiz)->start (func) ;
 	}
 
-	CalcSolution best () const {
-		return CalcThreadHolder::hold (thiz)->best () ;
+	BOOL ready () const {
+		return CalcThreadHolder::hold (thiz)->ready () ;
 	}
 
-	void join () const {
-		return CalcThreadHolder::hold (thiz)->join () ;
+	CalcSolution poll () const {
+		return CalcThreadHolder::hold (thiz)->poll () ;
 	}
 
 	void suspend () const {
@@ -184,8 +184,8 @@ struct PromiseHolder implement Interface {
 	virtual void rethrow (CREF<Exception> e) const = 0 ;
 	virtual BOOL ready () const = 0 ;
 	virtual BOOL running () const = 0 ;
-	virtual AutoRef<Pointer> future () const = 0 ;
-	virtual void signal () const = 0 ;
+	virtual AutoRef<Pointer> poll () const = 0 ;
+	virtual void future () const = 0 ;
 	virtual void stop () const = 0 ;
 } ;
 
@@ -234,15 +234,15 @@ public:
 		return PromiseHolder::hold (thiz)->running () ;
 	}
 
-	Optional<A> future () const {
-		auto rax = PromiseHolder::hold (thiz)->future () ;
+	Optional<A> poll () const {
+		auto rax = PromiseHolder::hold (thiz)->poll () ;
 		if (!rax.exist ())
 			return Optional<A>::error (1) ;
 		return move (rax.rebind (TYPE<A>::expr).self) ;
 	}
 
-	void signal () const {
-		return PromiseHolder::hold (thiz)->signal () ;
+	void future () const {
+		return PromiseHolder::hold (thiz)->future () ;
 	}
 
 	void stop () const {

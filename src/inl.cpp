@@ -25,6 +25,7 @@
 #include <csc_stream.inl>
 #include <csc_string.inl>
 #include <csc_runtime.inl>
+#include <csc_file.inl>
 #include <csc_thread.inl>
 
 #define __CSC_API_WITH_SYS__
@@ -41,10 +42,12 @@
 #ifdef __CSC_API_WITH_SYS__
 #ifdef __CSC_SYSTEM_WINDOWS__
 #include <csc_runtime.windows.inl>
+#include <csc_file.windows.inl>
 #endif
 
 #ifdef __CSC_SYSTEM_LINUX__
 #include <csc_runtime.linux.inl>
+#include <csc_file.linux.inl>
 #endif
 #endif
 
@@ -55,3 +58,14 @@
 #ifdef __CSC_API_WITH_EIGEN__
 #include <csc_matrix.eigen.inl>
 #endif
+
+namespace CSC3DCV {
+class Module {
+public:
+	imports DLLEXTERN String<STR> BuildTime () ;
+} ;
+
+DLLEXTERN String<STR> Module::BuildTime () {
+	return String<STR>::make (__DATE__ ,slice (" ") ,__TIME__) ;
+}
+} ;

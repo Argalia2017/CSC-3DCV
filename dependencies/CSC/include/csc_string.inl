@@ -6,6 +6,11 @@
 
 #include "csc_string.hpp"
 
+#include "csc_end.h"
+#include <cstdlib>
+#include <clocale>
+#include "csc_begin.h"
+
 namespace CSC {
 template <class A>
 struct FUNCTION_string_from_impl {
@@ -31,18 +36,93 @@ struct FUNCTION_string_from {
 
 static constexpr auto string_from = FUNCTION_string_from () ;
 
-class StringProcImplHolder implement Fat<StringProcHolder ,StringProcLayout> {
+#ifdef __CSC_SYSTEM_WINDOWS__
+using locale_t = _locale_t ;
+
+struct FUNCTION_string_locale {
+	forceinline UniqueRef<locale_t> operator() () const {
+		return UniqueRef<locale_t> ([&] (VREF<locale_t> me) {
+			me = _create_locale (LC_CTYPE ,String<STRA>::zero ()) ;
+		} ,[&] (VREF<locale_t> me) {
+			_free_locale (me) ;
+		}) ;
+	}
+} ;
+
+struct FUNCTION_stra_from_strw {
+	forceinline void operator() (VREF<String<STRA>> dst ,CREF<String<STRW>> src ,CREF<locale_t> loc) const {
+		auto rax = csc_size_t (0) ;
+		const auto r1x = _wcstombs_s_l ((&rax) ,dst ,dst.size () ,src ,_TRUNCATE ,loc) ;
+		assume (r1x == 0) ;
+		dst.trunc (rax) ;
+	}
+} ;
+
+struct FUNCTION_strw_from_stra {
+	forceinline void operator() (VREF<String<STRW>> dst ,CREF<String<STRA>> src ,CREF<locale_t> loc) const {
+		auto rax = csc_size_t (0) ;
+		const auto r1x = _mbstowcs_s_l ((&rax) ,dst ,dst.size () ,src ,_TRUNCATE ,loc) ;
+		assume (r1x == 0) ;
+		dst.trunc (rax) ;
+	}
+} ;
+#endif
+
+#ifdef __CSC_SYSTEM_LINUX__
+struct FUNCTION_string_locale {
+	forceinline UniqueRef<locale_t> operator() () const {
+		return UniqueRef<locale_t> ([&] (VREF<locale_t> me) {
+			me = newlocale (LC_CTYPE_MASK ,String<STRA>::zero () ,NULL) ;
+		} ,[&] (VREF<locale_t> me) {
+			freelocale (me) ;
+		}) ;
+	}
+} ;
+
+struct FUNCTION_stra_from_strw {
+	forceinline void operator() (VREF<String<STRA>> dst ,CREF<String<STRW>> src ,CREF<locale_t> loc) const {
+		auto rax = mbstate_t () ;
+		inline_memset (rax) ;
+		uselocale (loc) ;
+		auto rbx = src.self ;
+		const auto r1x = LENGTH (wcsrtombs (dst ,(&rbx) ,dst.size () ,(&rax))) ;
+		assume (r1x >= 0) ;
+		dst.trunc (r1x) ;
+	}
+} ;
+
+struct FUNCTION_strw_from_stra {
+	forceinline void operator() (VREF<String<STRW>> dst ,CREF<String<STRA>> src ,CREF<locale_t> loc) const {
+		auto rax = mbstate_t () ;
+		inline_memset (rax) ;
+		uselocale (loc) ;
+		auto rbx = src.self ;
+		const auto r1x = LENGTH (mbsrtowcs (dst ,(&rbx) ,dst.size () ,(&rax))) ;
+		assume (r1x >= 0) ;
+		dst.trunc (r1x) ;
+	}
+} ;
+#endif
+
+static constexpr auto string_locale = FUNCTION_string_locale () ;
+static constexpr auto stra_from_strw = FUNCTION_stra_from_strw () ;
+static constexpr auto strw_from_stra = FUNCTION_strw_from_stra () ;
+
+struct StringProcImplLayout {
+	UniqueRef<locale_t> mStringLocale ;
+} ;
+
+class StringProcImplHolder final implement Fat<StringProcHolder ,StringProcLayout> {
 public:
 	void initialize () override {
-		noop () ;
+		auto rax = StringProcImplLayout () ;
+		rax.mStringLocale = string_locale () ;
+		fake.mThis = Ref<StringProcImplLayout>::make (move (rax)) ;
 	}
 
 	String<STRA> stra_from_strw (CREF<String<STRW>> a) const override {
 		String<STRA> ret = String<STRA> (a.length () * 2 + 1) ;
-		std::setlocale (LC_CTYPE ,String<STRA>::zero ()) ;
-		const auto r1x = (ret.size () + 1) * ret.step () ;
-		const auto r2x = std::wcstombs (ret ,a ,r1x) ;
-		assume (r2x >= 0) ;
+		CSC::stra_from_strw (ret ,a ,fake.mThis->mStringLocale) ;
 		return move (ret) ;
 	}
 
@@ -57,10 +137,7 @@ public:
 
 	String<STRW> strw_from_stra (CREF<String<STRA>> a) const override {
 		String<STRW> ret = String<STRW> (a.length () + 1) ;
-		std::setlocale (LC_CTYPE ,String<STRA>::zero ()) ;
-		const auto r1x = (ret.size () + 1) * ret.step () ;
-		const auto r2x = std::mbstowcs (ret ,a ,r1x) ;
-		assume (r2x >= 0) ;
+		CSC::strw_from_stra (ret ,a ,fake.mThis->mStringLocale) ;
 		return move (ret) ;
 	}
 
@@ -723,6 +800,14 @@ public:
 	}
 } ;
 
+exports CREF<StringProcLayout> StringProcHolder::instance () {
+	return memorize ([&] () {
+		StringProcLayout ret ;
+		StringProcHolder::hold (ret)->initialize () ;
+		return move (ret) ;
+	}) ;
+}
+
 exports VFat<StringProcHolder> StringProcHolder::hold (VREF<StringProcLayout> that) {
 	return VFat<StringProcHolder> (StringProcImplHolder () ,that) ;
 }
@@ -731,52 +816,9 @@ exports CFat<StringProcHolder> StringProcHolder::hold (CREF<StringProcLayout> th
 	return CFat<StringProcHolder> (StringProcImplHolder () ,that) ;
 }
 
-struct RegexImplLayout {
-	std::basic_regex<STR> mRegex ;
-	std::match_results<PTR<CREF<STR>>> mMatch ;
-} ;
-
-class RegexImplHolder implement Fat<RegexHolder ,RegexLayout> {
-public:
-	void initialize (CREF<String<STR>> format) override {
-		fake.mThis = AutoRef<RegexImplLayout>::make () ;
-		fake.mThis->mRegex = std::basic_regex<STR> (format) ;
-	}
-
-	INDEX search (CREF<String<STR>> text ,CREF<INDEX> offset) override {
-		const auto r1x = (&text.self[offset]) ;
-		const auto r2x = std::regex_search (r1x ,fake.mThis->mMatch ,fake.mThis->mRegex) ;
-		if (!r2x)
-			return NONE ;
-		const auto r3x = FLAG (fake.mThis->mMatch[0].first) ;
-		const auto r4x = (r3x - FLAG (r1x)) / SIZE_OF<STR>::expr ;
-		return offset + r4x ;
-	}
-
-	String<STR> match (CREF<INDEX> index) const override {
-		assert (!fake.mThis->mMatch.empty ()) ;
-		assert (inline_between (index ,0 ,fake.mThis->mMatch.size ())) ;
-		const auto r1x = FLAG (fake.mThis->mMatch[index].first) ;
-		const auto r2x = FLAG (fake.mThis->mMatch[index].second) ;
-		const auto r3x = (r2x - r1x) / SIZE_OF<STR>::expr ;
-		const auto r4x = Slice (r1x ,r3x ,SIZE_OF<STR>::expr) ;
-		return String<STR> (r4x) ;
-	}
-} ;
-
-exports VFat<RegexHolder> RegexHolder::hold (VREF<RegexLayout> that) {
-	return VFat<RegexHolder> (RegexImplHolder () ,that) ;
-}
-
-exports CFat<RegexHolder> RegexHolder::hold (CREF<RegexLayout> that) {
-	return CFat<RegexHolder> (RegexImplHolder () ,that) ;
-}
-
 struct RegularReaderLayout {
 	Ref<RefBuffer<BYTE>> mStream ;
-	INDEX mRead ;
-	INDEX mWrite ;
-	Box<ByteReader> mByteReader ;
+	StreamShape mBackup ;
 	Box<TextReader> mTextReader ;
 	Deque<STRU32> mDeque ;
 	STRU32 mTop ;
@@ -785,9 +827,7 @@ struct RegularReaderLayout {
 class RegularReader implement RegularReaderLayout {
 protected:
 	using RegularReaderLayout::mStream ;
-	using RegularReaderLayout::mRead ;
-	using RegularReaderLayout::mWrite ;
-	using RegularReaderLayout::mByteReader ;
+	using RegularReaderLayout::mBackup ;
 	using RegularReaderLayout::mTextReader ;
 	using RegularReaderLayout::mDeque ;
 	using RegularReaderLayout::mTop ;
@@ -797,28 +837,14 @@ public:
 
 	explicit RegularReader (RREF<Ref<RefBuffer<BYTE>>> stream ,CREF<LENGTH> ring_size) {
 		mStream = move (stream) ;
-		mRead = 0 ;
-		mWrite = mStream->size () ;
+		mBackup.mRead = 0 ;
+		mBackup.mWrite = mStream->size () ;
 		mDeque = Deque<STRU32> (ring_size) ;
 	}
 
-	void use_byte () {
-		mTextReader = NULL ;
-		mByteReader = Box<ByteReader>::make (mStream.share ()) ;
-		mByteReader->reset (mRead ,mWrite) ;
-		mDeque.clear () ;
-		while (TRUE) {
-			if (mDeque.length () >= mDeque.size ())
-				break ;
-			mByteReader.self >> mTop ;
-			mDeque.add (mTop) ;
-		}
-	}
-
 	void use_text () {
-		mByteReader = NULL ;
 		mTextReader = Box<TextReader>::make (mStream.share ()) ;
-		mTextReader->reset (mRead ,mWrite) ;
+		mTextReader->reset (mBackup) ;
 		mDeque.clear () ;
 		while (TRUE) {
 			if (mDeque.length () >= mDeque.size ())
@@ -840,34 +866,15 @@ public:
 
 	template <class ARG1>
 	void read (XREF<ARG1> item) {
-		auto act = TRUE ;
-		if ifdo (act) {
-			if (mByteReader == NULL)
-				discard ;
-			mByteReader->reset (mRead ,mWrite) ;
-			mByteReader.self >> item ;
-			mRead = mByteReader->length () ;
-			mDeque.clear () ;
-			while (TRUE) {
-				if (mDeque.length () >= mDeque.size ())
-					break ;
-				mByteReader.self >> mTop ;
-				mDeque.add (mTop) ;
-			}
-		}
-		if ifdo (act) {
-			if (mTextReader == NULL)
-				discard ;
-			mTextReader->reset (mRead ,mWrite) ;
-			mTextReader.self >> item ;
-			mRead = mTextReader->length () ;
-			mDeque.clear () ;
-			while (TRUE) {
-				if (mDeque.length () >= mDeque.size ())
-					break ;
-				mTextReader.self >> mTop ;
-				mDeque.add (mTop) ;
-			}
+		mTextReader->reset (mBackup) ;
+		mTextReader.self >> item ;
+		mBackup = mTextReader->backup () ;
+		mDeque.clear () ;
+		while (TRUE) {
+			if (mDeque.length () >= mDeque.size ())
+				break ;
+			mTextReader.self >> mTop ;
+			mDeque.add (mTop) ;
 		}
 	}
 
@@ -878,20 +885,11 @@ public:
 	}
 
 	void next () {
-		auto act = TRUE ;
-		if ifdo (act) {
-			if (mByteReader == NULL)
+		mTextReader.self >> mTop ;
+		if ifdo (TRUE) {
+			if (mTop == STRU32 (0X00))
 				discard ;
-			mByteReader.self >> mTop ;
-			mRead++ ;
-			assume (mRead <= mByteReader->size ()) ;
-		}
-		if ifdo (act) {
-			if (mTextReader == NULL)
-				discard ;
-			mTextReader.self >> mTop ;
-			mRead++ ;
-			assume (mRead <= mTextReader->size ()) ;
+			mBackup.mRead++ ;
 		}
 		mDeque.take () ;
 		mDeque.add (mTop) ;
@@ -910,17 +908,23 @@ protected:
 	Pin<LENGTH> mThat ;
 
 public:
-	imports CREF<ScopeCounter> from (VREF<LENGTH> that) {
+	static CREF<ScopeCounter> from (VREF<LENGTH> that) {
 		return Pointer::from (that) ;
 	}
 
 	void enter () const {
-		mThat.self++ ;
-		assume (mThat.self < COUNTER_MAX_DEPTH::expr) ;
+		auto rax = LENGTH () ;
+		mThat.get (rax) ;
+		rax++ ;
+		assume (rax < COUNTER_MAX_DEPTH::expr) ;
+		mThat.set (rax) ;
 	}
 
 	void leave () const {
-		mThat.self-- ;
+		auto rax = LENGTH () ;
+		mThat.get (rax) ;
+		rax-- ;
+		mThat.set (rax) ;
 	}
 } ;
 
@@ -986,8 +990,12 @@ public:
 		const auto r1x = Array<INDEX>::make (mTree.range ()) ;
 		for (auto &&i : ret.mTree.range ()) {
 			ret.mTree[i] = move (mTree[r1x[i]]) ;
+			const auto r2x = ret.mTree[i].mArrayMap.length () ;
 			ret.mTree[i].mArrayMap.remap () ;
+			assume (ret.mTree[i].mArrayMap.length () == r2x) ;
+			const auto r3x = ret.mTree[i].mObjectMap.length () ;
 			ret.mTree[i].mObjectMap.remap () ;
+			assume (ret.mTree[i].mObjectMap.length () == r3x) ;
 		}
 		ret.mRoot = NONE ;
 		if ifdo (TRUE) {
@@ -1082,6 +1090,7 @@ public:
 		INDEX ix = mTree.insert () ;
 		read_shift_e1 () ;
 		mTree[ix].mName = move (mLastString) ;
+		mTree[ix].mObjectMap = mObjectMap.share () ;
 		mTree[ix].mType = XmlParserNodeType::Value ;
 		mTree[ix].mParent = curr ;
 		mTree[ix].mBrother = NONE ;
@@ -1097,7 +1106,6 @@ public:
 			mReader++ ;
 			mReader >> GAP ;
 			mTree[ix].mArrayMap = mArrayMap.share () ;
-			mTree[ix].mObjectMap = mObjectMap.share () ;
 			read_shift_e8 (ix ,iy) ;
 			mTree[ix].mChild = mLastIndex ;
 			mReader >> GAP ;
@@ -1260,7 +1268,7 @@ public:
 	}
 } ;
 
-class XmlParserImplHolder implement Fat<XmlParserHolder ,XmlParserLayout> {
+class XmlParserImplHolder final implement Fat<XmlParserHolder ,XmlParserLayout> {
 public:
 	void initialize (CREF<RefBuffer<BYTE>> stream) override {
 		auto rax = MakeXmlParser (Ref<RefBuffer<BYTE>>::reference (stream)) ;
@@ -1558,7 +1566,7 @@ public:
 	}
 
 	template <class ARG1>
-	Array<ARG1> parse_impl (CREF<ARG1> def ,CREF<LENGTH> size_) const {
+	forceinline Array<ARG1> parse_impl (CREF<ARG1> def ,CREF<LENGTH> size_) const {
 		const auto r1x = list () ;
 		assume (r1x.size () == size_) ;
 		Array<ARG1> ret = Array<ARG1> (r1x.size ()) ;
@@ -1640,8 +1648,12 @@ public:
 		const auto r1x = Array<INDEX>::make (mTree.range ()) ;
 		for (auto &&i : ret.mTree.range ()) {
 			ret.mTree[i] = move (mTree[r1x[i]]) ;
+			const auto r2x = ret.mTree[i].mArrayMap.length () ;
 			ret.mTree[i].mArrayMap.remap () ;
+			assume (ret.mTree[i].mArrayMap.length () == r2x) ;
+			const auto r3x = ret.mTree[i].mObjectMap.length () ;
 			ret.mTree[i].mObjectMap.remap () ;
+			assume (ret.mTree[i].mObjectMap.length () == r3x) ;
 		}
 		ret.mRoot = NONE ;
 		if ifdo (TRUE) {
@@ -1931,7 +1943,7 @@ public:
 	}
 } ;
 
-class JsonParserImplHolder implement Fat<JsonParserHolder ,JsonParserLayout> {
+class JsonParserImplHolder final implement Fat<JsonParserHolder ,JsonParserLayout> {
 public:
 	void initialize (CREF<RefBuffer<BYTE>> stream) override {
 		auto rax = MakeJsonParser (Ref<RefBuffer<BYTE>>::reference (stream)) ;
@@ -2229,7 +2241,7 @@ public:
 	}
 
 	template <class ARG1>
-	Array<ARG1> parse_impl (CREF<ARG1> def ,CREF<LENGTH> size_) const {
+	forceinline Array<ARG1> parse_impl (CREF<ARG1> def ,CREF<LENGTH> size_) const {
 		const auto r1x = list () ;
 		assume (r1x.size () == size_) ;
 		Array<ARG1> ret = Array<ARG1> (r1x.size ()) ;
@@ -2298,8 +2310,8 @@ struct MakePlyParserLayout {
 	String<STRU8> mFormat ;
 	ArrayList<PlyParserElement> mElementList ;
 	Set<String<STRU8>> mElementSet ;
-	BOOL mBitwiseReverseFlag ;
-	LENGTH mBodyOffset ;
+	BOOL mReverseFlag ;
+	StreamShape mBodyBackup ;
 	INDEX mLastIndex ;
 	String<STRU8> mLastType ;
 	String<STRU8> mLastString ;
@@ -2315,7 +2327,7 @@ protected:
 	using MakePlyParserLayout::mFormat ;
 	using MakePlyParserLayout::mElementList ;
 	using MakePlyParserLayout::mElementSet ;
-	using MakePlyParserLayout::mBitwiseReverseFlag ;
+	using MakePlyParserLayout::mReverseFlag ;
 	using MakePlyParserLayout::mLastIndex ;
 	using MakePlyParserLayout::mLastType ;
 	using MakePlyParserLayout::mLastString ;
@@ -2360,13 +2372,13 @@ public:
 		if ifdo (act) {
 			if (mFormat != slice ("binary_big_endian"))
 				discard ;
-			mBitwiseReverseFlag = FALSE ;
+			mReverseFlag = FALSE ;
 			read_body_byte () ;
 		}
 		if ifdo (act) {
 			if (mFormat != slice ("binary_little_endian"))
 				discard ;
-			mBitwiseReverseFlag = TRUE ;
+			mReverseFlag = TRUE ;
 			read_body_byte () ;
 		}
 		if ifdo (act) {
@@ -2429,7 +2441,13 @@ public:
 				mTextReader >> GAP ;
 				mTextReader >> KeywordText::from (mLastString) ;
 				const auto r4x = mPropertyType.map (mLastString) ;
-				assume (r4x != NONE) ;
+				if ifdo (TRUE) {
+					if (r4x == PlyParserDataType::Val32)
+						discard ;
+					if (r4x == PlyParserDataType::Val64)
+						discard ;
+					assume (FALSE) ;
+				}
 				mElementList[ix].mPropertyList[iy].mListType = r4x ;
 				mElementList[ix].mPropertyList[iy].mListSize = 0 ;
 				mTextReader >> GAP ;
@@ -2469,16 +2487,17 @@ public:
 		}
 		if ifdo (TRUE) {
 			auto rax = STRU32 () ;
+			const auto r7x = mTextReader.backup () ;
 			mTextReader.read (rax) ;
 			if (rax == STRU32 ('\r'))
 				discard ;
-			mTextReader.reset (mTextReader.length () - 1 ,mTextReader.size ()) ;
+			mTextReader.reset (r7x) ;
 		}
 		if ifdo (TRUE) {
 			auto rax = STRU32 () ;
 			mTextReader.read (rax) ;
 			assume (rax == STRU32 ('\n')) ;
-			mBodyOffset = mTextReader.length () ;
+			mBodyBackup = mTextReader.backup () ;
 		}
 		for (auto &&i : mElementList.range ()) {
 			auto &&rax = mElementList[i] ;
@@ -2495,37 +2514,37 @@ public:
 		}
 		for (auto &&i : mElementList.range ()) {
 			auto &&rax = mElementList[i] ;
-			const auto r7x = rax.mLineSize * rax.mLineStep ;
-			rax.mPlyBuffer = RefBuffer<BYTE> (r7x) ;
+			const auto r8x = rax.mLineSize * rax.mLineStep ;
+			rax.mPlyBuffer = RefBuffer<BYTE> (r8x) ;
 			rax.mPlyIndex = address (rax.mPlyBuffer[0]) ;
 		}
 	}
 
-	LENGTH ply_parser_data_type_size (CREF<Just<PlyParserDataType>> type) const {
-		if (type == PlyParserDataType::Bool)
+	LENGTH ply_parser_data_type_size (CREF<Just<PlyParserDataType>> type_) const {
+		if (type_ == PlyParserDataType::Bool)
 			return 1 ;
-		if (type == PlyParserDataType::Val32)
+		if (type_ == PlyParserDataType::Val32)
 			return 4 ;
-		if (type == PlyParserDataType::Val64)
+		if (type_ == PlyParserDataType::Val64)
 			return 8 ;
-		if (type == PlyParserDataType::Flt32)
+		if (type_ == PlyParserDataType::Flt32)
 			return 4 ;
-		if (type == PlyParserDataType::Flt64)
+		if (type_ == PlyParserDataType::Flt64)
 			return 8 ;
-		if (type == PlyParserDataType::Byte)
+		if (type_ == PlyParserDataType::Byte)
 			return 1 ;
-		if (type == PlyParserDataType::Word)
+		if (type_ == PlyParserDataType::Word)
 			return 2 ;
-		if (type == PlyParserDataType::Char)
+		if (type_ == PlyParserDataType::Char)
 			return 4 ;
-		if (type == PlyParserDataType::Quad)
+		if (type_ == PlyParserDataType::Quad)
 			return 8 ;
 		return 0 ;
 	}
 
 	void read_body_text () {
 		mTextReader = TextReader (mStream.share ()) ;
-		mTextReader.reset (mBodyOffset ,mStream->size ()) ;
+		mTextReader.reset (mBodyBackup) ;
 		mTextReader >> GAP ;
 		for (auto &&i : iter (0 ,mElementList.length ())) {
 			for (auto &&j : iter (0 ,mElementList[i].mLineSize)) {
@@ -2598,7 +2617,7 @@ public:
 				discard ;
 			const auto r9x = mTextReader.poll (TYPE<VAL64>::expr) ;
 			assume (r9x >= 0) ;
-			const auto r10x = BYTE (r9x) ;
+			const auto r10x = WORD (r9x) ;
 			inline_memcpy (Pointer::make (element.mPlyIndex) ,Pointer::from (r10x) ,SIZE_OF<WORD>::expr) ;
 			element.mPlyIndex += SIZE_OF<WORD>::expr ;
 			mTextReader >> GAP ;
@@ -2608,7 +2627,7 @@ public:
 				discard ;
 			const auto r11x = mTextReader.poll (TYPE<VAL64>::expr) ;
 			assume (r11x >= 0) ;
-			const auto r12x = BYTE (r11x) ;
+			const auto r12x = CHAR (r11x) ;
 			inline_memcpy (Pointer::make (element.mPlyIndex) ,Pointer::from (r12x) ,SIZE_OF<CHAR>::expr) ;
 			element.mPlyIndex += SIZE_OF<CHAR>::expr ;
 			mTextReader >> GAP ;
@@ -2618,7 +2637,7 @@ public:
 				discard ;
 			const auto r13x = mTextReader.poll (TYPE<VAL64>::expr) ;
 			assume (r13x >= 0) ;
-			const auto r14x = BYTE (r13x) ;
+			const auto r14x = QUAD (r13x) ;
 			inline_memcpy (Pointer::make (element.mPlyIndex) ,Pointer::from (r14x) ,SIZE_OF<QUAD>::expr) ;
 			element.mPlyIndex += SIZE_OF<QUAD>::expr ;
 			mTextReader >> GAP ;
@@ -2692,7 +2711,7 @@ public:
 
 	void read_body_byte () {
 		mByteReader = ByteReader (mStream.share ()) ;
-		mByteReader.reset (mBodyOffset ,mStream->size ()) ;
+		mByteReader.reset (mBodyBackup) ;
 		for (auto &&i : iter (0 ,mElementList.length ())) {
 			for (auto &&j : iter (0 ,mElementList[i].mLineSize)) {
 				for (auto &&k : iter (0 ,mElementList[i].mPropertyList.length ())) {
@@ -2845,13 +2864,13 @@ public:
 
 	template <class ARG1>
 	BYTE_BASE<ARG1> bitwise_reverse (CREF<ARG1> a) const {
-		if (!mBitwiseReverseFlag)
+		if (!mReverseFlag)
 			return bitwise[TYPE<BYTE_BASE<ARG1>>::expr] (a) ;
 		return ByteProc::bit_reverse (bitwise[TYPE<BYTE_BASE<ARG1>>::expr] (a)) ;
 	}
 } ;
 
-class PlyParserImplHolder implement Fat<PlyParserHolder ,PlyParserLayout> {
+class PlyParserImplHolder final implement Fat<PlyParserHolder ,PlyParserLayout> {
 public:
 	void initialize (CREF<RefBuffer<BYTE>> stream) override {
 		auto rax = MakePlyParser (Ref<RefBuffer<BYTE>>::reference (stream)) ;

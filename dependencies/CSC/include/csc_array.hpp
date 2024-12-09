@@ -94,11 +94,11 @@ protected:
 	A mThat ;
 
 public:
-	imports CREF<ArrayRange> from (CREF<A> that) {
+	static CREF<ArrayRange> from (CREF<A> that) {
 		return Pointer::from (that) ;
 	}
 
-	imports CREF<ArrayRange> from (RREF<A> that) = delete ;
+	static CREF<ArrayRange> from (RREF<A> that) = delete ;
 
 	LENGTH length () const {
 		return mThat.length () ;
@@ -156,7 +156,7 @@ struct ArrayHolder implement Interface {
 } ;
 
 template <class A>
-class ArrayUnknownBinder implement UnknownFriend {
+class ArrayUnknownBinder implement ReflectUnknown {
 public:
 	FLAG reflect (CREF<FLAG> uuid) const override {
 		if (uuid == ReflectSizeBinder<A>::expr)
@@ -185,8 +185,7 @@ template <class A>
 class ArrayRealLayout implement ArrayLayout {
 public:
 	implicit ArrayRealLayout () noexcept {
-		auto &&rax = keep[TYPE<RefBufferLayout>::expr] (thiz.mArray) ;
-		rax = RefBuffer<A> () ;
+		noop (RefBuffer<A> ()) ;
 	}
 } ;
 
@@ -203,12 +202,12 @@ public:
 	}
 
 	explicit Array (CREF<csc_initializer_list_t<A>> that) {
-		auto rax = Box<A>::make () ;
+		auto rax = Box<A> () ;
 		ArrayHolder::hold (thiz)->initialize (ArrayUnknownBinder<A> () ,MakeWrapper (that) ,rax) ;
 	}
 
 	template <class ARG1>
-	imports Array make (CREF<ARG1> iterator) {
+	static Array make (CREF<ARG1> iterator) {
 		Array ret = Array (iterator.length ()) ;
 		INDEX ix = 0 ;
 		for (auto &&i : iterator) {
@@ -354,7 +353,8 @@ struct StringHolder implement Interface {
 	virtual LENGTH length () const = 0 ;
 	virtual VREF<Pointer> self_m () leftvalue = 0 ;
 	virtual CREF<Pointer> self_m () const leftvalue = 0 ;
-	virtual Ref<RefBuffer<BYTE>> borrow () const = 0 ;
+	virtual Ref<RefBuffer<BYTE>> borrow () leftvalue = 0 ;
+	virtual Ref<RefBuffer<BYTE>> borrow () const leftvalue = 0 ;
 	virtual void get (CREF<INDEX> index ,VREF<STRU32> item) const = 0 ;
 	virtual void set (CREF<INDEX> index ,CREF<STRU32> item) = 0 ;
 	virtual VREF<Pointer> at (CREF<INDEX> index) leftvalue = 0 ;
@@ -377,8 +377,7 @@ template <class A>
 class StringRealLayout implement StringLayout {
 public:
 	implicit StringRealLayout () noexcept {
-		auto &&rax = keep[TYPE<RefBufferLayout>::expr] (thiz.mString) ;
-		rax = RefBuffer<A> () ;
+		noop (RefBuffer<A> ()) ;
 	}
 } ;
 
@@ -402,12 +401,12 @@ public:
 	}
 
 	template <class...ARG1>
-	imports String make (CREF<ARG1>...params) {
+	static String make (CREF<ARG1>...params) {
 		using R1X = KILL<StringBuild<A> ,TYPE<ARG1...>> ;
 		return R1X::make (params...) ;
 	}
 
-	imports CREF<String> zero () {
+	static CREF<String> zero () {
 		return memorize ([&] () {
 			return String (slice ("\0")) ;
 		}) ;
@@ -459,6 +458,10 @@ public:
 
 	forceinline operator CREF<ARR<A>> () const leftvalue {
 		return self ;
+	}
+
+	Ref<RefBuffer<BYTE>> borrow () leftvalue {
+		return StringHolder::hold (thiz)->borrow () ;
 	}
 
 	Ref<RefBuffer<BYTE>> borrow () const leftvalue {
@@ -580,7 +583,7 @@ struct DequeHolder implement Interface {
 	imports VFat<DequeHolder> hold (VREF<DequeLayout> that) ;
 	imports CFat<DequeHolder> hold (CREF<DequeLayout> that) ;
 
-	virtual void initialize (CREF<Unknown> holder) = 0 ;
+	virtual void prepare (CREF<Unknown> holder) = 0 ;
 	virtual void initialize (CREF<Unknown> holder ,CREF<LENGTH> size_) = 0 ;
 	virtual void initialize (CREF<Unknown> holder ,CREF<WrapperLayout> params ,VREF<BoxLayout> item) = 0 ;
 	virtual void clear () = 0 ;
@@ -599,11 +602,11 @@ struct DequeHolder implement Interface {
 	virtual void take () = 0 ;
 	virtual void push (RREF<BoxLayout> item) = 0 ;
 	virtual void pop () = 0 ;
-	virtual void ring (CREF<LENGTH> size_) = 0 ;
+	virtual void ring (CREF<LENGTH> count) = 0 ;
 } ;
 
 template <class A>
-class DequeUnknownBinder implement UnknownFriend {
+class DequeUnknownBinder implement ReflectUnknown {
 public:
 	FLAG reflect (CREF<FLAG> uuid) const override {
 		if (uuid == ReflectSizeBinder<A>::expr)
@@ -624,8 +627,7 @@ template <class A>
 class DequeRealLayout implement DequeLayout {
 public:
 	implicit DequeRealLayout () noexcept {
-		auto &&rax = keep[TYPE<RefBufferLayout>::expr] (thiz.mDeque) ;
-		rax = RefBuffer<A> () ;
+		noop (RefBuffer<A> ()) ;
 	}
 } ;
 
@@ -644,7 +646,7 @@ public:
 	}
 
 	explicit Deque (CREF<csc_initializer_list_t<A>> that) {
-		auto rax = Box<A>::make () ;
+		auto rax = Box<A> () ;
 		DequeHolder::hold (thiz)->initialize (DequeUnknownBinder<A> () ,MakeWrapper (that) ,rax) ;
 	}
 
@@ -722,7 +724,7 @@ public:
 
 	void add (RREF<A> item) {
 		auto rax = Box<A>::make (move (item)) ;
-		DequeHolder::hold (thiz)->initialize (DequeUnknownBinder<A> ()) ;
+		DequeHolder::hold (thiz)->prepare (DequeUnknownBinder<A> ()) ;
 		return DequeHolder::hold (thiz)->add (move (rax)) ;
 	}
 
@@ -736,7 +738,7 @@ public:
 
 	void push (RREF<A> item) {
 		auto rax = Box<A>::make (move (item)) ;
-		DequeHolder::hold (thiz)->initialize (DequeUnknownBinder<A> ()) ;
+		DequeHolder::hold (thiz)->prepare (DequeUnknownBinder<A> ()) ;
 		return DequeHolder::hold (thiz)->push (move (rax)) ;
 	}
 
@@ -744,8 +746,8 @@ public:
 		return DequeHolder::hold (thiz)->pop () ;
 	}
 
-	void ring (CREF<LENGTH> size_) {
-		return DequeHolder::hold (thiz)->ring (size_) ;
+	void ring (CREF<LENGTH> count) {
+		return DequeHolder::hold (thiz)->ring (count) ;
 	}
 } ;
 
@@ -756,7 +758,6 @@ struct PriorityNode {
 struct PriorityLayout {
 	RefBuffer<Pointer> mPriority ;
 	FLAG mOffset ;
-	INDEX mRead ;
 	INDEX mWrite ;
 } ;
 
@@ -764,7 +765,7 @@ struct PriorityHolder implement Interface {
 	imports VFat<PriorityHolder> hold (VREF<PriorityLayout> that) ;
 	imports CFat<PriorityHolder> hold (CREF<PriorityLayout> that) ;
 
-	virtual void initialize (CREF<Unknown> holder) = 0 ;
+	virtual void prepare (CREF<Unknown> holder) = 0 ;
 	virtual void initialize (CREF<Unknown> holder ,CREF<LENGTH> size_) = 0 ;
 	virtual void initialize (CREF<Unknown> holder ,CREF<WrapperLayout> params ,VREF<BoxLayout> item) = 0 ;
 	virtual void clear () = 0 ;
@@ -784,7 +785,7 @@ struct PriorityHolder implement Interface {
 } ;
 
 template <class A>
-class PriorityUnknownBinder implement UnknownFriend {
+class PriorityUnknownBinder implement ReflectUnknown {
 public:
 	FLAG reflect (CREF<FLAG> uuid) const override {
 		using R1X = Tuple<A ,PriorityNode> ;
@@ -812,9 +813,7 @@ template <class A>
 class PriorityRealLayout implement PriorityLayout {
 public:
 	implicit PriorityRealLayout () noexcept {
-		using R1X = Tuple<A ,PriorityNode> ;
-		auto &&rax = keep[TYPE<RefBufferLayout>::expr] (thiz.mPriority) ;
-		rax = RefBuffer<R1X> () ;
+		noop (RefBuffer<Tuple<A ,PriorityNode>> ()) ;
 	}
 } ;
 
@@ -822,7 +821,7 @@ template <class A>
 class Priority implement PriorityRealLayout<A> {
 protected:
 	using PriorityRealLayout<A>::mPriority ;
-	using PriorityRealLayout<A>::mRead ;
+	using PriorityRealLayout<A>::mOffset ;
 	using PriorityRealLayout<A>::mWrite ;
 
 public:
@@ -833,7 +832,7 @@ public:
 	}
 
 	explicit Priority (CREF<csc_initializer_list_t<A>> that) {
-		auto rax = Box<A>::make () ;
+		auto rax = Box<A> () ;
 		PriorityHolder::hold (thiz)->initialize (PriorityUnknownBinder<A> () ,MakeWrapper (that) ,rax) ;
 	}
 
@@ -915,7 +914,7 @@ public:
 
 	void add (RREF<A> item ,CREF<INDEX> map_) {
 		auto rax = Box<A>::make (move (item)) ;
-		PriorityHolder::hold (thiz)->initialize (PriorityUnknownBinder<A> ()) ;
+		PriorityHolder::hold (thiz)->prepare (PriorityUnknownBinder<A> ()) ;
 		return PriorityHolder::hold (thiz)->add (move (rax) ,map_) ;
 	}
 
@@ -939,7 +938,7 @@ struct ListHolder implement Interface {
 	imports VFat<ListHolder> hold (VREF<ListLayout> that) ;
 	imports CFat<ListHolder> hold (CREF<ListLayout> that) ;
 
-	virtual void initialize (CREF<Unknown> holder) = 0 ;
+	virtual void prepare (CREF<Unknown> holder) = 0 ;
 	virtual void initialize (CREF<Unknown> holder ,CREF<LENGTH> size_) = 0 ;
 	virtual void initialize (CREF<Unknown> holder ,CREF<WrapperLayout> params ,VREF<BoxLayout> item) = 0 ;
 	virtual void clear () = 0 ;
@@ -965,7 +964,7 @@ struct ListHolder implement Interface {
 } ;
 
 template <class A>
-class ListUnknownBinder implement UnknownFriend {
+class ListUnknownBinder implement ReflectUnknown {
 public:
 	FLAG reflect (CREF<FLAG> uuid) const override {
 		using R1X = TupleNode<A ,ListNode> ;
@@ -987,8 +986,7 @@ template <class A>
 class ListRealLayout implement ListLayout {
 public:
 	implicit ListRealLayout () noexcept {
-		auto &&rax = keep[TYPE<AllocatorLayout>::expr] (thiz.mList) ;
-		rax = Allocator<A ,ListNode> () ;
+		noop (Allocator<A ,ListNode> ()) ;
 	}
 } ;
 
@@ -1007,7 +1005,7 @@ public:
 	}
 
 	explicit List (CREF<csc_initializer_list_t<A>> that) {
-		auto rax = Box<A>::make () ;
+		auto rax = Box<A> () ;
 		ListHolder::hold (thiz)->initialize (ListUnknownBinder<A> () ,MakeWrapper (that) ,rax) ;
 	}
 
@@ -1085,7 +1083,7 @@ public:
 
 	void add (RREF<A> item) {
 		auto rax = Box<A>::make (move (item)) ;
-		ListHolder::hold (thiz)->initialize (ListUnknownBinder<A> ()) ;
+		ListHolder::hold (thiz)->prepare (ListUnknownBinder<A> ()) ;
 		return ListHolder::hold (thiz)->add (move (rax)) ;
 	}
 
@@ -1099,7 +1097,7 @@ public:
 
 	void push (RREF<A> item) {
 		auto rax = Box<A>::make (move (item)) ;
-		ListHolder::hold (thiz)->initialize (ListUnknownBinder<A> ()) ;
+		ListHolder::hold (thiz)->prepare (ListUnknownBinder<A> ()) ;
 		return ListHolder::hold (thiz)->push (move (rax)) ;
 	}
 
@@ -1109,13 +1107,13 @@ public:
 
 	INDEX insert () {
 		auto rax = Box<A>::make () ;
-		ListHolder::hold (thiz)->initialize (ListUnknownBinder<A> ()) ;
+		ListHolder::hold (thiz)->prepare (ListUnknownBinder<A> ()) ;
 		return ListHolder::hold (thiz)->insert (move (rax)) ;
 	}
 
 	INDEX insert (CREF<INDEX> index) {
 		auto rax = Box<A>::make () ;
-		ListHolder::hold (thiz)->initialize (ListUnknownBinder<A> ()) ;
+		ListHolder::hold (thiz)->prepare (ListUnknownBinder<A> ()) ;
 		return ListHolder::hold (thiz)->insert (index ,move (rax)) ;
 	}
 
@@ -1128,20 +1126,22 @@ public:
 	}
 } ;
 
-struct ArrayListNode implement AllocatorNode {} ;
+struct ArrayListNode implement AllocatorNode {
+	INDEX mIndex ;
+} ;
 
 struct ArrayListLayout {
 	Allocator<Pointer ,ArrayListNode> mList ;
 	RefBuffer<INDEX> mRange ;
 	INDEX mTop ;
-	BOOL mSorted ;
+	BOOL mRemap ;
 } ;
 
 struct ArrayListHolder implement Interface {
 	imports VFat<ArrayListHolder> hold (VREF<ArrayListLayout> that) ;
 	imports CFat<ArrayListHolder> hold (CREF<ArrayListLayout> that) ;
 
-	virtual void initialize (CREF<Unknown> holder) = 0 ;
+	virtual void prepare (CREF<Unknown> holder) = 0 ;
 	virtual void initialize (CREF<Unknown> holder ,CREF<LENGTH> size_) = 0 ;
 	virtual void initialize (CREF<Unknown> holder ,CREF<WrapperLayout> params ,VREF<BoxLayout> item) = 0 ;
 	virtual void clear () = 0 ;
@@ -1162,7 +1162,7 @@ struct ArrayListHolder implement Interface {
 } ;
 
 template <class A>
-class ArrayListUnknownBinder implement UnknownFriend {
+class ArrayListUnknownBinder implement ReflectUnknown {
 public:
 	FLAG reflect (CREF<FLAG> uuid) const override {
 		using R1X = TupleNode<A ,ArrayListNode> ;
@@ -1184,8 +1184,7 @@ template <class A>
 class ArrayListRealLayout implement ArrayListLayout {
 public:
 	implicit ArrayListRealLayout () noexcept {
-		auto &&rax = keep[TYPE<AllocatorLayout>::expr] (thiz.mList) ;
-		rax = Allocator<A ,ArrayListNode> () ;
+		noop (Allocator<A ,ArrayListNode> ()) ;
 	}
 } ;
 
@@ -1204,7 +1203,7 @@ public:
 	}
 
 	explicit ArrayList (CREF<csc_initializer_list_t<A>> that) {
-		auto rax = Box<A>::make () ;
+		auto rax = Box<A> () ;
 		ArrayListHolder::hold (thiz)->initialize (ArrayListUnknownBinder<A> () ,MakeWrapper (that) ,rax) ;
 	}
 
@@ -1270,19 +1269,19 @@ public:
 
 	void add (RREF<A> item) {
 		auto rax = Box<A>::make (move (item)) ;
-		ArrayListHolder::hold (thiz)->initialize (ArrayListUnknownBinder<A> ()) ;
+		ArrayListHolder::hold (thiz)->prepare (ArrayListUnknownBinder<A> ()) ;
 		return ArrayListHolder::hold (thiz)->add (move (rax)) ;
 	}
 
 	INDEX insert () {
 		auto rax = Box<A>::make () ;
-		ArrayListHolder::hold (thiz)->initialize (ArrayListUnknownBinder<A> ()) ;
+		ArrayListHolder::hold (thiz)->prepare (ArrayListUnknownBinder<A> ()) ;
 		return ArrayListHolder::hold (thiz)->insert (move (rax)) ;
 	}
 
 	INDEX insert (CREF<INDEX> index) {
 		auto rax = Box<A>::make () ;
-		ArrayListHolder::hold (thiz)->initialize (ArrayListUnknownBinder<A> ()) ;
+		ArrayListHolder::hold (thiz)->prepare (ArrayListUnknownBinder<A> ()) ;
 		return ArrayListHolder::hold (thiz)->insert (index ,move (rax)) ;
 	}
 
@@ -1312,14 +1311,14 @@ struct SortedMapLayout {
 	SharedRef<SortedMapImplLayout> mThis ;
 	RefBuffer<INDEX> mRange ;
 	INDEX mWrite ;
-	BOOL mSorted ;
+	BOOL mRemap ;
 } ;
 
 struct SortedMapHolder implement Interface {
 	imports VFat<SortedMapHolder> hold (VREF<SortedMapLayout> that) ;
 	imports CFat<SortedMapHolder> hold (CREF<SortedMapLayout> that) ;
 
-	virtual void initialize (CREF<Unknown> holder) = 0 ;
+	virtual void prepare (CREF<Unknown> holder) = 0 ;
 	virtual void initialize (CREF<Unknown> holder ,CREF<LENGTH> size_) = 0 ;
 	virtual void initialize (CREF<Unknown> holder ,CREF<WrapperLayout> params ,VREF<BoxLayout> item) = 0 ;
 	virtual SortedMapLayout share () const = 0 ;
@@ -1339,7 +1338,7 @@ struct SortedMapHolder implement Interface {
 } ;
 
 template <class A>
-class SortedMapUnknownBinder implement UnknownFriend {
+class SortedMapUnknownBinder implement ReflectUnknown {
 public:
 	FLAG reflect (CREF<FLAG> uuid) const override {
 		using R1X = TupleNode<A ,SortedMapNode> ;
@@ -1367,10 +1366,7 @@ template <class A>
 class SortedMapRealLayout implement SortedMapLayout {
 public:
 	implicit SortedMapRealLayout () noexcept {
-		if (!thiz.mThis.exist ())
-			return ;
-		auto &&rax = keep[TYPE<AllocatorLayout>::expr] (thiz.mThis->mList) ;
-		rax = Allocator<A ,SortedMapNode> () ;
+		noop (Allocator<A ,SortedMapNode> ()) ;
 	}
 } ;
 
@@ -1380,7 +1376,7 @@ protected:
 	using SortedMapRealLayout<A>::mThis ;
 	using SortedMapRealLayout<A>::mRange ;
 	using SortedMapRealLayout<A>::mWrite ;
-	using SortedMapRealLayout<A>::mSorted ;
+	using SortedMapRealLayout<A>::mRemap ;
 
 public:
 	implicit SortedMap () = default ;
@@ -1390,7 +1386,7 @@ public:
 	}
 
 	explicit SortedMap (CREF<csc_initializer_list_t<A>> that) {
-		auto rax = Box<A>::make () ;
+		auto rax = Box<A> () ;
 		SortedMapHolder::hold (thiz)->initialize (SortedMapUnknownBinder<A> () ,MakeWrapper (that) ,rax) ;
 	}
 
@@ -1461,7 +1457,7 @@ public:
 
 	void add (RREF<A> item ,CREF<INDEX> map_) {
 		auto rax = Box<A>::make (move (item)) ;
-		SortedMapHolder::hold (thiz)->initialize (SortedMapUnknownBinder<A> ()) ;
+		SortedMapHolder::hold (thiz)->prepare (SortedMapUnknownBinder<A> ()) ;
 		return SortedMapHolder::hold (thiz)->add (move (rax) ,map_) ;
 	}
 
@@ -1501,7 +1497,7 @@ struct SetHolder implement Interface {
 	imports VFat<SetHolder> hold (VREF<SetLayout> that) ;
 	imports CFat<SetHolder> hold (CREF<SetLayout> that) ;
 
-	virtual void initialize (CREF<Unknown> holder) = 0 ;
+	virtual void prepare (CREF<Unknown> holder) = 0 ;
 	virtual void initialize (CREF<Unknown> holder ,CREF<LENGTH> size_) = 0 ;
 	virtual void initialize (CREF<Unknown> holder ,CREF<WrapperLayout> params ,VREF<BoxLayout> item) = 0 ;
 	virtual void clear () = 0 ;
@@ -1523,7 +1519,7 @@ struct SetHolder implement Interface {
 } ;
 
 template <class A>
-class SetUnknownBinder implement UnknownFriend {
+class SetUnknownBinder implement ReflectUnknown {
 public:
 	FLAG reflect (CREF<FLAG> uuid) const override {
 		using R1X = TupleNode<A ,SetNode> ;
@@ -1551,8 +1547,7 @@ template <class A>
 class SetRealLayout implement SetLayout {
 public:
 	implicit SetRealLayout () noexcept {
-		auto &&rax = keep[TYPE<AllocatorLayout>::expr] (thiz.mSet) ;
-		rax = Allocator<A ,SetNode> () ;
+		noop (Allocator<A ,SetNode> ()) ;
 	}
 } ;
 
@@ -1571,7 +1566,7 @@ public:
 	}
 
 	explicit Set (CREF<csc_initializer_list_t<A>> that) {
-		auto rax = Box<A>::make () ;
+		auto rax = Box<A> () ;
 		SetHolder::hold (thiz)->initialize (SetUnknownBinder<A> () ,MakeWrapper (that) ,rax) ;
 	}
 
@@ -1645,7 +1640,7 @@ public:
 
 	void add (RREF<A> item ,CREF<INDEX> map_) {
 		auto rax = Box<A>::make (move (item)) ;
-		SetHolder::hold (thiz)->initialize (SetUnknownBinder<A> ()) ;
+		SetHolder::hold (thiz)->prepare (SetUnknownBinder<A> ()) ;
 		return SetHolder::hold (thiz)->add (move (rax) ,map_) ;
 	}
 
@@ -1686,7 +1681,7 @@ struct HashSetHolder implement Interface {
 	imports VFat<HashSetHolder> hold (VREF<HashSetLayout> that) ;
 	imports CFat<HashSetHolder> hold (CREF<HashSetLayout> that) ;
 
-	virtual void initialize (CREF<Unknown> holder) = 0 ;
+	virtual void prepare (CREF<Unknown> holder) = 0 ;
 	virtual void initialize (CREF<Unknown> holder ,CREF<LENGTH> size_) = 0 ;
 	virtual void initialize (CREF<Unknown> holder ,CREF<WrapperLayout> params ,VREF<BoxLayout> item) = 0 ;
 	virtual void clear () = 0 ;
@@ -1708,7 +1703,7 @@ struct HashSetHolder implement Interface {
 } ;
 
 template <class A>
-class HashSetUnknownBinder implement UnknownFriend {
+class HashSetUnknownBinder implement ReflectUnknown {
 public:
 	FLAG reflect (CREF<FLAG> uuid) const override {
 		using R1X = TupleNode<A ,HashSetNode> ;
@@ -1734,8 +1729,7 @@ template <class A>
 class HashSetRealLayout implement HashSetLayout {
 public:
 	implicit HashSetRealLayout () noexcept {
-		auto &&rax = keep[TYPE<AllocatorLayout>::expr] (thiz.mSet) ;
-		rax = Allocator<A ,HashSetNode> () ;
+		noop (Allocator<A ,HashSetNode> ()) ;
 	}
 } ;
 
@@ -1754,7 +1748,7 @@ public:
 	}
 
 	explicit HashSet (CREF<csc_initializer_list_t<A>> that) {
-		auto rax = Box<A>::make () ;
+		auto rax = Box<A> () ;
 		HashSetHolder::hold (thiz)->initialize (HashSetUnknownBinder<A> () ,MakeWrapper (that) ,rax) ;
 	}
 
@@ -1828,7 +1822,7 @@ public:
 
 	void add (RREF<A> item ,CREF<INDEX> map_) {
 		auto rax = Box<A>::make (move (item)) ;
-		HashSetHolder::hold (thiz)->initialize (HashSetUnknownBinder<A> ()) ;
+		HashSetHolder::hold (thiz)->prepare (HashSetUnknownBinder<A> ()) ;
 		return HashSetHolder::hold (thiz)->add (move (rax) ,map_) ;
 	}
 
@@ -1887,7 +1881,7 @@ struct BitSetHolder implement Interface {
 	imports CFat<BitSetHolder> hold (CREF<BitSetLayout> that) ;
 
 	virtual void initialize (CREF<LENGTH> size_) = 0 ;
-	virtual void initialize (CREF<Unknown> holder ,CREF<WrapperLayout> params ,VREF<BoxLayout> item) = 0 ;
+	virtual void initialize (CREF<LENGTH> size_ ,CREF<WrapperLayout> params ,VREF<BoxLayout> item) = 0 ;
 	virtual void initialize (CREF<BitSetLayout> that) = 0 ;
 	virtual void clear () = 0 ;
 	virtual LENGTH size () const = 0 ;
@@ -1926,9 +1920,9 @@ public:
 		BitSetHolder::hold (thiz)->initialize (size_) ;
 	}
 
-	explicit BitSet (CREF<csc_initializer_list_t<A>> that) {
-		auto rax = Box<A>::make () ;
-		BitSetHolder::hold (thiz)->initialize (BufferUnknownBinder<A> () ,MakeWrapper (that) ,rax) ;
+	explicit BitSet (CREF<SizeProxy> size_ ,CREF<csc_initializer_list_t<A>> that) {
+		auto rax = Box<A> () ;
+		BitSetHolder::hold (thiz)->initialize (size_ ,MakeWrapper (that) ,rax) ;
 	}
 
 	implicit BitSet (CREF<BitSet> that) {
@@ -2040,6 +2034,10 @@ public:
 	}
 
 	void add (CREF<A> item) {
+		add (move (item)) ;
+	}
+
+	void add (RREF<A> item) {
 		auto rax = Box<A>::make (move (item)) ;
 		return BitSetHolder::hold (thiz)->add (move (rax)) ;
 	}

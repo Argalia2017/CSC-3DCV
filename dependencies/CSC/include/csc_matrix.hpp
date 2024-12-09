@@ -60,16 +60,12 @@ public:
 	}
 } ;
 
+struct VectorLayout ;
+struct MatrixLayout ;
+struct QuaternionLayout ;
+
 struct VectorLayout {
 	Buffer<FLT64 ,RANK4> mVector ;
-} ;
-
-struct MatrixLayout {
-	Buffer<FLT64 ,ENUM<16>> mMatrix ;
-} ;
-
-struct QuaternionLayout {
-	Buffer<FLT64 ,RANK4> mQuaternion ;
 } ;
 
 struct VectorHolder implement Interface {
@@ -93,7 +89,7 @@ struct VectorHolder implement Interface {
 	virtual FLT64 dot (CREF<VectorLayout> that) const = 0 ;
 	virtual VectorLayout smul (CREF<MatrixLayout> that) const = 0 ;
 	virtual VectorLayout cross (CREF<VectorLayout> that) const = 0 ;
-	virtual VectorLayout plus () const = 0 ;
+	virtual VectorLayout sabs () const = 0 ;
 	virtual VectorLayout minus () const = 0 ;
 	virtual FLT64 magnitude () const = 0 ;
 	virtual VectorLayout normalize () const = 0 ;
@@ -128,31 +124,31 @@ public:
 		VectorHolder::hold (thiz)->initialize (point) ;
 	}
 
-	imports CREF<Vector> zero () {
+	static CREF<Vector> zero () {
 		return memorize ([&] () {
 			return Vector (0 ,0 ,0 ,0) ;
 		}) ;
 	}
 
-	imports CREF<Vector> axis_x () {
+	static CREF<Vector> axis_x () {
 		return memorize ([&] () {
 			return Vector (1 ,0 ,0 ,0) ;
 		}) ;
 	}
 
-	imports CREF<Vector> axis_y () {
+	static CREF<Vector> axis_y () {
 		return memorize ([&] () {
 			return Vector (0 ,1 ,0 ,0) ;
 		}) ;
 	}
 
-	imports CREF<Vector> axis_z () {
+	static CREF<Vector> axis_z () {
 		return memorize ([&] () {
 			return Vector (0 ,0 ,1 ,0) ;
 		}) ;
 	}
 
-	imports CREF<Vector> axis_w () {
+	static CREF<Vector> axis_w () {
 		return memorize ([&] () {
 			return Vector (0 ,0 ,0 ,1) ;
 		}) ;
@@ -300,13 +296,9 @@ public:
 		thiz = cross (that) ;
 	}
 
-	Vector plus () const {
-		VectorLayout ret = VectorHolder::hold (thiz)->plus () ;
+	Vector sabs () const {
+		VectorLayout ret = VectorHolder::hold (thiz)->sabs () ;
 		return move (keep[TYPE<Vector>::expr] (ret)) ;
-	}
-
-	forceinline Vector operator+ () const {
-		return plus () ;
 	}
 
 	Vector minus () const {
@@ -338,6 +330,10 @@ public:
 	}
 } ;
 
+struct MatrixLayout {
+	Buffer<FLT64 ,ENUM<16>> mMatrix ;
+} ;
+
 struct MatrixHolder implement Interface {
 	imports VFat<MatrixHolder> hold (VREF<MatrixLayout> that) ;
 	imports CFat<MatrixHolder> hold (CREF<MatrixLayout> that) ;
@@ -355,7 +351,7 @@ struct MatrixHolder implement Interface {
 	virtual MatrixLayout sdiv (CREF<FLT64> scale) const = 0 ;
 	virtual VectorLayout smul (CREF<VectorLayout> that) const = 0 ;
 	virtual MatrixLayout smul (CREF<MatrixLayout> that) const = 0 ;
-	virtual MatrixLayout plus () const = 0 ;
+	virtual MatrixLayout sabs () const = 0 ;
 	virtual MatrixLayout minus () const = 0 ;
 	virtual MatrixLayout transpose () const = 0 ;
 	virtual MatrixLayout triangular () const = 0 ;
@@ -381,14 +377,14 @@ public:
 		MatrixHolder::hold (thiz)->initialize (x ,y ,z ,w) ;
 	}
 
-	imports CREF<Matrix> zero () {
+	static CREF<Matrix> zero () {
 		return memorize ([&] () {
 			const auto r1x = Vector::zero () ;
 			return Matrix (r1x ,r1x ,r1x ,r1x) ;
 		}) ;
 	}
 
-	imports CREF<Matrix> identity () {
+	static CREF<Matrix> identity () {
 		return memorize ([&] () {
 			const auto r1x = Vector::axis_x () ;
 			const auto r2x = Vector::axis_y () ;
@@ -398,7 +394,7 @@ public:
 		}) ;
 	}
 
-	imports CREF<Matrix> axis_w () {
+	static CREF<Matrix> axis_w () {
 		return memorize ([&] () {
 			const auto r1x = Vector::zero () ;
 			const auto r2x = Vector::axis_w () ;
@@ -552,13 +548,9 @@ public:
 		thiz = smul (that) ;
 	}
 
-	Matrix plus () const {
-		MatrixLayout ret = MatrixHolder::hold (thiz)->plus () ;
+	Matrix sabs () const {
+		MatrixLayout ret = MatrixHolder::hold (thiz)->sabs () ;
 		return move (keep[TYPE<Matrix>::expr] (ret)) ;
-	}
-
-	forceinline Matrix operator+ () const {
-		return plus () ;
 	}
 
 	Matrix minus () const {
@@ -753,9 +745,10 @@ struct SVDResult {
 	Matrix mV ;
 } ;
 
-struct MatrixProcLayout implement ThisLayout<AutoRefLayout> {} ;
+struct MatrixProcLayout implement ThisLayout<RefLayout> {} ;
 
 struct MatrixProcHolder implement Interface {
+	imports CREF<MatrixProcLayout> instance () ;
 	imports VFat<MatrixProcHolder> hold (VREF<MatrixProcLayout> that) ;
 	imports CFat<MatrixProcHolder> hold (CREF<MatrixProcLayout> that) ;
 
@@ -770,23 +763,19 @@ protected:
 	using MatrixProcLayout::mThis ;
 
 public:
-	imports CREF<MatrixProc> instance () {
-		return memorize ([&] () {
-			MatrixProc ret ;
-			MatrixProcHolder::hold (ret)->initialize () ;
-			return move (ret) ;
-		}) ;
+	static CREF<MatrixProc> instance () {
+		return keep[TYPE<MatrixProc>::expr] (MatrixProcHolder::instance ()) ;
 	}
 
-	imports TRSResult solve_trs (CREF<Matrix> a) {
+	static TRSResult solve_trs (CREF<Matrix> a) {
 		return MatrixProcHolder::hold (instance ())->solve_trs (a) ;
 	}
 
-	imports KRTResult solve_krt (CREF<Matrix> a) {
+	static KRTResult solve_krt (CREF<Matrix> a) {
 		return MatrixProcHolder::hold (instance ())->solve_krt (a) ;
 	}
 
-	imports SVDResult solve_svd (CREF<Matrix> a) {
+	static SVDResult solve_svd (CREF<Matrix> a) {
 		return MatrixProcHolder::hold (instance ())->solve_svd (a) ;
 	}
 } ;
@@ -828,6 +817,10 @@ public:
 	}
 } ;
 
+struct QuaternionLayout {
+	Buffer<FLT64 ,RANK4> mQuaternion ;
+} ;
+
 struct QuaternionHolder implement Interface {
 	imports VFat<QuaternionHolder> hold (VREF<QuaternionLayout> that) ;
 	imports CFat<QuaternionHolder> hold (CREF<QuaternionLayout> that) ;
@@ -863,7 +856,7 @@ public:
 		QuaternionHolder::hold (thiz)->initialize (that) ;
 	}
 
-	imports CREF<Quaternion> identity () {
+	static CREF<Quaternion> identity () {
 		return memorize ([&] () {
 			return Quaternion (0 ,0 ,0 ,1) ;
 		}) ;
@@ -937,9 +930,10 @@ public:
 	}
 } ;
 
-struct LinearProcLayout implement ThisLayout<AutoRefLayout> {} ;
+struct LinearProcLayout implement ThisLayout<RefLayout> {} ;
 
 struct LinearProcHolder implement Interface {
+	imports CREF<LinearProcLayout> instance () ;
 	imports VFat<LinearProcHolder> hold (VREF<LinearProcLayout> that) ;
 	imports CFat<LinearProcHolder> hold (CREF<LinearProcLayout> that) ;
 
@@ -954,23 +948,19 @@ protected:
 	using LinearProcLayout::mThis ;
 
 public:
-	imports CREF<LinearProc> instance () {
-		return memorize ([&] () {
-			LinearProc ret ;
-			LinearProcHolder::hold (ret)->initialize () ;
-			return move (ret) ;
-		}) ;
+	static CREF<LinearProc> instance () {
+		return keep[TYPE<LinearProc>::expr] (LinearProcHolder::instance ()) ;
 	}
 
-	imports Image<FLT64> solve_lsm (CREF<Image<FLT64>> a) {
+	static Image<FLT64> solve_lsm (CREF<Image<FLT64>> a) {
 		return LinearProcHolder::hold (instance ())->solve_lsm (a) ;
 	}
 
-	imports Image<FLT64> solve_lsm (CREF<Image<FLT64>> a ,CREF<Image<FLT64>> b) {
+	static Image<FLT64> solve_lsm (CREF<Image<FLT64>> a ,CREF<Image<FLT64>> b) {
 		return LinearProcHolder::hold (instance ())->solve_lsm (a ,b) ;
 	}
 
-	imports Image<FLT64> solve_inv (CREF<Image<FLT64>> a) {
+	static Image<FLT64> solve_inv (CREF<Image<FLT64>> a) {
 		return LinearProcHolder::hold (instance ())->solve_inv (a) ;
 	}
 } ;

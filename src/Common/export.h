@@ -2,7 +2,7 @@
 
 namespace CSC3DCV {
 struct ConfigHolder implement Interface {	
-	imports DLLEXTERN AutoRef<ConfigHolder> DLLAPI create () ;
+	imports DLLEXTERN AutoRef<ConfigHolder> create () ;
 
 	virtual void initialize () = 0 ;
 } ;
@@ -14,9 +14,7 @@ public:
 	using ConfigLayout::mThis ;
 
 public:
-	implicit Config () = default ;
-
-	explicit Config (CREF<typeof (NULL)>) {
+	explicit Config () {
 		mThis = ConfigHolder::create () ;
 		mThis->initialize () ;
 	}

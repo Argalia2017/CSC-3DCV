@@ -7,7 +7,7 @@
 #include "csc_matrix.hpp"
 
 namespace CSC {
-class VectorImplHolder implement Fat<VectorHolder ,VectorLayout> {
+class VectorImplHolder final implement Fat<VectorHolder ,VectorLayout> {
 public:
 	void initialize (CREF<Buffer<FLT64 ,RANK4>> that) override {
 		fake.mVector[0] = that[0] ;
@@ -52,7 +52,7 @@ public:
 		return fake.mVector[y] ;
 	}
 
-	imports INDEX mm (CREF<INDEX> x ,CREF<INDEX> y) {
+	static INDEX mm (CREF<INDEX> x ,CREF<INDEX> y) {
 		return x + y * 4 ;
 	}
 
@@ -146,10 +146,10 @@ public:
 		return move (ret) ;
 	}
 
-	VectorLayout plus () const override {
+	VectorLayout sabs () const override {
 		VectorLayout ret ;
 		for (auto &&i : iter (0 ,4)) {
-			ret.mVector[i] = +fake.mVector[i] ;
+			ret.mVector[i] = MathProc::abs (fake.mVector[i]) ;
 		}
 		return move (ret) ;
 	}
@@ -210,7 +210,7 @@ exports CFat<VectorHolder> VectorHolder::hold (CREF<VectorLayout> that) {
 	return CFat<VectorHolder> (VectorImplHolder () ,that) ;
 }
 
-class MatrixImplHolder implement Fat<MatrixHolder ,MatrixLayout> {
+class MatrixImplHolder final implement Fat<MatrixHolder ,MatrixLayout> {
 public:
 	void initialize (CREF<Buffer<FLT64 ,ENUM<16>>> that) override {
 		for (auto &&i : iter (0 ,4 ,0 ,4)) {
@@ -240,7 +240,7 @@ public:
 		return fake.mMatrix[mm (x ,y)] ;
 	}
 
-	imports INDEX mm (CREF<INDEX> x ,CREF<INDEX> y) {
+	static INDEX mm (CREF<INDEX> x ,CREF<INDEX> y) {
 		return x + y * 4 ;
 	}
 
@@ -328,10 +328,10 @@ public:
 		return move (ret) ;
 	}
 
-	MatrixLayout plus () const override {
+	MatrixLayout sabs () const override {
 		MatrixLayout ret ;
 		for (auto &&i : iter (0 ,16)) {
-			ret.mMatrix[i] = +fake.mMatrix[i] ;
+			ret.mMatrix[i] = MathProc::abs (fake.mMatrix[i]) ;
 		}
 		return move (ret) ;
 	}
@@ -460,7 +460,7 @@ exports CFat<MatrixHolder> MatrixHolder::hold (CREF<MatrixLayout> that) {
 	return CFat<MatrixHolder> (MatrixImplHolder () ,that) ;
 }
 
-class MakeMatrixImplHolder implement Fat<MakeMatrixHolder ,MatrixLayout> {
+class MakeMatrixImplHolder final implement Fat<MakeMatrixHolder ,MatrixLayout> {
 public:
 	void DiagMatrix_initialize (CREF<FLT64> x ,CREF<FLT64> y ,CREF<FLT64> z ,CREF<FLT64> w) override {
 		Matrix ret = Matrix::zero () ;
@@ -684,15 +684,23 @@ exports CFat<MakeMatrixHolder> MakeMatrixHolder::hold (CREF<MatrixLayout> that) 
 
 template class External<MatrixProcHolder ,MatrixProcLayout> ;
 
+exports CREF<MatrixProcLayout> MatrixProcHolder::instance () {
+	return memorize ([&] () {
+		MatrixProcLayout ret ;
+		MatrixProcHolder::hold (ret)->initialize () ;
+		return move (ret) ;
+	}) ;
+}
+
 exports VFat<MatrixProcHolder> MatrixProcHolder::hold (VREF<MatrixProcLayout> that) {
-	return VFat<MatrixProcHolder> (External<MatrixProcHolder ,MatrixProcLayout>::instance () ,that) ;
+	return VFat<MatrixProcHolder> (External<MatrixProcHolder ,MatrixProcLayout>::linkage () ,that) ;
 }
 
 exports CFat<MatrixProcHolder> MatrixProcHolder::hold (CREF<MatrixProcLayout> that) {
-	return CFat<MatrixProcHolder> (External<MatrixProcHolder ,MatrixProcLayout>::instance () ,that) ;
+	return CFat<MatrixProcHolder> (External<MatrixProcHolder ,MatrixProcLayout>::linkage () ,that) ;
 }
 
-class DuplexMatrixImplHolder implement Fat<DuplexMatrixHolder ,DuplexMatrixLayout> {
+class DuplexMatrixImplHolder final implement Fat<DuplexMatrixHolder ,DuplexMatrixLayout> {
 public:
 	void initialize (CREF<Matrix> that) override {
 		fake.mDuplexMatrix[0] = that ;
@@ -726,7 +734,7 @@ exports CFat<DuplexMatrixHolder> DuplexMatrixHolder::hold (CREF<DuplexMatrixLayo
 	return CFat<DuplexMatrixHolder> (DuplexMatrixImplHolder () ,that) ;
 }
 
-class QuaternionImplHolder implement Fat<QuaternionHolder ,QuaternionLayout> {
+class QuaternionImplHolder final implement Fat<QuaternionHolder ,QuaternionLayout> {
 public:
 	void initialize (CREF<FLT64> x ,CREF<FLT64> y ,CREF<FLT64> z ,CREF<FLT64> w) override {
 		fake.mQuaternion[0] = x ;
@@ -861,7 +869,7 @@ public:
 		return move (ret) ;
 	}
 
-	imports Vector axis (CREF<QuaternionLayout> q) {
+	static Vector axis (CREF<QuaternionLayout> q) {
 		return Vector (q.mQuaternion[0] ,q.mQuaternion[1] ,q.mQuaternion[2] ,0) ;
 	}
 
@@ -894,26 +902,34 @@ exports CFat<QuaternionHolder> QuaternionHolder::hold (CREF<QuaternionLayout> th
 
 template class External<LinearProcHolder ,LinearProcLayout> ;
 
+exports CREF<LinearProcLayout> LinearProcHolder::instance () {
+	return memorize ([&] () {
+		LinearProcLayout ret ;
+		LinearProcHolder::hold (ret)->initialize () ;
+		return move (ret) ;
+	}) ;
+}
+
 exports VFat<LinearProcHolder> LinearProcHolder::hold (VREF<LinearProcLayout> that) {
-	return VFat<LinearProcHolder> (External<LinearProcHolder ,LinearProcLayout>::instance () ,that) ;
+	return VFat<LinearProcHolder> (External<LinearProcHolder ,LinearProcLayout>::linkage () ,that) ;
 }
 
 exports CFat<LinearProcHolder> LinearProcHolder::hold (CREF<LinearProcLayout> that) {
-	return CFat<LinearProcHolder> (External<LinearProcHolder ,LinearProcLayout>::instance () ,that) ;
+	return CFat<LinearProcHolder> (External<LinearProcHolder ,LinearProcLayout>::linkage () ,that) ;
 }
 
-class PointCloudImplHolder implement Fat<PointCloudHolder ,PointCloudLayout> {
+class PointCloudImplHolder final implement Fat<PointCloudHolder ,PointCloudLayout> {
 public:
 	void initialize (RREF<Ref<Array<Point2F>>> that) override {
 		fake.mRank = 2 ;
-		auto &&rax = keep[TYPE<RefLayout>::expr] (fake.mPointCloud) ;
+		auto &&rax = keep[TYPE<Ref<Array<Point2F>>>::expr] (Pointer::from (fake.mPointCloud)) ;
 		rax = move (that) ;
 		fake.mWorld = Matrix::identity () ;
 	}
 
 	void initialize (RREF<Ref<Array<Point3F>>> that) override {
 		fake.mRank = 3 ;
-		auto &&rax = keep[TYPE<RefLayout>::expr] (fake.mPointCloud) ;
+		auto &&rax = keep[TYPE<Ref<Array<Point3F>>>::expr] (Pointer::from (fake.mPointCloud)) ;
 		rax = move (that) ;
 		fake.mWorld = Matrix::identity () ;
 	}

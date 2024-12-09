@@ -12,7 +12,7 @@ public:
 
 } ;
 
-exports DLLEXTERN AutoRef<CameraOptimizerHolder> DLLAPI CameraOptimizerHolder::create () {
+exports DLLEXTERN AutoRef<CameraOptimizerHolder> CameraOptimizerHolder::create () {
 	return AutoRef<CameraOptimizerImplHolder>::make () ;
 }
 } ;

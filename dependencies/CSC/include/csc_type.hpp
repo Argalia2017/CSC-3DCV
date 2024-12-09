@@ -675,7 +675,7 @@ struct Interface {
 	forceinline VREF<Interface> operator= (RREF<Interface> that) = delete ;
 } ;
 
-struct UnknownFriend implement Interface {
+struct ReflectUnknown implement Interface {
 	virtual FLAG reflect (CREF<FLAG> uuid) const = 0 ;
 } ;
 
@@ -1043,10 +1043,10 @@ template <class A>
 using IS_TRIVIAL = typename IS_TRIVIAL_HELP<A ,ALWAYS>::RET ;
 
 template <class...>
-trait IS_COPYABLE_HELP ;
+trait IS_CLONEABLE_HELP ;
 
 template <class A>
-trait IS_COPYABLE_HELP<A ,ALWAYS> {
+trait IS_CLONEABLE_HELP<A ,ALWAYS> {
 	using R1X = MACRO_IS_COPY_CONSTRUCTIBLE<A> ;
 	using R2X = MACRO_IS_COPY_ASSIGNABLE<A> ;
 	using R3X = MACRO_IS_MOVE_CONSTRUCTIBLE<A> ;
@@ -1055,7 +1055,7 @@ trait IS_COPYABLE_HELP<A ,ALWAYS> {
 } ;
 
 template <class A>
-using IS_COPYABLE = typename IS_COPYABLE_HELP<A ,ALWAYS>::RET ;
+using IS_CLONEABLE = typename IS_CLONEABLE_HELP<A ,ALWAYS>::RET ;
 
 template <class...>
 trait IS_EQUALABLE_HELP ;
@@ -1138,13 +1138,14 @@ template <class A>
 using HAS_COMPR = typename HAS_COMPR_HELP<A ,ALWAYS>::RET ;
 
 struct VisitorFriend implement Interface {
+	virtual void reset () = 0 ;
 	virtual void enter () = 0 ;
 	virtual void leave () = 0 ;
+	virtual FLAG fetch () const = 0 ;
 	virtual void push (CREF<BYTE> a) = 0 ;
 	virtual void push (CREF<WORD> a) = 0 ;
 	virtual void push (CREF<CHAR> a) = 0 ;
 	virtual void push (CREF<QUAD> a) = 0 ;
-	virtual FLAG peek () const = 0 ;
 } ;
 
 template <class...>

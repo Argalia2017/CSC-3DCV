@@ -13,9 +13,12 @@
 #include "csc_stream.hpp"
 
 namespace CSC {
-struct StringProcLayout implement ThisLayout<AutoRefLayout> {} ;
+struct StringProcImplLayout ;
+
+struct StringProcLayout implement ThisLayout<Ref<StringProcImplLayout>> {} ;
 
 struct StringProcHolder implement Interface {
+	imports CREF<StringProcLayout> instance () ;
 	imports VFat<StringProcHolder> hold (VREF<StringProcLayout> that) ;
 	imports CFat<StringProcHolder> hold (CREF<StringProcLayout> that) ;
 
@@ -55,157 +58,120 @@ protected:
 	using StringProcLayout::mThis ;
 
 public:
-	imports CREF<StringProc> instance () {
-		return memorize ([&] () {
-			StringProc ret ;
-			StringProcHolder::hold (ret)->initialize () ;
-			return move (ret) ;
-		}) ;
+	static CREF<StringProc> instance () {
+		return keep[TYPE<StringProc>::expr] (StringProcHolder::instance ()) ;
 	}
 
-	imports String<STRA> stra_from_strw (CREF<String<STRW>> a) {
+	static String<STRA> stra_from_strw (CREF<String<STRW>> a) {
 		return StringProcHolder::hold (instance ())->stra_from_strw (a) ;
 	}
 
-	imports String<STRA> stra_from_strs (CREF<String<STR>> a) {
+	static String<STRA> stra_from_strs (CREF<String<STR>> a) {
 		return StringProcHolder::hold (instance ())->stra_from_strs (a) ;
 	}
 
-	imports String<STRW> strw_from_stra (CREF<String<STRA>> a) {
+	static String<STRW> strw_from_stra (CREF<String<STRA>> a) {
 		return StringProcHolder::hold (instance ())->strw_from_stra (a) ;
 	}
 
-	imports String<STRW> strw_from_strs (CREF<String<STR>> a) {
+	static String<STRW> strw_from_strs (CREF<String<STR>> a) {
 		return StringProcHolder::hold (instance ())->strw_from_strs (a) ;
 	}
 
-	imports String<STR> strs_from_stra (CREF<String<STRA>> a) {
+	static String<STR> strs_from_stra (CREF<String<STRA>> a) {
 		return StringProcHolder::hold (instance ())->strs_from_stra (a) ;
 	}
 
-	imports String<STR> strs_from_strw (CREF<String<STRW>> a) {
+	static String<STR> strs_from_strw (CREF<String<STRW>> a) {
 		return StringProcHolder::hold (instance ())->strs_from_strw (a) ;
 	}
 
-	imports String<STRU8> stru8_from_stru16 (CREF<String<STRU16>> a) {
+	static String<STRU8> stru8_from_stru16 (CREF<String<STRU16>> a) {
 		return StringProcHolder::hold (instance ())->stru8_from_stru16 (a) ;
 	}
 
-	imports String<STRU8> stru8_from_stru32 (CREF<String<STRU32>> a) {
+	static String<STRU8> stru8_from_stru32 (CREF<String<STRU32>> a) {
 		return StringProcHolder::hold (instance ())->stru8_from_stru32 (a) ;
 	}
 
-	imports String<STRU16> stru16_from_stru8 (CREF<String<STRU8>> a) {
+	static String<STRU16> stru16_from_stru8 (CREF<String<STRU8>> a) {
 		return StringProcHolder::hold (instance ())->stru16_from_stru8 (a) ;
 	}
 
-	imports String<STRU16> stru16_from_stru32 (CREF<String<STRU32>> a) {
+	static String<STRU16> stru16_from_stru32 (CREF<String<STRU32>> a) {
 		return StringProcHolder::hold (instance ())->stru16_from_stru32 (a) ;
 	}
 
-	imports String<STRU32> stru32_from_stru8 (CREF<String<STRU8>> a) {
+	static String<STRU32> stru32_from_stru8 (CREF<String<STRU8>> a) {
 		return StringProcHolder::hold (instance ())->stru32_from_stru8 (a) ;
 	}
 
-	imports String<STRU32> stru32_from_stru16 (CREF<String<STRU16>> a) {
+	static String<STRU32> stru32_from_stru16 (CREF<String<STRU16>> a) {
 		return StringProcHolder::hold (instance ())->stru32_from_stru16 (a) ;
 	}
 
-	imports String<STRUA> strua_from_stra (RREF<String<STRA>> a) {
+	static String<STRUA> strua_from_stra (RREF<String<STRA>> a) {
 		return StringProcHolder::hold (instance ())->strua_from_stra (move (a)) ;
 	}
 
-	imports String<STRA> stra_from_strua (RREF<String<STRUA>> a) {
+	static String<STRA> stra_from_strua (RREF<String<STRUA>> a) {
 		return StringProcHolder::hold (instance ())->stra_from_strua (move (a)) ;
 	}
 
-	imports String<STRUW> struw_from_strw (RREF<String<STRW>> a) {
+	static String<STRUW> struw_from_strw (RREF<String<STRW>> a) {
 		return StringProcHolder::hold (instance ())->struw_from_strw (move (a)) ;
 	}
 
-	imports String<STRW> strw_from_struw (RREF<String<STRUW>> a) {
+	static String<STRW> strw_from_struw (RREF<String<STRUW>> a) {
 		return StringProcHolder::hold (instance ())->strw_from_struw (move (a)) ;
 	}
 
-	imports String<STRA> stra_from_stru (CREF<String<STRU8>> a) {
+	static String<STRA> stra_from_stru (CREF<String<STRU8>> a) {
 		return StringProcHolder::hold (instance ())->stra_from_stru (a) ;
 	}
 
-	imports String<STRA> stra_from_stru (CREF<String<STRU16>> a) {
+	static String<STRA> stra_from_stru (CREF<String<STRU16>> a) {
 		return StringProcHolder::hold (instance ())->stra_from_stru (a) ;
 	}
 
-	imports String<STRA> stra_from_stru (CREF<String<STRU32>> a) {
+	static String<STRA> stra_from_stru (CREF<String<STRU32>> a) {
 		return StringProcHolder::hold (instance ())->stra_from_stru (a) ;
 	}
 
-	imports String<STRW> strw_from_stru (CREF<String<STRU8>> a) {
+	static String<STRW> strw_from_stru (CREF<String<STRU8>> a) {
 		return StringProcHolder::hold (instance ())->strw_from_stru (a) ;
 	}
 
-	imports String<STRW> strw_from_stru (CREF<String<STRU16>> a) {
+	static String<STRW> strw_from_stru (CREF<String<STRU16>> a) {
 		return StringProcHolder::hold (instance ())->strw_from_stru (a) ;
 	}
 
-	imports String<STRW> strw_from_stru (CREF<String<STRU32>> a) {
+	static String<STRW> strw_from_stru (CREF<String<STRU32>> a) {
 		return StringProcHolder::hold (instance ())->strw_from_stru (a) ;
 	}
 
-	imports String<STR> strs_from_stru (CREF<String<STRU8>> a) {
+	static String<STR> strs_from_stru (CREF<String<STRU8>> a) {
 		return StringProcHolder::hold (instance ())->strs_from_stru (a) ;
 	}
 
-	imports String<STR> strs_from_stru (CREF<String<STRU16>> a) {
+	static String<STR> strs_from_stru (CREF<String<STRU16>> a) {
 		return StringProcHolder::hold (instance ())->strs_from_stru (a) ;
 	}
 
-	imports String<STR> strs_from_stru (CREF<String<STRU32>> a) {
+	static String<STR> strs_from_stru (CREF<String<STRU32>> a) {
 		return StringProcHolder::hold (instance ())->strs_from_stru (a) ;
 	}
 
-	imports String<STRU8> stru8_from_strw (CREF<String<STRW>> a) {
+	static String<STRU8> stru8_from_strw (CREF<String<STRW>> a) {
 		return StringProcHolder::hold (instance ())->stru8_from_strw (a) ;
 	}
 
-	imports String<STRU16> stru16_from_strw (CREF<String<STRW>> a) {
+	static String<STRU16> stru16_from_strw (CREF<String<STRW>> a) {
 		return StringProcHolder::hold (instance ())->stru16_from_strw (a) ;
 	}
 
-	imports String<STRU32> stru32_from_strw (CREF<String<STRW>> a) {
+	static String<STRU32> stru32_from_strw (CREF<String<STRW>> a) {
 		return StringProcHolder::hold (instance ())->stru32_from_strw (a) ;
-	}
-} ;
-
-struct RegexImplLayout ;
-
-struct RegexLayout implement ThisLayout<AutoRef<RegexImplLayout>> {} ;
-
-struct RegexHolder implement Interface {
-	imports VFat<RegexHolder> hold (VREF<RegexLayout> that) ;
-	imports CFat<RegexHolder> hold (CREF<RegexLayout> that) ;
-
-	virtual void initialize (CREF<String<STR>> format) = 0 ;
-	virtual INDEX search (CREF<String<STR>> text ,CREF<INDEX> offset) = 0 ;
-	virtual String<STR> match (CREF<INDEX> index) const = 0 ;
-} ;
-
-class Regex implement RegexLayout {
-protected:
-	using RegexLayout::mThis ;
-
-public:
-	implicit Regex () = default ;
-
-	explicit Regex (CREF<String<STR>> format) {
-		RegexHolder::hold (thiz)->initialize (format) ;
-	}
-
-	INDEX search (CREF<String<STR>> text ,CREF<INDEX> offset) {
-		return RegexHolder::hold (thiz)->search (text ,offset) ;
-	}
-
-	String<STR> match (CREF<INDEX> index) const {
-		return RegexHolder::hold (thiz)->match (index) ;
 	}
 } ;
 

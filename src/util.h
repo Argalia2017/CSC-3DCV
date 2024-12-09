@@ -11,11 +11,17 @@
 #include <csc_stream.hpp>
 #include <csc_string.hpp>
 #include <csc_runtime.hpp>
+#include <csc_file.hpp>
 #include <csc_thread.hpp>
 
 #ifndef DLLEXTERN
+#ifdef __CSC_COMPILER_MSVC__
 #define DLLEXTERN __declspec (dllexport)
-#define DLLAPI __stdcall
+#endif
+
+#ifdef __CSC_COMPILER_GNUC__
+#define DLLEXTERN __attribute__ ((visibility("default")))
+#endif
 #endif
 
 namespace CSC3DCV {

@@ -9,9 +9,7 @@
 #include "csc_end.h"
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <clocale>
-#include <exception>
 #include <ctime>
 #include <chrono>
 #include <mutex>
@@ -61,7 +59,7 @@ struct TimeImplLayout {
 	std::chrono::system_clock::duration mTime ;
 } ;
 
-class TimeImplHolder implement Fat<TimeHolder ,TimeLayout> {
+class TimeImplHolder final implement Fat<TimeHolder ,TimeLayout> {
 public:
 	void initialize (CREF<LENGTH> milliseconds_) override {
 		fake.mThis = Box<TimeImplLayout>::make () ;
@@ -97,7 +95,7 @@ public:
 		fake.mThis->mTime = that.mThis->mTime ;
 	}
 
-	Ref<TimeImplLayout> borrow () const override {
+	Ref<TimeImplLayout> borrow () const leftvalue override {
 		assert (fake.mThis.exist ()) ;
 		return Ref<TimeImplLayout>::reference (fake.mThis.self) ;
 	}
@@ -173,7 +171,7 @@ exports CFat<TimeHolder> TimeHolder::hold (CREF<TimeLayout> that) {
 	return CFat<TimeHolder> (TimeImplHolder () ,that) ;
 }
 
-class MakeTimeImplHolder implement Fat<MakeTimeHolder ,TimeLayout> {
+class MakeTimeImplHolder final implement Fat<MakeTimeHolder ,TimeLayout> {
 public:
 	void CurrentTime_initialize () override {
 		fake.mThis = Box<TimeImplLayout>::make () ;
@@ -192,54 +190,64 @@ exports CFat<MakeTimeHolder> MakeTimeHolder::hold (CREF<TimeLayout> that) {
 
 template class External<RuntimeProcHolder ,RuntimeProcLayout> ;
 
+exports CREF<RuntimeProcLayout> RuntimeProcHolder::instance () {
+	return memorize ([&] () {
+		RuntimeProcLayout ret ;
+		RuntimeProcHolder::hold (ret)->initialize () ;
+		return move (ret) ;
+	}) ;
+}
+
 exports VFat<RuntimeProcHolder> RuntimeProcHolder::hold (VREF<RuntimeProcLayout> that) {
-	return VFat<RuntimeProcHolder> (External<RuntimeProcHolder ,RuntimeProcLayout>::instance () ,that) ;
+	return VFat<RuntimeProcHolder> (External<RuntimeProcHolder ,RuntimeProcLayout>::linkage () ,that) ;
 }
 
 exports CFat<RuntimeProcHolder> RuntimeProcHolder::hold (CREF<RuntimeProcLayout> that) {
-	return CFat<RuntimeProcHolder> (External<RuntimeProcHolder ,RuntimeProcLayout>::instance () ,that) ;
+	return CFat<RuntimeProcHolder> (External<RuntimeProcHolder ,RuntimeProcLayout>::linkage () ,that) ;
 }
 
 struct AtomicImplLayout {
-	Pin<std::atomic<VAL>> mValue ;
+	Pin<std::atomic<VAL>> mAtomic ;
 } ;
 
-class AtomicImplHolder implement Fat<AtomicHolder ,AtomicLayout> {
+class AtomicImplHolder final implement Fat<AtomicHolder ,AtomicLayout> {
 public:
 	void initialize () override {
 		fake.mThis = Box<AtomicImplLayout>::make () ;
-		fake.mThis->mValue.self = 0 ;
+		store (ZERO) ;
+	}
+
+	static VREF<std::atomic<VAL>> ptr (CREF<AtomicLayout> layout) {
+		return layout.mThis->mAtomic.self ;
 	}
 
 	VAL fetch () const override {
-		if (fake.mThis == NULL)
-			return 0 ;
-		return fake.mThis->mValue->load (std::memory_order_relaxed) ;
+		return ptr (fake).load (std::memory_order_relaxed) ;
 	}
 
 	void store (CREF<VAL> item) const override {
-		return fake.mThis->mValue->store (item ,std::memory_order_relaxed) ;
+		return ptr (fake).store (item ,std::memory_order_relaxed) ;
 	}
 
 	VAL exchange (CREF<VAL> item) const override {
-		return fake.mThis->mValue->exchange (item ,std::memory_order_relaxed) ;
+		return ptr (fake).exchange (item ,std::memory_order_relaxed) ;
 	}
 
 	BOOL change (VREF<VAL> expect ,CREF<VAL> item) const override {
-		return fake.mThis->mValue->compare_exchange_weak (expect ,item ,std::memory_order_relaxed) ;
+		return ptr (fake).compare_exchange_weak (expect ,item ,std::memory_order_relaxed) ;
 	}
 
 	void replace (CREF<VAL> expect ,CREF<VAL> item) const override {
 		auto rax = expect ;
-		fake.mThis->mValue->compare_exchange_strong (rax ,item ,std::memory_order_relaxed) ;
+		ptr (fake).compare_exchange_strong (rax ,item ,std::memory_order_relaxed) ;
 	}
 
 	void increase () const override {
-		fake.mThis->mValue->fetch_add (1 ,std::memory_order_relaxed) ;
+		ptr (fake).fetch_add (1 ,std::memory_order_relaxed) ;
 	}
 
 	void decrease () const override {
-		fake.mThis->mValue->fetch_sub (1 ,std::memory_order_relaxed) ;
+		ptr (fake).fetch_sub (1 ,std::memory_order_relaxed) ;
 	}
 } ;
 
@@ -253,8 +261,9 @@ exports CFat<AtomicHolder> AtomicHolder::hold (CREF<AtomicLayout> that) {
 
 struct MutexType {
 	enum {
-		Mutex ,
-		Recursive ,
+		Basic ,
+		Once ,
+		OnceDone ,
 		Shared ,
 		Unique ,
 		ETC
@@ -263,51 +272,43 @@ struct MutexType {
 
 struct MutexImplLayout {
 	Just<MutexType> mType ;
-	Pin<Box<std::mutex>> mMutex ;
-	Pin<Box<std::recursive_mutex>> mRecursive ;
+	Box<std::mutex> mBasic ;
 	Atomic mShared ;
-	Pin<Box<std::condition_variable>> mUnique ;
+	Box<std::condition_variable> mUnique ;
 } ;
 
-class MutexImplHolder implement Fat<MutexHolder ,MutexLayout> {
+class MutexImplHolder final implement Fat<MutexHolder ,MutexLayout> {
 public:
 	void initialize () override {
-		fake.mThis = AutoRef<MutexImplLayout>::make () ;
-		fake.mThis->mType = MutexType::Mutex ;
-		fake.mThis->mMutex->remake () ;
+		fake.mThis = SharedRef<MutexImplLayout>::make () ;
+		fake.mThis->mType = MutexType::Basic ;
+		fake.mThis->mBasic.remake () ;
 	}
 
-	Ref<MutexImplLayout> borrow () const override {
+	Ref<MutexImplLayout> borrow () const leftvalue override {
 		assert (fake.mThis.exist ()) ;
 		return Ref<MutexImplLayout>::reference (fake.mThis.self) ;
 	}
 
 	void enter () const override {
-		if (!fake.mThis.exist ())
+		if (done ())
 			return ;
-		auto act = TRUE ;
-		if ifdo (act) {
-			if (fake.mThis->mType != MutexType::Recursive)
-				discard ;
-			fake.mThis->mRecursive->self.lock () ;
-		}
-		if ifdo (act) {
-			fake.mThis->mMutex->self.lock () ;
-		}
+		fake.mThis->mBasic->lock () ;
 	}
 
 	void leave () const override {
-		if (!fake.mThis.exist ())
+		if (done ())
 			return ;
-		auto act = TRUE ;
-		if ifdo (act) {
-			if (fake.mThis->mType != MutexType::Recursive)
-				discard ;
-			fake.mThis->mRecursive->self.unlock () ;
-		}
-		if ifdo (act) {
-			fake.mThis->mMutex->self.unlock () ;
-		}
+		replace (fake.mThis->mType ,FLAG (MutexType::Once) ,MutexType::OnceDone) ;
+		fake.mThis->mBasic->unlock () ;
+	}
+
+	BOOL done () const override {
+		if (!fake.mThis.exist ())
+			return TRUE ;
+		if (fake.mThis->mType == MutexType::OnceDone)
+			return TRUE ;
+		return FALSE ;
 	}
 } ;
 
@@ -319,25 +320,26 @@ exports CFat<MutexHolder> MutexHolder::hold (CREF<MutexLayout> that) {
 	return CFat<MutexHolder> (MutexImplHolder () ,that) ;
 }
 
-class MakeMutexImplHolder implement Fat<MakeMutexHolder ,MutexLayout> {
+class MakeMutexImplHolder final implement Fat<MakeMutexHolder ,MutexLayout> {
 public:
-	void RecursiveMutex_initialize () override {
-		fake.mThis = AutoRef<MutexImplLayout>::make () ;
-		fake.mThis->mType = MutexType::Recursive ;
-		fake.mThis->mRecursive->remake () ;
+	void OnceMutex_initialize () override {
+		fake.mThis = SharedRef<MutexImplLayout>::make () ;
+		fake.mThis->mType = MutexType::Once ;
+		fake.mThis->mBasic.remake () ;
 	}
 
 	void SharedMutex_initialize () override {
-		fake.mThis = AutoRef<MutexImplLayout>::make () ;
+		fake.mThis = SharedRef<MutexImplLayout>::make () ;
 		fake.mThis->mType = MutexType::Shared ;
+		fake.mThis->mBasic.remake () ;
 		fake.mThis->mShared = NULL ;
 	}
 
 	void UniqueMutex_initialize () override {
-		fake.mThis = AutoRef<MutexImplLayout>::make () ;
+		fake.mThis = SharedRef<MutexImplLayout>::make () ;
 		fake.mThis->mType = MutexType::Unique ;
-		fake.mThis->mMutex->remake () ;
-		fake.mThis->mUnique->remake () ;
+		fake.mThis->mBasic.remake () ;
+		fake.mThis->mUnique.remake () ;
 	}
 } ;
 
@@ -354,7 +356,7 @@ protected:
 	Atomic mThat ;
 
 public:
-	imports VREF<SharedAtomicMutex> from (VREF<Atomic> that) {
+	static VREF<SharedAtomicMutex> from (VREF<Atomic> that) {
 		return Pointer::from (that) ;
 	}
 
@@ -372,23 +374,26 @@ struct SharedLockImplLayout {
 	std::unique_lock<SharedAtomicMutex> mLock ;
 } ;
 
-class SharedLockImplHolder implement Fat<SharedLockHolder ,SharedLockLayout> {
+class SharedLockImplHolder final implement Fat<SharedLockHolder ,SharedLockLayout> {
 public:
 	void initialize (CREF<Mutex> mutex) override {
 		fake.mThis = Box<SharedLockImplLayout>::make () ;
 		fake.mThis->mMutex = mutex.borrow () ;
-		assert (fake.mThis->mMutex->mType == MutexType::Shared) ;
+		assert (ptr (fake).mType == MutexType::Shared) ;
 		shared_enter () ;
-		auto &&rax = fake.mThis->mMutex.leak () ;
-		fake.mThis->mLock = std::unique_lock<SharedAtomicMutex> (SharedAtomicMutex::from (rax.mShared)) ;
+		fake.mThis->mLock = std::unique_lock<SharedAtomicMutex> (SharedAtomicMutex::from (ptr (fake).mShared)) ;
+	}
+
+	static VREF<MutexImplLayout> ptr (CREF<SharedLockLayout> layout) {
+		return layout.mThis->mMutex.pin ().self ;
 	}
 
 	void shared_enter () {
 		if ifdo (TRUE) {
-			auto rax = fake.mThis->mMutex->mShared.fetch () ;
+			auto rax = ptr (fake).mShared.fetch () ;
 			while (TRUE) {
 				rax = MathProc::abs (rax) ;
-				const auto r1x = fake.mThis->mMutex->mShared.change (rax ,rax + 1) ;
+				const auto r1x = ptr (fake).mShared.change (rax ,rax + 1) ;
 				if (r1x)
 					break ;
 				RuntimeProc::thread_yield () ;
@@ -398,17 +403,17 @@ public:
 	}
 
 	BOOL busy () const override {
-		return fake.mThis->mMutex->mShared.fetch () != IDEN ;
+		return ptr (fake).mShared.fetch () != IDEN ;
 	}
 
 	void enter () const override {
-		fake.mThis->mMutex->mShared.decrease () ;
-		fake.mThis->mMutex->mMutex->self.lock () ;
+		ptr (fake).mShared.decrease () ;
+		ptr (fake).mBasic->lock () ;
 		if ifdo (TRUE) {
 			auto rax = ZERO ;
 			while (TRUE) {
 				rax = ZERO ;
-				const auto r1x = fake.mThis->mMutex->mShared.change (rax ,NONE) ;
+				const auto r1x = ptr (fake).mShared.change (rax ,NONE) ;
 				if (r1x)
 					break ;
 				RuntimeProc::thread_yield () ;
@@ -418,8 +423,8 @@ public:
 
 	void leave () const override {
 		std::atomic_thread_fence (std::memory_order_release) ;
-		fake.mThis->mMutex->mShared.replace (NONE ,IDEN) ;
-		fake.mThis->mMutex->mMutex->self.unlock () ;
+		ptr (fake).mShared.replace (NONE ,IDEN) ;
+		ptr (fake).mBasic->unlock () ;
 	}
 } ;
 
@@ -436,32 +441,36 @@ struct UniqueLockImplLayout {
 	std::unique_lock<std::mutex> mLock ;
 } ;
 
-class UniqueLockImplHolder implement Fat<UniqueLockHolder ,UniqueLockLayout> {
+class UniqueLockImplHolder final implement Fat<UniqueLockHolder ,UniqueLockLayout> {
 public:
 	void initialize (CREF<Mutex> mutex) override {
 		fake.mThis = Box<UniqueLockImplLayout>::make () ;
 		fake.mThis->mMutex = mutex.borrow () ;
-		assert (fake.mThis->mMutex->mType == MutexType::Unique) ;
-		fake.mThis->mLock = std::unique_lock<std::mutex> (fake.mThis->mMutex->mMutex->self) ;
+		assert (ptr (fake).mType == MutexType::Unique) ;
+		fake.mThis->mLock = std::unique_lock<std::mutex> (ptr (fake).mBasic.self) ;
+	}
+
+	static VREF<MutexImplLayout> ptr (CREF<UniqueLockLayout> layout) {
+		return layout.mThis->mMutex.pin ().self ;
 	}
 
 	void wait () override {
-		fake.mThis->mMutex->mUnique->self.wait (fake.mThis->mLock) ;
+		ptr (fake).mUnique->wait (fake.mThis->mLock) ;
 	}
 
 	void wait (CREF<Time> time) override {
 		const auto r1x = time.borrow () ;
-		fake.mThis->mMutex->mUnique->self.wait_for (fake.mThis->mLock ,r1x->mTime) ;
+		ptr (fake).mUnique->wait_for (fake.mThis->mLock ,r1x->mTime) ;
 	}
 
 	void notify () override {
-		fake.mThis->mMutex->mUnique->self.notify_all () ;
+		ptr (fake).mUnique->notify_all () ;
 	}
 
 	void yield () override {
 		fake.mThis->mLock = std::unique_lock<std::mutex> () ;
 		std::this_thread::yield () ;
-		fake.mThis->mLock = std::unique_lock<std::mutex> (fake.mThis->mMutex->mMutex->self) ;
+		fake.mThis->mLock = std::unique_lock<std::mutex> (ptr (fake).mBasic.self) ;
 	}
 } ;
 
@@ -474,15 +483,22 @@ exports CFat<UniqueLockHolder> UniqueLockHolder::hold (CREF<UniqueLockLayout> th
 }
 
 struct ThreadImplLayout {
-	Ref<ThreadFriend> mExecutor ;
+	Ref<VFat<ThreadFriend>> mExecutor ;
 	FLAG mUid ;
 	INDEX mSlot ;
-	std::thread mThread ;
+	Box<std::thread> mThread ;
+
+public:
+	implicit ThreadImplLayout () = default ;
+
+	implicit ~ThreadImplLayout () noexcept {
+		assert (mThread == NULL) ;
+	}
 } ;
 
-class ThreadImplHolder implement Fat<ThreadHolder ,ThreadLayout> {
+class ThreadImplHolder final implement Fat<ThreadHolder ,ThreadLayout> {
 public:
-	void initialize (RREF<Ref<ThreadFriend>> executor ,CREF<INDEX> slot) override {
+	void initialize (RREF<Ref<VFat<ThreadFriend>>> executor ,CREF<INDEX> slot) override {
 		fake.mThis = AutoRef<ThreadImplLayout>::make () ;
 		fake.mThis->mExecutor = move (executor) ;
 		fake.mThis->mUid = ZERO ;
@@ -495,18 +511,19 @@ public:
 
 	void start () override {
 		auto &&rax = fake.mThis.self ;
-		fake.mThis->mThread = std::thread ([&] () {
+		fake.mThis->mThread = Box<std::thread>::make ([&] () {
 			rax.mUid = RuntimeProc::thread_uid () ;
-			auto &&rbx = rax.mExecutor.leak () ;
-			rbx.friend_execute (rax.mSlot) ;
+			rax.mExecutor->self.friend_execute (rax.mSlot) ;
 		}) ;
 	}
 
 	void stop () override {
 		if (!fake.mThis.exist ())
 			return ;
-		fake.mThis->mThread.join () ;
-		fake.mThis->mThread = std::thread () ;
+		if (fake.mThis->mThread == NULL)
+			return ;
+		fake.mThis->mThread->join () ;
+		fake.mThis->mThread = NULL ;
 	}
 } ;
 
@@ -521,32 +538,36 @@ exports CFat<ThreadHolder> ThreadHolder::hold (CREF<ThreadLayout> that) {
 template class External<ProcessHolder ,ProcessLayout> ;
 
 exports VFat<ProcessHolder> ProcessHolder::hold (VREF<ProcessLayout> that) {
-	return VFat<ProcessHolder> (External<ProcessHolder ,ProcessLayout>::instance () ,that) ;
+	return VFat<ProcessHolder> (External<ProcessHolder ,ProcessLayout>::linkage () ,that) ;
 }
 
 exports CFat<ProcessHolder> ProcessHolder::hold (CREF<ProcessLayout> that) {
-	return CFat<ProcessHolder> (External<ProcessHolder ,ProcessLayout>::instance () ,that) ;
+	return CFat<ProcessHolder> (External<ProcessHolder ,ProcessLayout>::linkage () ,that) ;
 }
 
-template class External<ModuleHolder ,ModuleLayout> ;
+template class External<LibraryHolder ,LibraryLayout> ;
 
-exports VFat<ModuleHolder> ModuleHolder::hold (VREF<ModuleLayout> that) {
-	return VFat<ModuleHolder> (External<ModuleHolder ,ModuleLayout>::instance () ,that) ;
+exports VFat<LibraryHolder> LibraryHolder::hold (VREF<LibraryLayout> that) {
+	return VFat<LibraryHolder> (External<LibraryHolder ,LibraryLayout>::linkage () ,that) ;
 }
 
-exports CFat<ModuleHolder> ModuleHolder::hold (CREF<ModuleLayout> that) {
-	return CFat<ModuleHolder> (External<ModuleHolder ,ModuleLayout>::instance () ,that) ;
+exports CFat<LibraryHolder> LibraryHolder::hold (CREF<LibraryLayout> that) {
+	return CFat<LibraryHolder> (External<LibraryHolder ,LibraryLayout>::linkage () ,that) ;
 }
 
-class SystemImplHolder implement Fat<SystemHolder ,SystemLayout> {
+struct SystemImplLayout {
+	std::locale mLocale ;
+} ;
+
+class SystemImplHolder final implement Fat<SystemHolder ,SystemLayout> {
 public:
 	void initialize () override {
-		noop () ;
+		fake.mThis = AutoRef<SystemImplLayout>::make () ;
 	}
 
-	void set_locale (CREF<String<STR>> name) const override {
+	void set_locale (CREF<String<STR>> name) override {
 		const auto r1x = StringProc::stra_from_strs (name) ;
-		std::setlocale (LC_ALL ,r1x) ;
+		fake.mThis->mLocale = std::locale (r1x) ;
 	}
 
 	FLAG execute (CREF<String<STR>> command) const override {
@@ -571,18 +592,23 @@ struct RandomNormal {
 
 struct RandomImplLayout {
 	FLAG mSeed ;
-	Pin<std::mt19937_64> mRandom ;
-	SharedRef<RandomNormal> mNormal ;
+	Box<std::mt19937_64> mRandom ;
+	RandomNormal mNormal ;
 } ;
 
-class RandomImplHolder implement Fat<RandomHolder ,RandomLayout> {
+class RandomImplHolder final implement Fat<RandomHolder ,RandomLayout> {
 public:
+	void initialize () override {
+		const auto r1x = invoke (std::random_device ()) ;
+		initialize (r1x) ;
+	}
+
 	void initialize (CREF<FLAG> seed) override {
-		fake.mThis = AutoRef<RandomImplLayout>::make () ;
+		fake.mThis = SharedRef<RandomImplLayout>::make () ;
 		fake.mThis->mSeed = seed ;
+		fake.mThis->mRandom.remake () ;
 		fake.mThis->mRandom.self = std::mt19937_64 (seed) ;
-		fake.mThis->mNormal = SharedRef<RandomNormal>::make () ;
-		fake.mThis->mNormal->mOdd = FALSE ;
+		fake.mThis->mNormal.mOdd = FALSE ;
 	}
 
 	FLAG seed () const override {
@@ -596,8 +622,9 @@ public:
 	INDEX random_value (CREF<INDEX> lb ,CREF<INDEX> rb) const override {
 		assert (lb <= rb) ;
 		const auto r1x = VAL64 (rb) - VAL64 (lb) + 1 ;
-		const auto r2x = VAL64 (random_byte () & QUAD (VAL64_MAX)) ;
-		return INDEX (r2x % r1x + lb) ;
+		const auto r2x = VAL64 (random_byte ()) & VAL64_MAX ;
+		const auto r3x = INDEX (r2x % r1x) + lb ;
+		return r3x ;
 	}
 
 	Array<INDEX> random_shuffle (CREF<LENGTH> length_ ,CREF<LENGTH> size_) const override {
@@ -656,7 +683,7 @@ public:
 
 	FLT64 random_normal () const override {
 		if ifdo (TRUE) {
-			if (fake.mThis->mNormal->mOdd)
+			if (fake.mThis->mNormal.mOdd)
 				discard ;
 			const auto r1x = random_value (1 ,10000) ;
 			const auto r2x = FLT64 (r1x) * MathProc::inverse (FLT64 (10000)) ;
@@ -664,13 +691,13 @@ public:
 			const auto r4x = FLT64 (r3x) * MathProc::inverse (FLT64 (10000)) ;
 			const auto r5x = MathProc::sqrt (FLT64 (-2) * MathProc::log (r2x)) ;
 			const auto r6x = MATH_PI * 2 * r4x ;
-			fake.mThis->mNormal->mNX = r5x * MathProc::cos (r6x) ;
-			fake.mThis->mNormal->mNY = r5x * MathProc::sin (r6x) ;
-			fake.mThis->mNormal->mOdd = TRUE ;
-			return fake.mThis->mNormal->mNX ;
+			fake.mThis->mNormal.mNX = r5x * MathProc::cos (r6x) ;
+			fake.mThis->mNormal.mNY = r5x * MathProc::sin (r6x) ;
+			fake.mThis->mNormal.mOdd = TRUE ;
+			return fake.mThis->mNormal.mNX ;
 		}
-		fake.mThis->mNormal->mOdd = FALSE ;
-		return fake.mThis->mNormal->mNY ;
+		fake.mThis->mNormal.mOdd = FALSE ;
+		return fake.mThis->mNormal.mNY ;
 	}
 } ;
 
@@ -684,31 +711,21 @@ exports CFat<RandomHolder> RandomHolder::hold (CREF<RandomLayout> that) {
 
 template class External<SingletonProcHolder ,SingletonProcLayout> ;
 
+exports CREF<SingletonProcLayout> SingletonProcHolder::instance () {
+	return memorize ([&] () {
+		SingletonProcLayout ret ;
+		SingletonProcHolder::hold (ret)->initialize () ;
+		return move (ret) ;
+	}) ;
+}
+
 exports VFat<SingletonProcHolder> SingletonProcHolder::hold (VREF<SingletonProcLayout> that) {
-	return VFat<SingletonProcHolder> (External<SingletonProcHolder ,SingletonProcLayout>::instance () ,that) ;
+	return VFat<SingletonProcHolder> (External<SingletonProcHolder ,SingletonProcLayout>::linkage () ,that) ;
 }
 
 exports CFat<SingletonProcHolder> SingletonProcHolder::hold (CREF<SingletonProcLayout> that) {
-	return CFat<SingletonProcHolder> (External<SingletonProcHolder ,SingletonProcLayout>::instance () ,that) ;
+	return CFat<SingletonProcHolder> (External<SingletonProcHolder ,SingletonProcLayout>::linkage () ,that) ;
 }
-
-#ifdef __CSC_SYSTEM_WINDOWS__
-struct FUNCTION_dump_memory_leaks {
-	forceinline void operator() () const {
-		_CrtSetDbgFlag (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF) ;
-	}
-} ;
-#endif
-
-#ifdef __CSC_SYSTEM_LINUX__
-struct FUNCTION_dump_memory_leaks {
-	forceinline void operator() () const {
-		noop () ;
-	}
-} ;
-#endif
-
-static constexpr auto dump_memory_leaks = FUNCTION_dump_memory_leaks () ;
 
 struct GlobalNode {
 	FLAG mHolder ;
@@ -719,19 +736,22 @@ struct GlobalImplLayout {
 	Mutex mMutex ;
 	Set<Slice> mGlobalNameSet ;
 	List<GlobalNode> mGlobalList ;
+	BOOL mFinalize ;
 } ;
 
-class GlobalImplHolder implement Fat<GlobalHolder ,GlobalLayout> {
+class GlobalImplHolder final implement Fat<GlobalHolder ,GlobalLayout> {
 public:
 	void initialize () override {
 		fake.mThis = SharedRef<GlobalImplLayout>::make () ;
-		fake.mThis->mMutex = RecursiveMutex () ;
+		fake.mThis->mMutex = NULL ;
+		fake.mThis->mFinalize = FALSE ;
 		fake.mIndex = NONE ;
-		dump_memory_leaks () ;
 	}
 
-	void initialize (CREF<Slice> name ,CREF<Unknown> holder ,CREF<GlobalLayout> root) override {
-		fake.mThis = root.mThis ;
+	void initialize (CREF<Slice> name ,CREF<Unknown> holder) override {
+		fake.mThis = Singleton<GlobalRoot>::instance ().mThis ;
+		assert (!fake.mThis->mFinalize) ;
+		Scope<Mutex> anonymous (fake.mThis->mMutex) ;
 		INDEX ix = fake.mThis->mGlobalNameSet.map (name) ;
 		if ifdo (TRUE) {
 			if (ix != NONE)
@@ -742,6 +762,18 @@ public:
 		}
 		fake.mIndex = ix ;
 		ClazzHolder::hold (fake.mClazz)->initialize (holder) ;
+	}
+
+	void startup () const override {
+		auto &&rax = Singleton<GlobalRoot>::instance ().mThis.self ;
+		assume (!rax.mFinalize) ;
+	}
+
+	void shutdown () const override {
+		auto &&rax = Singleton<GlobalRoot>::instance ().mThis.self ;
+		rax.mFinalize = TRUE ;
+		rax.mGlobalNameSet.clear () ;
+		rax.mGlobalList.clear () ;
 	}
 
 	BOOL exist () const override {
@@ -771,141 +803,19 @@ public:
 	}
 } ;
 
+exports CREF<GlobalLayout> GlobalHolder::instance () {
+	return memorize ([&] () {
+		GlobalLayout ret ;
+		GlobalHolder::hold (ret)->initialize () ;
+		return move (ret) ;
+	}) ;
+}
+
 exports VFat<GlobalHolder> GlobalHolder::hold (VREF<GlobalLayout> that) {
 	return VFat<GlobalHolder> (GlobalImplHolder () ,that) ;
 }
 
 exports CFat<GlobalHolder> GlobalHolder::hold (CREF<GlobalLayout> that) {
 	return CFat<GlobalHolder> (GlobalImplHolder () ,that) ;
-}
-
-template class External<PathHolder ,PathLayout> ;
-
-exports VFat<PathHolder> PathHolder::hold (VREF<PathLayout> that) {
-	return VFat<PathHolder> (External<PathHolder ,PathLayout>::instance () ,that) ;
-}
-
-exports CFat<PathHolder> PathHolder::hold (CREF<PathLayout> that) {
-	return CFat<PathHolder> (External<PathHolder ,PathLayout>::instance () ,that) ;
-}
-
-template class External<FileProcHolder ,FileProcLayout> ;
-
-exports VFat<FileProcHolder> FileProcHolder::hold (VREF<FileProcLayout> that) {
-	return VFat<FileProcHolder> (External<FileProcHolder ,FileProcLayout>::instance () ,that) ;
-}
-
-exports CFat<FileProcHolder> FileProcHolder::hold (CREF<FileProcLayout> that) {
-	return CFat<FileProcHolder> (External<FileProcHolder ,FileProcLayout>::instance () ,that) ;
-}
-
-template class External<StreamFileHolder ,StreamFileLayout> ;
-
-exports VFat<StreamFileHolder> StreamFileHolder::hold (VREF<StreamFileLayout> that) {
-	return VFat<StreamFileHolder> (External<StreamFileHolder ,StreamFileLayout>::instance () ,that) ;
-}
-
-exports CFat<StreamFileHolder> StreamFileHolder::hold (CREF<StreamFileLayout> that) {
-	return CFat<StreamFileHolder> (External<StreamFileHolder ,StreamFileLayout>::instance () ,that) ;
-}
-
-class StreamFileByteWriterImplHolder implement Fat<StreamFileByteWriterHolder ,StreamFileByteWriterLayout> {
-private:
-	using STREAM_FILE_BUFFER_SIZE = ENUM<4096> ;
-
-public:
-	void initialize (CREF<String<STR>> file) override {
-		fake.mFile = StreamFile (file) ;
-		fake.mFile.open_w (0) ;
-		fake.mFileBuffer = RefBuffer<BYTE> (STREAM_FILE_BUFFER_SIZE::expr) ;
-		set_writer (fake) ;
-	}
-
-	void set_writer (VREF<ByteWriter> writer) {
-		writer = ByteWriter (Ref<RefBuffer<BYTE>>::reference (fake.mFileBuffer)) ;
-		fake.use_overflow ([&] (VREF<ByteWriter> writer) {
-			auto &&rax = keep[TYPE<StreamFileByteWriterLayout>::expr] (writer) ;
-			rax.mFile.write (rax.mFileBuffer) ;
-			rax.reset () ;
-		}) ;
-	}
-
-	void close () override {
-		const auto r1x = fake.length () ;
-		if (r1x == 0)
-			return ;
-		const auto r2x = FLAG (fake.mFileBuffer.self) ;
-		fake.mFile.write (RefBuffer<BYTE>::reference (r2x ,r1x)) ;
-		fake.reset () ;
-		fake.mFile.flush () ;
-	}
-} ;
-
-exports VFat<StreamFileByteWriterHolder> StreamFileByteWriterHolder::hold (VREF<StreamFileByteWriterLayout> that) {
-	return VFat<StreamFileByteWriterHolder> (StreamFileByteWriterImplHolder () ,that) ;
-}
-
-exports CFat<StreamFileByteWriterHolder> StreamFileByteWriterHolder::hold (CREF<StreamFileByteWriterLayout> that) {
-	return CFat<StreamFileByteWriterHolder> (StreamFileByteWriterImplHolder () ,that) ;
-}
-
-class StreamFileTextWriterImplHolder implement Fat<StreamFileTextWriterHolder ,StreamFileTextWriterLayout> {
-private:
-	using STREAM_FILE_BUFFER_SIZE = ENUM<4096> ;
-
-public:
-	void initialize (CREF<String<STR>> file) override {
-		fake.mFile = StreamFile (file) ;
-		fake.mFile.open_w (0) ;
-		fake.mFileBuffer = RefBuffer<BYTE> (STREAM_FILE_BUFFER_SIZE::expr) ;
-		set_writer (fake) ;
-	}
-
-	void set_writer (VREF<TextWriter> writer) {
-		writer = TextWriter (Ref<RefBuffer<BYTE>>::reference (fake.mFileBuffer)) ;
-		fake.use_overflow ([&] (VREF<TextWriter> writer) {
-			auto &&rax = keep[TYPE<StreamFileTextWriterLayout>::expr] (writer) ;
-			rax.mFile.write (rax.mFileBuffer) ;
-			rax.reset () ;
-		}) ;
-	}
-
-	void close () override {
-		const auto r1x = fake.length () ;
-		if (r1x == 0)
-			return ;
-		const auto r2x = FLAG (fake.mFileBuffer.self) ;
-		fake.mFile.write (RefBuffer<BYTE>::reference (r2x ,r1x)) ;
-		fake.reset () ;
-		fake.mFile.flush () ;
-	}
-} ;
-
-exports VFat<StreamFileTextWriterHolder> StreamFileTextWriterHolder::hold (VREF<StreamFileTextWriterLayout> that) {
-	return VFat<StreamFileTextWriterHolder> (StreamFileTextWriterImplHolder () ,that) ;
-}
-
-exports CFat<StreamFileTextWriterHolder> StreamFileTextWriterHolder::hold (CREF<StreamFileTextWriterLayout> that) {
-	return CFat<StreamFileTextWriterHolder> (StreamFileTextWriterImplHolder () ,that) ;
-}
-
-template class External<BufferFileHolder ,BufferFileLayout> ;
-
-exports VFat<BufferFileHolder> BufferFileHolder::hold (VREF<BufferFileLayout> that) {
-	return VFat<BufferFileHolder> (External<BufferFileHolder ,BufferFileLayout>::instance () ,that) ;
-}
-
-exports CFat<BufferFileHolder> BufferFileHolder::hold (CREF<BufferFileLayout> that) {
-	return CFat<BufferFileHolder> (External<BufferFileHolder ,BufferFileLayout>::instance () ,that) ;
-}
-
-template class External<ConsoleHolder ,ConsoleLayout> ;
-
-exports VFat<ConsoleHolder> ConsoleHolder::hold (VREF<ConsoleLayout> that) {
-	return VFat<ConsoleHolder> (External<ConsoleHolder ,ConsoleLayout>::instance () ,that) ;
-}
-
-exports CFat<ConsoleHolder> ConsoleHolder::hold (CREF<ConsoleLayout> that) {
-	return CFat<ConsoleHolder> (External<ConsoleHolder ,ConsoleLayout>::instance () ,that) ;
 }
 } ;

@@ -379,7 +379,7 @@ using csc_initializer_list_t = std::initializer_list<A> ;
 
 template <csc_diff_t A>
 struct ENUM {
-	imports forceinline consteval csc_diff_t expr_m () noexcept {
+	forceinline static consteval csc_diff_t expr_m () noexcept {
 		return A ;
 	}
 } ;
@@ -390,7 +390,7 @@ using ENUM_FALSE = ENUM<false> ;
 
 template <class...A>
 struct TYPE {
-	imports forceinline consteval TYPE expr_m () noexcept {
+	forceinline static consteval TYPE expr_m () noexcept {
 		return TYPE () ;
 	}
 } ;

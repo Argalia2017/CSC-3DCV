@@ -2,7 +2,7 @@
 
 namespace CSC3DCV {
 struct CameraViewHolder implement Interface {	
-	imports DLLEXTERN AutoRef<CameraViewHolder> DLLAPI create () ;
+	imports DLLEXTERN AutoRef<CameraViewHolder> create () ;
 
 	virtual void initialize () = 0 ;
 } ;
@@ -23,7 +23,7 @@ public:
 } ;
 
 struct CameraPoseHolder implement Interface {
-	imports DLLEXTERN AutoRef<CameraPoseHolder> DLLAPI create () ;
+	imports DLLEXTERN AutoRef<CameraPoseHolder> create () ;
 
 	virtual void initialize () = 0 ;
 } ;
@@ -44,7 +44,7 @@ public:
 } ;
 
 struct CameraBlockHolder implement Interface {	
-	imports DLLEXTERN AutoRef<CameraBlockHolder> DLLAPI create () ;
+	imports DLLEXTERN AutoRef<CameraBlockHolder> create () ;
 
 	virtual void initialize () = 0 ;
 } ;
@@ -65,7 +65,7 @@ public:
 } ;
 
 struct CameraOptimizerHolder implement Interface {
-	imports DLLEXTERN AutoRef<CameraOptimizerHolder> DLLAPI create () ;
+	imports DLLEXTERN AutoRef<CameraOptimizerHolder> create () ;
 
 	virtual void initialize () = 0 ;
 } ;
@@ -86,7 +86,7 @@ public:
 } ;
 
 struct CalibrationHolder implement Interface {	
-	imports DLLEXTERN AutoRef<CalibrationHolder> DLLAPI create () ;
+	imports DLLEXTERN AutoRef<CalibrationHolder> create () ;
 
 	virtual void initialize () = 0 ;
 	virtual void execute () = 0 ;

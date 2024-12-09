@@ -17,7 +17,7 @@ public:
 	}
 } ;
 
-exports DLLEXTERN AutoRef<CalibrationHolder> DLLAPI CalibrationHolder::create () {
+exports DLLEXTERN AutoRef<CalibrationHolder> CalibrationHolder::create () {
 	return AutoRef<CalibrationImplHolder>::make () ;
 }
 } ;

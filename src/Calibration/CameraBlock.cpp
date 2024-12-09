@@ -12,7 +12,7 @@ public:
 
 } ;
 
-exports DLLEXTERN AutoRef<CameraBlockHolder> DLLAPI CameraBlockHolder::create () {
+exports DLLEXTERN AutoRef<CameraBlockHolder> CameraBlockHolder::create () {
 	return AutoRef<CameraBlockImplHolder>::make () ;
 }
 } ;
