@@ -845,8 +845,8 @@ struct UniqueRefHolder implement Interface {
 	imports CFat<UniqueRefHolder> hold (CREF<UniqueRefLayout> that) ;
 
 	virtual void initialize (RREF<BoxLayout> item) = 0 ;
-	virtual void acquire (RREF<FunctionLayout> dtor) = 0 ;
 	virtual void destroy () = 0 ;
+	virtual void use_owner (CREF<FunctionLayout> owner) = 0 ;
 	virtual BOOL exist () const = 0 ;
 	virtual VREF<BoxLayout> raw () leftvalue = 0 ;
 	virtual CREF<BoxLayout> raw () const leftvalue = 0 ;
@@ -876,7 +876,7 @@ public:
 		auto rbx = Function<VREF<A>> (move (dtor)) ;
 		UniqueRefHolder::hold (thiz)->initialize (move (rax)) ;
 		ctor (BoxHolder::hold (raw ())->self) ;
-		UniqueRefHolder::hold (thiz)->acquire (move (rbx)) ;
+		UniqueRefHolder::hold (thiz)->use_owner (rbx) ;
 	}
 
 	template <class...ARG1>

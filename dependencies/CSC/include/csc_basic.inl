@@ -647,11 +647,6 @@ public:
 		fake.mPointer = address (BoxHolder::hold (raw ())->self) ;
 	}
 
-	void acquire (RREF<FunctionLayout> dtor) override {
-		auto &&rax = keep[TYPE<UniqueRefImplLayout>::expr] (fake.mThis.pin ().self) ;
-		rax.mOwner = move (keep[TYPE<Function<VREF<Pointer>>>::expr] (dtor)) ;
-	}
-
 	void destroy () override {
 		if (!exist ())
 			return ;
@@ -659,6 +654,11 @@ public:
 			return ;
 		fake.mThis->mOwner (BoxHolder::hold (raw ())->self) ;
 		BoxHolder::hold (raw ())->destroy () ;
+	}
+
+	void use_owner (CREF<FunctionLayout> owner) override {
+		auto &&rax = keep[TYPE<UniqueRefImplLayout>::expr] (fake.mThis.pin ().self) ;
+		rax.mOwner = move (keep[TYPE<Function<VREF<Pointer>>>::expr] (owner)) ;
 	}
 
 	BOOL exist () const override {

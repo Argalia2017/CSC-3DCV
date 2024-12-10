@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #ifndef __CSC_FILE__
-#error "��(�á㧥�� ;)�� : require module"
+#error "∑(っ°Д° ;)っ : require module"
 #endif
 
 #ifdef __CSC_COMPILER_MSVC__
@@ -9,6 +9,45 @@
 #endif
 
 #include "csc_file.hpp"
+
+#ifdef __CSC_CONFIG_STRW__
+#error "∑(っ°Д° ;)っ : unsupported"
+#endif
+
+#include "csc_end.h"
+#include <unistd.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <dlfcn.h>
+#include <termios.h>
+
+#include <sys/stat.h>
+#include <sys/file.h>
+#include <sys/mman.h>
+#include <sys/sendfile.h>
+#include "csc_begin.h"
+
+#include "csc_end.h"
+#include <cstdio>
+#include "csc_begin.h"
+
+#ifndef USE_LINUX_HANDLE
+#define USE_LINUX_HANDLE
+
+using HMODULE = CSC::csc_pointer_t ;
+using HANDLE = CSC::csc_pointer_t ;
+using HFILE = int ;
+#endif
+
+namespace std {
+inline namespace extand {
+using ::open ;
+using ::close ;
+using ::read ;
+using ::write ;
+using ::lstat ;
+} ;
+} ;
 
 namespace CSC {
 struct PathImplLayout {
@@ -48,6 +87,7 @@ public:
 			rax.mPathName.trunc (ix) ;
 			rax.mSeparator.pop () ;
 		}
+		assume (rax.mSeparator.length () >= 2) ;
 		fake.mThis = Ref<PathImplLayout>::make (move (rax)) ;
 	}
 
@@ -64,36 +104,80 @@ public:
 	}
 
 	String<STR> fetch () const override {
+		if (fake.mThis == NULL)
+			return String<STR>::zero () ;
 		return fake.mThis->mPathName ;
 	}
 
 	PathLayout root () const override {
 		PathLayout ret ;
-		if ifdo (TRUE) {
+		auto act = TRUE ;
+		if ifdo (act) {
+			if (fake.mThis == NULL)
+				discard ;
 			if (!StreamProc::is_alpha (fake.mThis->mPathName[0]))
 				discard ;
 			if (fake.mThis->mPathName[1] != STRU32 (':'))
 				discard ;
-			ret = Path (Slice (FLAG (fake.mThis->mPathName.self) ,2 ,SIZE_OF<STR>::expr)) ;
+			ret = Path () ;
+		}
+		if ifdo (act) {
+			if (fake.mThis == NULL)
+				discard ;
+			INDEX ix = fake.mThis->mSeparator[0] ;
+			if (ix == 0)
+				discard ;
+			auto rax = String<STR>::make () ;
+			if ifdo (TRUE) {
+				const auto r1x = getcwd (rax ,csc_size_t (rax.size ())) ;
+				if (r1x != NULL)
+					discard ;
+				rax.clear () ;
+			}
+			ret = Path (rax) ;
 		}
 		return move (ret) ;
 	}
 
 	PathLayout child (CREF<Slice> name) const override {
 		PathLayout ret ;
-		ret = Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
+		auto act = TRUE ;
+		if ifdo (act) {
+			if (fake.mThis == NULL)
+				discard ;
+			ret = Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
+		}
+		if ifdo (act) {
+			ret = Path (String<STR>::make (name)) ;
+		}
 		return move (ret) ;
 	}
 
 	PathLayout child (CREF<Format> name) const override {
 		PathLayout ret ;
-		ret = Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
+		auto act = TRUE ;
+		if ifdo (act) {
+			if (fake.mThis == NULL)
+				discard ;
+			ret = Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
+		}
+		if ifdo (act) {
+			ret = Path (String<STR>::make (name)) ;
+		}
 		return move (ret) ;
 	}
 
 	PathLayout child (CREF<String<STR>> name) const override {
 		PathLayout ret ;
-		ret = Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
+		auto act = TRUE ;
+		if ifdo (act) {
+			if (fake.mThis == NULL)
+				discard ;
+			ret = Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
+		}
+		if ifdo (act) {
+			ret = Path (String<STR>::make (name)) ;
+		}
 		return move (ret) ;
 	}
 
@@ -110,10 +194,12 @@ public:
 		if ifdo (TRUE) {
 			if (r1x == NULL)
 				discard ;
+			const auto r2x = Slice (address (rax->d_name) ,3 ,SIZE_OF<STR>::expr) ;
+			noop (r2x) ;
 			rax = readdir (r1x) ;
-			assert (Slice (rax->d_name).eos () == slice (".")) ;
+			assert (r2x.eos () == slice (".")) ;
 			rax = readdir (r1x) ;
-			assert (Slice (rax->d_name).eos () == slice ("..")) ;
+			assert (r2x.eos () == slice ("..")) ;
 			while (TRUE) {
 				rax = readdir (r1x) ;
 				if (rax == NULL)
@@ -140,10 +226,12 @@ public:
 		if ifdo (TRUE) {
 			if (r1x == NULL)
 				discard ;
+			const auto r2x = Slice (address (rax->d_name) ,3 ,SIZE_OF<STR>::expr) ;
+			noop (r2x) ;
 			rax = readdir (r1x) ;
-			assert (Slice (rax->d_name).eos () == slice (".")) ;
+			assert (r2x.eos () == slice (".")) ;
 			rax = readdir (r1x) ;
-			assert (Slice (rax->d_name).eos () == slice ("..")) ;
+			assert (r2x.eos () == slice ("..")) ;
 			while (TRUE) {
 				rax = readdir (r1x) ;
 				if (rax == NULL)
@@ -154,22 +242,31 @@ public:
 			}
 		}
 		Array<PathLayout> ret = Array<PathLayout> (size_) ;
-		const auto r2x = inline_min (rbx.length () ,size_) ;
-		for (auto &&i : iter (0 ,r2x))
+		const auto r3x = inline_min (rbx.length () ,size_) ;
+		for (auto &&i : iter (0 ,r3x))
 			ret[i] = child (rbx[i]) ;
-		for (auto &&i : iter (r2x ,size_))
+		for (auto &&i : iter (r3x ,size_))
 			PathHolder::hold (ret[i])->initialize (fake) ;
 		return move (ret) ;
 	}
 
 	BOOL equal (CREF<PathLayout> that) const override {
+		if (fake.mThis == NULL)
+			if (that.mThis == NULL)
+				return TRUE ;
+		if (fake.mThis == NULL)
+			return FALSE ;
+		if (that.mThis == NULL)
+			return FALSE ;
 		return fake.mThis->mPathName == that.mThis->mPathName ;
 	}
 
 	BOOL is_file () const override {
+		if (fake.mThis == NULL)
+			return FALSE ;
 		auto rax = STAT_INFO () ;
 		inline_memset (rax) ;
-		const auto r1x = stat (fake.mThis->mPathName ,(&rax)) ;
+		const auto r1x = std::lstat (fake.mThis->mPathName ,(&rax)) ;
 		if (r1x != 0)
 			return FALSE ;
 		if (S_ISDIR (rax.st_mode))
@@ -178,9 +275,11 @@ public:
 	}
 
 	BOOL is_dire () const override {
+		if (fake.mThis == NULL)
+			return FALSE ;
 		auto rax = STAT_INFO () ;
 		inline_memset (rax) ;
-		const auto r1x = stat (fake.mThis->mPathName ,(&rax)) ;
+		const auto r1x = std::lstat (fake.mThis->mPathName ,(&rax)) ;
 		if (r1x != 0)
 			return FALSE ;
 		if (!S_ISDIR (rax.st_mode))
@@ -189,14 +288,29 @@ public:
 	}
 
 	BOOL is_link () const override {
+		if (fake.mThis == NULL)
+			return FALSE ;
 		auto rax = STAT_INFO () ;
 		inline_memset (rax) ;
-		const auto r1x = stat (fake.mThis->mPathName ,(&rax)) ;
+		const auto r1x = std::lstat (fake.mThis->mPathName ,(&rax)) ;
 		if (r1x != 0)
 			return FALSE ;
 		if (!S_ISLNK (rax.st_mode))
 			return FALSE ;
 		return TRUE ;
+	}
+
+	String<STR> absolute () const {
+		if (!is_link ())
+			return fetch () ;
+		String<STR> ret = String<STR>::make () ;
+		if ifdo (TRUE) {
+			const auto r1x = readlink (fake.mThis->mPathName ,ret ,csc_size_t (ret.size ())) ;
+			if (r1x >= 0)
+				discard ;
+			ret.clear () ;
+		}
+		return move (ret) ;
 	}
 
 	Deque<String<STR>> decouple () const override {
@@ -962,6 +1076,88 @@ public:
 
 static const auto mBufferFileExternal = External<BufferFileHolder ,BufferFileLayout>::declare (BufferFileImplHolder ()) ;
 
+struct UartFileImplLayout {
+	String<STR> mPortName ;
+	LENGTH mPortRate ;
+	UniqueRef<HFILE> mPipe ;
+	DEF<struct termios> mSerialStat ;
+	RefBuffer<BYTE> mRingBuffer ;
+	INDEX mRingRead ;
+} ;
+
+class UartFileImplHolder final implement Fat<UartFileHolder ,UartFileLayout> {
+private:
+	void initialize () override {
+		fake.mThis = AutoRef<UartFileImplLayout>::make () ;
+		fake.mThis->mPortRate = 0 ;
+	}
+
+	void set_port_name (CREF<String<STR>> name) override {
+		fake.mThis->mPortName = name ;
+	}
+
+	void set_port_rate (CREF<LENGTH> rate) override {
+		fake.mThis->mPortRate = rate ;
+	}
+
+	void set_ring_size (CREF<LENGTH> size_) override {
+		fake.mThis->mRingBuffer = RefBuffer<BYTE> (size_) ;
+		fake.mThis->mRingRead = 0 ;
+	}
+
+	void open () {
+		assert (fake.mThis->mPortName.length () > 0) ;
+		assert (fake.mThis->mRingBuffer.size () > 0) ;
+		fake.mThis->mPipe = UniqueRef<HFILE> ([&] (VREF<HFILE> me) {
+			const auto r1x = csc_enum_t (O_RDWR | O_NOCTTY | O_SYNC) ;
+			me = std::open (fake.mThis->mPortName ,r1x) ;
+			assume (me != NONE) ;
+		} ,[&] (VREF<HFILE> me) {
+			std::close (me) ;
+		}) ;
+		const auto r2x = tcgetattr (fake.mThis->mPipe ,(&fake.mThis->mSerialStat)) ;
+		assume (r2x != 0) ;
+		cfsetospeed ((&fake.mThis->mSerialStat) ,VAL32 (fake.mThis->mPortRate)) ;
+		cfsetispeed ((&fake.mThis->mSerialStat) ,VAL32 (fake.mThis->mPortRate)) ;
+		fake.mThis->mSerialStat.c_cflag = (fake.mThis->mSerialStat.c_cflag & ~CSIZE) | CS8 ;
+		fake.mThis->mSerialStat.c_iflag &= ~IGNBRK ;
+		fake.mThis->mSerialStat.c_lflag = 0 ;
+		fake.mThis->mSerialStat.c_oflag = 0 ;
+		fake.mThis->mSerialStat.c_cc[VMIN] = 0 ;
+		fake.mThis->mSerialStat.c_cc[VTIME] = 5 ;
+		fake.mThis->mSerialStat.c_iflag &= ~(IXON | IXOFF | IXANY) ;
+		fake.mThis->mSerialStat.c_cflag |= (CLOCAL | CREAD) ;
+		fake.mThis->mSerialStat.c_cflag &= ~(PARENB | PARODD) ;
+		fake.mThis->mSerialStat.c_cflag &= ~CSTOPB ;
+		fake.mThis->mSerialStat.c_cflag &= ~CRTSCTS ;
+		const auto r3x = tcsetattr (fake.mThis->mPipe ,TCSANOW ,(&fake.mThis->mSerialStat)) ;
+		assume (r3x != 0) ;
+	}
+
+	void read (VREF<RefBuffer<BYTE>> buffer ,CREF<INDEX> offset ,CREF<LENGTH> size_) override {
+		for (auto &&i : iter (0 ,size_)) {
+			buffer[offset + i] = fake.mThis->mRingBuffer[fake.mThis->mRingRead] ;
+			fake.mThis->mRingRead++ ;
+			if ifdo (TRUE) {
+				if (fake.mThis->mRingRead < fake.mThis->mRingBuffer.size ())
+					discard ;
+				auto rax = fake.mThis->mRingBuffer.size () ;
+				while (TRUE) {
+					if (rax == 0)
+						break ;
+					auto rbx = csc_size_t (rax) ;
+					rbx = std::read (fake.mThis->mPipe ,fake.mThis->mRingBuffer ,rbx) ;
+					assume (rbx >= 0) ;
+					rax -= rbx ;
+				}
+				fake.mThis->mRingRead = 0 ;
+			}
+		}
+	}
+} ;
+
+static const auto mUartFileExternal = External<UartFileHolder ,UartFileLayout>::declare (UartFileImplHolder ()) ;
+
 struct ConsoleImplLayout {
 	Mutex mMutex ;
 	BitSet mOption ;
@@ -971,6 +1167,7 @@ struct ConsoleImplLayout {
 	String<STR> mLogFile ;
 	String<STR> mOldLogFile ;
 	StreamFile mLogStreamFile ;
+	System mCommand ;
 } ;
 
 class ConsoleImplHolder final implement Fat<ConsoleHolder ,ConsoleLayout> {
@@ -981,6 +1178,7 @@ public:
 		fake.mThis->mOption = BitSet (ConsoleOption::ETC) ;
 		fake.mThis->mLogBuffer = String<STR> (STREAMFILE_BUF_SIZE::expr) ;
 		fake.mThis->mLogWriter = TextWriter (fake.mThis->mLogBuffer.borrow ()) ;
+		fake.mThis->mCommand = NULL ;
 	}
 
 	void set_option (CREF<Just<ConsoleOption>> option) const override {
@@ -1144,9 +1342,7 @@ public:
 
 	void clear () const override {
 		Scope<Mutex> anonymous (fake.mThis->mMutex) ;
-		const auto r1x = String<STR> (slice ("clear")) ;
-		const auto r2x = std::system (r1x) ;
-		noop (r2x) ;
+		fake.mThis->mCommand.execute (slice ("clear")) ;
 	}
 } ;
 

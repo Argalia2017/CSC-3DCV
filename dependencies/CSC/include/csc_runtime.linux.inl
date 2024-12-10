@@ -20,26 +20,13 @@
 #include <fcntl.h>
 #include <dlfcn.h>
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/file.h>
 #include <sys/mman.h>
 #include <sys/syscall.h>
-#include <sys/sendfile.h>
 #include "csc_begin.h"
 
 #include "csc_end.h"
-#include <cstdio>
-#include <cwchar>
 #include <cstdlib>
-#include <clocale>
-#include <ctime>
-#include <chrono>
-#include <mutex>
-#include <condition_variable>
-#include <atomic>
 #include <thread>
-#include <random>
 #include "csc_begin.h"
 
 #ifndef USE_LINUX_HANDLE
@@ -49,15 +36,6 @@ using HMODULE = CSC::csc_pointer_t ;
 using HANDLE = CSC::csc_pointer_t ;
 using HFILE = int ;
 #endif
-
-namespace std {
-inline namespace extand {
-using ::open ;
-using ::close ;
-using ::read ;
-using ::write ;
-} ;
-} ;
 
 namespace CSC {
 class RuntimeProcImplHolder final implement Fat<RuntimeProcHolder ,RuntimeProcLayout> {
@@ -71,8 +49,7 @@ public:
 	}
 
 	FLAG thread_uid () const override {
-		const auto r1x = std::this_thread::get_id () ;
-		return FLAG (bitwise[TYPE<QUAD>::expr] (r1x)) ;
+		return FLAG (syscall (SYS_gettid)) ;
 	}
 
 	void thread_sleep (CREF<Time> time) const override {
@@ -85,26 +62,14 @@ public:
 	}
 
 	FLAG process_uid () const override {
-		return FLAG (syscall (SYS_gettid)) ;
+		return FLAG (syscall (SYS_getpid)) ;
 	}
 
 	void process_exit () const override {
 		std::quick_exit (0) ;
 	}
 
-	String<STR> working_path () const override {
-		String<STR> ret = String<STR>::make () ;
-		if ifdo (TRUE) {
-			const auto r1x = getcwd (ret ,csc_size_t (ret.size ())) ;
-			if (r1x != NULL)
-				discard ;
-			ret.clear () ;
-		}
-		ret = Path (ret).child (slice (".")).path () ;
-		return move (ret) ;
-	}
-
-	String<STR> library_path () const override {
+	String<STR> library_file () const override {
 		String<STR> ret = String<STR>::make () ;
 		if ifdo (TRUE) {
 			const auto r1x = String<STR> (slice ("/proc/self/exe")) ;
@@ -113,20 +78,6 @@ public:
 				discard ;
 			ret.clear () ;
 		}
-		ret = Path (ret).path () ;
-		return move (ret) ;
-	}
-
-	String<STR> library_name () const override {
-		String<STR> ret = String<STR>::make () ;
-		if ifdo (TRUE) {
-			const auto r1x = String<STR> (slice ("/proc/self/exe")) ;
-			const auto r2x = readlink (r1x ,ret ,csc_size_t (ret.size ())) ;
-			if (r2x >= 0)
-				discard ;
-			ret.clear () ;
-		}
-		ret = Path (ret).name () ;
 		return move (ret) ;
 	}
 } ;
@@ -273,7 +224,7 @@ class LibraryImplHolder final implement Fat<LibraryHolder ,LibraryLayout> {
 public:
 	void initialize (CREF<String<STR>> file) override {
 		fake.mThis = AutoRef<LibraryImplLayout>::make () ;
-		fake.mThis->mFile = Path (file).fetch () ;
+		fake.mThis->mFile = move (file) ;
 		assert (fake.mThis->mFile.length () > 0) ;
 		fake.mThis->mLibrary = UniqueRef<HMODULE> ([&] (VREF<HMODULE> me) {
 			const auto r1x = csc_enum_t (RTLD_NOW | RTLD_LOCAL | RTLD_DEEPBIND | RTLD_NODELETE) ;
@@ -291,8 +242,8 @@ public:
 		}) ;
 	}
 
-	String<STR> pathname () const {
-		return StringProc::strs_from_stra (fake.mThis->mFile) ;
+	String<STR> library_file () const {
+		return fake.mThis->mFile ;
 	}
 
 	FLAG load (CREF<String<STR>> name) override {

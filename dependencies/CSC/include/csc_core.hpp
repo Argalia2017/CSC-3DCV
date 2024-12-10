@@ -946,11 +946,13 @@ struct ReflectAssign implement Interface {
 
 template <class A>
 class ReflectAssignBinder implement ReflectAssign {
+private:
+	require (IS_DEFAULT<A>) ;
+
 public:
 	void assign (VREF<Pointer> a) const noexcept override {
-		auto rax = move (keep[TYPE<A>::expr] (a)) ;
-		noop (rax) ;
-		rax.~A () ;
+		auto rax = A () ;
+		assign (a ,Pointer::from (rax)) ;
 	}
 
 	void assign (VREF<Pointer> a ,VREF<Pointer> b) const noexcept override {
@@ -958,9 +960,9 @@ public:
 	}
 } ;
 
-struct ReflectFriend implement Interface {
-	virtual VFat<Interface> hold (VREF<Pointer> a) const = 0 ;
-	virtual CFat<Interface> hold (CREF<Pointer> a) const = 0 ;
+struct ReflectUnwind implement Interface {
+	virtual void unwind (VREF<Pointer> a ,CREF<Interface> b) const = 0 ;
+	virtual void unwind (CREF<Pointer> a ,CREF<Interface> b) const = 0 ;
 
 	forceinline static consteval FLAG expr_m () noexcept {
 		return 104 ;
@@ -968,14 +970,16 @@ struct ReflectFriend implement Interface {
 } ;
 
 template <class A>
-class ReflectFriendBinder implement ReflectFriend {
+class ReflectUnwindBinder implement ReflectUnwind {
 public:
-	VFat<Interface> hold (VREF<Pointer> a) const override {
-		return VFat<Interface> (A () ,keep[TYPE<A>::expr] (a)) ;
+	void unwind (VREF<Pointer> a ,CREF<Interface> b) const override {
+		auto &&rax = keep[TYPE<A>::expr] (a) ;
+		rax.unwind (b) ;
 	}
 
-	CFat<Interface> hold (CREF<Pointer> a) const override {
-		return CFat<Interface> (A () ,keep[TYPE<A>::expr] (a)) ;
+	void unwind (CREF<Pointer> a ,CREF<Interface> b) const override {
+		auto &&rax = keep[TYPE<A>::expr] (a) ;
+		rax.unwind (b) ;
 	}
 } ;
 
@@ -1369,30 +1373,6 @@ struct FUNCTION_memorize {
 
 static constexpr auto memorize = FUNCTION_memorize () ;
 
-template <class A ,class B>
-class External implement Pin<FatLayout> {
-public:
-	static CREF<External> instance () {
-		return memorize ([&] () {
-			return External () ;
-		}) ;
-	}
-
-	static CREF<Fat<A ,B>> linkage () {
-		//@warn: may crash if not declared
-		return instance ().self ;
-	}
-
-	template <class ARG1>
-	static BOOL declare (CREF<ARG1> holder) {
-		require (IS_EXTEND<Fat<A ,B> ,ARG1>) ;
-		require (ENUM_EQUAL<SIZE_OF<ARG1> ,SIZE_OF<FatLayout>>) ;
-		require (ENUM_EQUAL<ALIGN_OF<ARG1> ,ALIGN_OF<FatLayout>>) ;
-		inline_memcpy (instance ().self ,Pointer::from (holder) ,SIZE_OF<FatLayout>::expr) ;
-		return TRUE ;
-	}
-} ;
-
 struct HeapLayout {
 	FLAG mHolder ;
 
@@ -1612,6 +1592,32 @@ struct FUNCTION_unimplemented {
 
 static constexpr auto unimplemented = FUNCTION_unimplemented () ;
 
+template <class A ,class B>
+class External implement Pin<FatLayout> {
+public:
+	static CREF<External> instance () {
+		return memorize ([&] () {
+			return External () ;
+		}) ;
+	}
+
+	static CREF<Fat<A ,B>> linkage () {
+		auto rax = FatLayout () ;
+		instance ().get (rax) ;
+		assume (rax.mHolder != ZERO) ;
+		return instance ().self ;
+	}
+
+	template <class ARG1>
+	static BOOL declare (CREF<ARG1> holder) {
+		require (IS_EXTEND<Fat<A ,B> ,ARG1>) ;
+		require (ENUM_EQUAL<SIZE_OF<ARG1> ,SIZE_OF<FatLayout>>) ;
+		require (ENUM_EQUAL<ALIGN_OF<ARG1> ,ALIGN_OF<FatLayout>>) ;
+		inline_memcpy (instance ().self ,Pointer::from (holder) ,SIZE_OF<FatLayout>::expr) ;
+		return TRUE ;
+	}
+} ;
+
 struct ReflectClone implement Interface {
 	virtual void clone (VREF<Pointer> a ,CREF<Pointer> b) const = 0 ;
 
@@ -1688,7 +1694,9 @@ template <class A>
 class ReflectGuidBinder implement ReflectGuid {
 public:
 	FLAG type_guid () const override {
-		return inline_vptr (thiz) ;
+		return memorize ([&] () {
+			return inline_vptr (thiz) ;
+		}) ;
 	}
 } ;
 

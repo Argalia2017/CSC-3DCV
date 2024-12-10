@@ -651,14 +651,14 @@ public:
 
 struct KMMatchLayout {
 	LENGTH mSize ;
-	VAL32 mInfinity ;
-	Array<VAL32> mLove ;
-	Array<VAL32> mUser ;
-	Array<VAL32> mWork ;
+	FLT32 mThreshold ;
+	Array<FLT32> mLove ;
+	Array<FLT32> mUser ;
+	Array<FLT32> mWork ;
 	BitSet mUserVisit ;
 	BitSet mWorkVisit ;
 	Array<INDEX> mMatch ;
-	Array<VAL32> mLack ;
+	Array<FLT32> mLack ;
 } ;
 
 struct KMMatchHolder implement Interface {
@@ -666,14 +666,15 @@ struct KMMatchHolder implement Interface {
 	imports CFat<KMMatchHolder> hold (CREF<KMMatchLayout> that) ;
 
 	virtual void initialize (CREF<LENGTH> size_) = 0 ;
+	virtual void set_threshold (CREF<FLT64> threshold) = 0 ;
 	virtual LENGTH size () const = 0 ;
-	virtual Array<INDEX> sort (CREF<Array<VAL32>> love) = 0 ;
+	virtual Array<INDEX> sort (RREF<Array<FLT32>> love) = 0 ;
 } ;
 
 class KMMatch implement KMMatchLayout {
 protected:
 	using KMMatchLayout::mSize ;
-	using KMMatchLayout::mInfinity ;
+	using KMMatchLayout::mThreshold ;
 	using KMMatchLayout::mLove ;
 	using KMMatchLayout::mUser ;
 	using KMMatchLayout::mWork ;
@@ -689,12 +690,16 @@ public:
 		KMMatchHolder::hold (thiz)->initialize (size_) ;
 	}
 
+	void set_threshold (CREF<FLT64> threshold) {
+		return KMMatchHolder::hold (thiz)->set_threshold (threshold) ;
+	}
+
 	LENGTH size () const {
 		return KMMatchHolder::hold (thiz)->size () ;
 	}
 
-	Array<INDEX> sort (CREF<Array<VAL32>> love) {
-		return KMMatchHolder::hold (thiz)->sort (love) ;
+	Array<INDEX> sort (RREF<Array<FLT32>> love) {
+		return KMMatchHolder::hold (thiz)->sort (move (love)) ;
 	}
 } ;
 } ;

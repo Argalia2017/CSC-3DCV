@@ -24,7 +24,7 @@ struct CoroutineFriend implement Interface {
 template <class A>
 class CoroutineFriendBinder final implement Fat<CoroutineFriend ,A> {
 public:
-	static VFat<CoroutineFriend> create (VREF<A> that) {
+	static VFat<CoroutineFriend> hold (VREF<A> that) {
 		return VFat<CoroutineFriend> (CoroutineFriendBinder () ,that) ;
 	}
 

@@ -1665,6 +1665,11 @@ public:
 	}
 } ;
 
+struct HashcodeVisitor {
+	BYTE_BASE<VAL> mCode ;
+	LENGTH mDepth ;
+} ;
+
 struct HashSetNode implement AllocatorNode {
 	INDEX mMap ;
 	FLAG mHash ;
@@ -1674,7 +1679,7 @@ struct HashSetNode implement AllocatorNode {
 struct HashSetLayout {
 	Allocator<Pointer ,HashSetNode> mSet ;
 	RefBuffer<INDEX> mRange ;
-	SharedRef<VisitorFriend> mVisitor ;
+	SharedRef<HashcodeVisitor> mVisitor ;
 } ;
 
 struct HashSetHolder implement Interface {

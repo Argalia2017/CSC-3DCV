@@ -182,7 +182,7 @@ struct ReaderFriend implement Interface {
 template <class A>
 class ReaderFriendBinder final implement Fat<ReaderFriend ,A> {
 public:
-	static VFat<ReaderFriend> create (VREF<A> that) {
+	static VFat<ReaderFriend> hold (VREF<A> that) {
 		return VFat<ReaderFriend> (ReaderFriendBinder () ,that) ;
 	}
 
@@ -555,7 +555,7 @@ public:
 
 	template <class ARG1 ,class = REQUIRE<HAS_FRIEND_READ<ARG1>>>
 	void read (VREF<ARG1> item) {
-		item.friend_read (ReaderFriendBinder<ByteReader>::create (thiz).self) ;
+		item.friend_read (ReaderFriendBinder<ByteReader>::hold (thiz).self) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<HAS_FRIEND_READ<ARG1>>>
@@ -837,7 +837,7 @@ public:
 
 	template <class ARG1 ,class = REQUIRE<HAS_FRIEND_READ<ARG1>>>
 	void read (VREF<ARG1> item) {
-		item.friend_read (ReaderFriendBinder<TextReader>::create (thiz).self) ;
+		item.friend_read (ReaderFriendBinder<TextReader>::hold (thiz).self) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<HAS_FRIEND_READ<ARG1>>>
@@ -900,7 +900,7 @@ struct WriterFriend implement Interface {
 template <class A>
 class WriterFriendBinder final implement Fat<WriterFriend ,A> {
 public:
-	static VFat<WriterFriend> create (VREF<A> that) {
+	static VFat<WriterFriend> hold (VREF<A> that) {
 		return VFat<WriterFriend> (WriterFriendBinder () ,that) ;
 	}
 
@@ -1266,7 +1266,7 @@ public:
 
 	template <class ARG1 ,class = REQUIRE<HAS_FRIEND_WRITE<ARG1>>>
 	void write (CREF<ARG1> item) {
-		item.friend_write (WriterFriendBinder<ByteWriter>::create (thiz).self) ;
+		item.friend_write (WriterFriendBinder<ByteWriter>::hold (thiz).self) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<HAS_FRIEND_WRITE<ARG1>>>
@@ -1541,7 +1541,7 @@ public:
 
 	template <class ARG1 ,class = REQUIRE<HAS_FRIEND_WRITE<ARG1>>>
 	void write (CREF<ARG1> item) {
-		item.friend_write (WriterFriendBinder<TextWriter>::create (thiz).self) ;
+		item.friend_write (WriterFriendBinder<TextWriter>::hold (thiz).self) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<HAS_FRIEND_WRITE<ARG1>>>
@@ -1598,7 +1598,7 @@ struct FormatFriend implement Interface {
 template <class A>
 class FormatFriendBinder final implement Fat<FormatFriend ,A> {
 public:
-	static CFat<FormatFriend> create (CREF<A> that) {
+	static CFat<FormatFriend> hold (CREF<A> that) {
 		return CFat<FormatFriend> (FormatFriendBinder () ,that) ;
 	}
 
@@ -1656,7 +1656,7 @@ public:
 
 	template <class...ARG1>
 	void once (CREF<ARG1>...params) const {
-		return FormatHolder::hold (thiz)->once (MakeWrapper (FormatFriendBinder<ARG1>::create (params)...)) ;
+		return FormatHolder::hold (thiz)->once (MakeWrapper (FormatFriendBinder<ARG1>::hold (params)...)) ;
 	}
 
 	template <class...ARG1>
@@ -1743,7 +1743,7 @@ public:
 
 	template <class ARG1>
 	void friend_read (VREF<ARG1> reader) {
-		return StreamTextProc::read_keyword (ReaderFriendBinder<ARG1>::create (reader) ,mThat) ;
+		return StreamTextProc::read_keyword (ReaderFriendBinder<ARG1>::hold (reader) ,mThat) ;
 	}
 } ;
 
@@ -1758,7 +1758,7 @@ public:
 
 	template <class ARG1>
 	void friend_read (VREF<ARG1> reader) {
-		return StreamTextProc::read_scalar (ReaderFriendBinder<ARG1>::create (reader) ,mThat) ;
+		return StreamTextProc::read_scalar (ReaderFriendBinder<ARG1>::hold (reader) ,mThat) ;
 	}
 } ;
 
@@ -1779,12 +1779,12 @@ public:
 
 	template <class ARG1>
 	void friend_read (VREF<ARG1> reader) {
-		return StreamTextProc::read_escape (ReaderFriendBinder<ARG1>::create (reader) ,mThat) ;
+		return StreamTextProc::read_escape (ReaderFriendBinder<ARG1>::hold (reader) ,mThat) ;
 	}
 
 	template <class ARG1>
 	void friend_write (VREF<ARG1> writer) const {
-		return StreamTextProc::write_escape (WriterFriendBinder<ARG1>::create (writer) ,mThat) ;
+		return StreamTextProc::write_escape (WriterFriendBinder<ARG1>::hold (writer) ,mThat) ;
 	}
 } ;
 
@@ -1799,7 +1799,7 @@ public:
 
 	template <class ARG1>
 	void friend_read (VREF<ARG1> reader) {
-		return StreamTextProc::read_blank (ReaderFriendBinder<ARG1>::create (reader) ,mThat) ;
+		return StreamTextProc::read_blank (ReaderFriendBinder<ARG1>::hold (reader) ,mThat) ;
 	}
 } ;
 
@@ -1814,7 +1814,7 @@ public:
 
 	template <class ARG1>
 	void friend_read (VREF<ARG1> reader) {
-		return StreamTextProc::read_endline (ReaderFriendBinder<ARG1>::create (reader) ,mThat) ;
+		return StreamTextProc::read_endline (ReaderFriendBinder<ARG1>::hold (reader) ,mThat) ;
 	}
 } ;
 
@@ -1833,7 +1833,7 @@ public:
 
 	template <class ARG1>
 	void friend_write (VREF<ARG1> writer) const {
-		return StreamTextProc::write_aligned (WriterFriendBinder<ARG1>::create (writer) ,mNumber ,mAlign) ;
+		return StreamTextProc::write_aligned (WriterFriendBinder<ARG1>::hold (writer) ,mNumber ,mAlign) ;
 	}
 } ;
 

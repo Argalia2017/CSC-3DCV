@@ -181,6 +181,20 @@ struct is_trivially_default_constructible :integral_constant<bool ,__has_trivial
 #endif
 #endif
 
+#ifndef __macro_imports
+#ifdef __CSC_COMPILER_MSVC__
+#define __macro_imports static
+#endif
+
+#ifdef __CSC_COMPILER_GNUC__
+#define __macro_imports static
+#endif
+
+#ifdef __CSC_COMPILER_CLANG__
+#define __macro_imports static
+#endif
+#endif
+
 #ifndef __macro_forceinline
 #ifdef __CSC_COMPILER_MSVC__
 #define __macro_forceinline inline __forceinline

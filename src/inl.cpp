@@ -31,10 +31,8 @@
 #define __CSC_API_WITH_SYS__
 
 #ifdef __CSC_COMPILER_MSVC__
-#ifdef __CSC_PLATFORM_X64__
-#define __CSC_API_WITH_OPENCV__
 #define __CSC_API_WITH_EIGEN__
-#endif
+#define __CSC_API_WITH_OPENCV__
 #endif
 
 #include <csc_math.cache.inl>
@@ -51,21 +49,14 @@
 #endif
 #endif
 
-#ifdef __CSC_API_WITH_OPENCV__
-#include <csc_image.opencv.inl>
-#endif
-
 #ifdef __CSC_API_WITH_EIGEN__
 #include <csc_matrix.eigen.inl>
 #endif
 
-namespace CSC3DCV {
-class Module {
-public:
-	imports DLLEXTERN String<STR> BuildTime () ;
-} ;
+#ifdef __CSC_API_WITH_OPENCV__
+#include <csc_image.opencv.inl>
 
-DLLEXTERN String<STR> Module::BuildTime () {
-	return String<STR>::make (__DATE__ ,slice (" ") ,__TIME__) ;
-}
-} ;
+#ifdef __CSC_PLATFORM_X64__
+#pragma comment (lib ,"opencv_world470.lib")
+#endif
+#endif

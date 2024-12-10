@@ -83,7 +83,7 @@ public:
 		mItemLoadLength = 0 ;
 		mThreadFlag = ThreadFlag::Running ;
 		mThreadFunc = func ;
-		const auto r1x = Ref<VFat<ThreadFriend>>::make (ThreadFriendBinder<WorkThreadImpl>::create (thiz)) ;
+		const auto r1x = Ref<VFat<ThreadFriend>>::make (ThreadFriendBinder<WorkThreadImpl>::hold (thiz)) ;
 		for (auto &&i : mThread.range ()) {
 			mThread[i] = Thread (r1x.share () ,i) ;
 			mThread[i].start () ;
@@ -204,8 +204,6 @@ public:
 class WorkThreadImplHolder final implement Fat<WorkThreadHolder ,WorkThreadLayout> {
 public:
 	void initialize () override {
-		if (fake.mThis.exist ())
-			return ;
 		fake.mThis = SharedRef<WorkThreadImpl>::make () ;
 		ptr (fake).initialize () ;
 	}
@@ -322,7 +320,7 @@ public:
 		mThreadFlag = ThreadFlag::Running ;
 		mSuspendFlag = FALSE ;
 		mThreadFunc = func ;
-		const auto r1x = Ref<VFat<ThreadFriend>>::make (ThreadFriendBinder<CalcThreadImpl>::create (thiz)) ;
+		const auto r1x = Ref<VFat<ThreadFriend>>::make (ThreadFriendBinder<CalcThreadImpl>::hold (thiz)) ;
 		for (auto &&i : mThread.range ()) {
 			mThread[i] = Thread (r1x.share () ,i) ;
 			mThread[i].start () ;
@@ -488,8 +486,6 @@ public:
 class CalcThreadImplHolder final implement Fat<CalcThreadHolder ,CalcThreadLayout> {
 public:
 	void initialize () override {
-		if (fake.mThis.exist ())
-			return ;
 		fake.mThis = SharedRef<CalcThreadImpl>::make () ;
 		ptr (fake).initialize () ;
 	}
@@ -602,7 +598,7 @@ public:
 			if (mThread.size () > 0)
 				discard ;
 			mThread = Array<Thread> (1) ;
-			const auto r1x = Ref<VFat<ThreadFriend>>::make (ThreadFriendBinder<PromiseImpl>::create (thiz)) ;
+			const auto r1x = Ref<VFat<ThreadFriend>>::make (ThreadFriendBinder<PromiseImpl>::hold (thiz)) ;
 			for (auto &&i : mThread.range ()) {
 				mThread[i] = Thread (r1x.share () ,0) ;
 				mThread[i].start () ;
@@ -742,8 +738,6 @@ public:
 class PromiseImplHolder final implement Fat<PromiseHolder ,PromiseLayout> {
 public:
 	void initialize () override {
-		if (fake.mThis.exist ())
-			return ;
 		fake.mThis = SharedRef<PromiseImpl>::make () ;
 		ptr (fake).initialize () ;
 	}

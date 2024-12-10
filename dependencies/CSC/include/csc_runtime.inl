@@ -570,9 +570,10 @@ public:
 		fake.mThis->mLocale = std::locale (r1x) ;
 	}
 
-	FLAG execute (CREF<String<STR>> command) const override {
+	void execute (CREF<String<STR>> command) const override {
 		const auto r1x = StringProc::stra_from_strs (command) ;
-		return FLAG (std::system (r1x)) ;
+		const auto r2x = FLAG (std::system (r1x)) ;
+		noop (r2x) ;
 	}
 } ;
 
@@ -771,6 +772,8 @@ public:
 
 	void shutdown () const override {
 		auto &&rax = Singleton<GlobalRoot>::instance ().mThis.self ;
+		if (rax.mFinalize)
+			return ;
 		rax.mFinalize = TRUE ;
 		rax.mGlobalNameSet.clear () ;
 		rax.mGlobalList.clear () ;

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef __CSC_FILE__
 #define __CSC_FILE__
@@ -36,6 +36,7 @@ struct PathHolder implement Interface {
 	virtual BOOL is_file () const = 0 ;
 	virtual BOOL is_dire () const = 0 ;
 	virtual BOOL is_link () const = 0 ;
+	virtual String<STR> absolute () const = 0 ;
 	virtual Deque<String<STR>> decouple () const = 0 ;
 	virtual String<STR> path () const = 0 ;
 	virtual String<STR> name () const = 0 ;
@@ -78,7 +79,7 @@ public:
 		return fetch () ;
 	}
 
-	PathLayout root () const {
+	Path root () const {
 		PathLayout ret = PathHolder::hold (thiz)->root () ;
 		return move (keep[TYPE<Path>::expr] (ret)) ;
 	}
@@ -130,6 +131,10 @@ public:
 
 	BOOL is_link () const {
 		return PathHolder::hold (thiz)->is_link () ;
+	}
+
+	String<STR> absolute () const {
+		return PathHolder::hold (thiz)->absolute () ;
 	}
 
 	Deque<String<STR>> decouple () const {
@@ -447,6 +452,54 @@ public:
 
 	void flush () {
 		return BufferFileHolder::hold (thiz)->flush () ;
+	}
+} ;
+
+struct UartFileImplLayout ;
+
+struct UartFileLayout implement ThisLayout<AutoRef<UartFileImplLayout>> {} ;
+
+struct UartFileHolder implement Interface {
+	imports VFat<UartFileHolder> hold (VREF<UartFileLayout> that) ;
+	imports CFat<UartFileHolder> hold (CREF<UartFileLayout> that) ;
+
+	virtual void initialize () = 0 ;
+	virtual void set_port_name (CREF<String<STR>> name) = 0 ;
+	virtual void set_port_rate (CREF<LENGTH> rate) = 0 ;
+	virtual void set_ring_size (CREF<LENGTH> size_) = 0 ;
+	virtual void open () = 0 ;
+	virtual void read (VREF<RefBuffer<BYTE>> buffer ,CREF<INDEX> offset ,CREF<LENGTH> size_) = 0 ;
+} ;
+
+class UartFile implement UartFileLayout {
+protected:
+	using UartFileLayout::mThis ;
+
+public:
+	implicit UartFile () = default ;
+
+	implicit UartFile (CREF<typeof (NULL)>) {
+		UartFileHolder::hold (thiz)->initialize () ;
+	}
+
+	void set_port_name (CREF<String<STR>> name) {
+		return UartFileHolder::hold (thiz)->set_port_name (name) ;
+	}
+
+	void set_port_rate (CREF<LENGTH> rate) {
+		return UartFileHolder::hold (thiz)->set_port_rate (rate) ;
+	}
+
+	void set_ring_size (CREF<LENGTH> size_) {
+		return UartFileHolder::hold (thiz)->set_ring_size (size_) ;
+	}
+
+	void open () {
+		return UartFileHolder::hold (thiz)->open () ;
+	}
+
+	void read (VREF<RefBuffer<BYTE>> buffer ,CREF<INDEX> offset ,CREF<LENGTH> size_) {
+		return UartFileHolder::hold (thiz)->read (buffer ,offset ,size_) ;
 	}
 } ;
 

@@ -162,9 +162,7 @@ struct RuntimeProcHolder implement Interface {
 	virtual void thread_yield () const = 0 ;
 	virtual FLAG process_uid () const = 0 ;
 	virtual void process_exit () const = 0 ;
-	virtual String<STR> working_path () const = 0 ;
-	virtual String<STR> library_path () const = 0 ;
-	virtual String<STR> library_name () const = 0 ;
+	virtual String<STR> library_file () const = 0 ;
 } ;
 
 class RuntimeProc implement RuntimeProcLayout {
@@ -200,16 +198,8 @@ public:
 		return RuntimeProcHolder::hold (instance ())->process_exit () ;
 	}
 
-	static String<STR> working_path () {
-		return RuntimeProcHolder::hold (instance ())->working_path () ;
-	}
-
-	static String<STR> library_path () {
-		return RuntimeProcHolder::hold (instance ())->library_path () ;
-	}
-
-	static String<STR> library_name () {
-		return RuntimeProcHolder::hold (instance ())->library_name () ;
+	static String<STR> library_file () {
+		return RuntimeProcHolder::hold (instance ())->library_file () ;
 	}
 } ;
 
@@ -444,7 +434,7 @@ struct ThreadFriend implement Interface {
 template <class A>
 class ThreadFriendBinder final implement Fat<ThreadFriend ,A> {
 public:
-	static VFat<ThreadFriend> create (VREF<A> that) {
+	static VFat<ThreadFriend> hold (VREF<A> that) {
 		return VFat<ThreadFriend> (ThreadFriendBinder () ,that) ;
 	}
 
@@ -551,7 +541,7 @@ struct LibraryHolder implement Interface {
 	imports CFat<LibraryHolder> hold (CREF<LibraryLayout> that) ;
 
 	virtual void initialize (CREF<String<STR>> file) = 0 ;
-	virtual String<STR> pathname () const = 0 ;
+	virtual String<STR> library_file () const = 0 ;
 	virtual FLAG load (CREF<String<STR>> name) = 0 ;
 	virtual String<STR> error () const = 0 ;
 } ;
@@ -567,8 +557,8 @@ public:
 		LibraryHolder::hold (thiz)->initialize (file) ;
 	}
 
-	String<STR> pathname () const {
-		return LibraryHolder::hold (thiz)->pathname () ;
+	String<STR> library_file () const {
+		return LibraryHolder::hold (thiz)->library_file () ;
 	}
 
 	FLAG load (CREF<String<STR>> name) {
@@ -590,7 +580,7 @@ struct SystemHolder implement Interface {
 
 	virtual void initialize () = 0 ;
 	virtual void set_locale (CREF<String<STR>> name) = 0 ;
-	virtual FLAG execute (CREF<String<STR>> command) const = 0 ;
+	virtual void execute (CREF<String<STR>> command) const = 0 ;
 } ;
 
 class System implement SystemLayout {
@@ -600,11 +590,15 @@ protected:
 public:
 	implicit System () = default ;
 
+	implicit System (CREF<typeof (NULL)>) {
+		SystemHolder::hold (thiz)->initialize () ;
+	}
+
 	void set_locale (CREF<String<STR>> name) {
 		return SystemHolder::hold (thiz)->set_locale (name) ;
 	}
 
-	FLAG execute (CREF<String<STR>> command) const {
+	void execute (CREF<String<STR>> command) const {
 		return SystemHolder::hold (thiz)->execute (command) ;
 	}
 } ;

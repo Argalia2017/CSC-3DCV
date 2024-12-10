@@ -39,12 +39,10 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\build.Debug.x64.props" />
-    <Import Project="..\depend.Debug.x64.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\build.Release.x64.props" />
-    <Import Project="..\depend.Release.x64.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -76,8 +74,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\Calibration\Calibration.cpp" />
+    <ClCompile Include="..\..\src\Calibration\CameraBlock.cpp" />
+    <ClCompile Include="..\..\src\Calibration\CameraOptimizer.cpp" />
+    <ClCompile Include="..\..\src\Calibration\CameraPose.cpp" />
+    <ClCompile Include="..\..\src\Calibration\CameraView.cpp" />
+    <ClCompile Include="..\..\src\Common\Config.cpp" />
+    <ClCompile Include="..\..\src\Detection\Board.cpp" />
+    <ClCompile Include="..\..\src\Detection\Feature.cpp" />
+    <ClCompile Include="..\..\src\Detection\Phase.cpp" />
     <ClCompile Include="..\..\src\inl.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
+    <ClCompile Include="..\..\src\Meshing\Delaunay.cpp" />
+    <ClCompile Include="..\..\src\Meshing\MarchingCube.cpp" />
+    <ClCompile Include="..\..\src\Meshing\Polyfit.cpp" />
+    <ClCompile Include="..\..\src\Registration\DepthEstimation.cpp" />
+    <ClCompile Include="..\..\src\Registration\GaussionSplatting.cpp" />
+    <ClCompile Include="..\..\src\Rendering\Display.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\dependencies\CSC\include\csc.hpp" />
@@ -95,30 +108,14 @@
     <ClInclude Include="..\..\dependencies\CSC\include\csc_string.hpp" />
     <ClInclude Include="..\..\dependencies\CSC\include\csc_thread.hpp" />
     <ClInclude Include="..\..\dependencies\CSC\include\csc_type.hpp" />
+    <ClInclude Include="..\..\src\Calibration\export.h" />
+    <ClInclude Include="..\..\src\Common\export.h" />
+    <ClInclude Include="..\..\src\Detection\export.h" />
+    <ClInclude Include="..\..\src\Meshing\export.h" />
+    <ClInclude Include="..\..\src\Registration\export.h" />
+    <ClInclude Include="..\..\src\Rendering\export.h" />
+    <ClInclude Include="..\..\src\System\export.h" />
     <ClInclude Include="..\..\src\util.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Calibration\Calibration.vcxproj">
-      <Project>{351b2912-591b-4ea5-84e7-a66b13b19e4b}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\Common\Common.vcxproj">
-      <Project>{f9aad400-b1a2-4fed-81b2-1ebd1a7324bf}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\Detection\Detection.vcxproj">
-      <Project>{fbc21750-2e3f-40d6-82a2-8bd6d601385b}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\Meshing\Meshing.vcxproj">
-      <Project>{962119a0-b046-446c-80b1-013d414fef45}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\Registration\Registration.vcxproj">
-      <Project>{fa94b58c-0960-4e0d-859d-d22866456e8e}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\Rendering\Rendering.vcxproj">
-      <Project>{26733981-090c-4295-9630-7fb94e32d03d}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\System\System.vcxproj">
-      <Project>{46754ffb-35ba-4a5d-b22c-ccd3976123f5}</Project>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\dependencies\CSC\include\cpp.hint" />

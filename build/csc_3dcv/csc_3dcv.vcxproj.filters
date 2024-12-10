@@ -3,6 +3,51 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\inl.cpp" />
+    <ClCompile Include="..\..\src\Calibration\Calibration.cpp">
+      <Filter>module\Calibration</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Calibration\CameraBlock.cpp">
+      <Filter>module\Calibration</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Calibration\CameraOptimizer.cpp">
+      <Filter>module\Calibration</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Calibration\CameraPose.cpp">
+      <Filter>module\Calibration</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Calibration\CameraView.cpp">
+      <Filter>module\Calibration</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Common\Config.cpp">
+      <Filter>module\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Detection\Board.cpp">
+      <Filter>module\Detection</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Detection\Feature.cpp">
+      <Filter>module\Detection</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Detection\Phase.cpp">
+      <Filter>module\Detection</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Meshing\Delaunay.cpp">
+      <Filter>module\Meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Meshing\MarchingCube.cpp">
+      <Filter>module\Meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Meshing\Polyfit.cpp">
+      <Filter>module\Meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Rendering\Display.cpp">
+      <Filter>module\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Registration\DepthEstimation.cpp">
+      <Filter>module\Registration</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Registration\GaussionSplatting.cpp">
+      <Filter>module\Registration</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\util.h" />
@@ -51,10 +96,55 @@
     <ClInclude Include="..\..\dependencies\CSC\include\csc_type.hpp">
       <Filter>csc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\Calibration\export.h">
+      <Filter>module\Calibration</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Common\export.h">
+      <Filter>module\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Detection\export.h">
+      <Filter>module\Detection</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Meshing\export.h">
+      <Filter>module\Meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Rendering\export.h">
+      <Filter>module\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Registration\export.h">
+      <Filter>module\Registration</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\System\export.h">
+      <Filter>module\System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="csc">
       <UniqueIdentifier>{0fae85e1-73c9-4f79-9d0f-1bb3535037f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="module">
+      <UniqueIdentifier>{6ca3145c-be04-4042-912b-8b72435cd091}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="module\Calibration">
+      <UniqueIdentifier>{debce96d-abb6-48ae-863b-17be77cd760e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="module\Common">
+      <UniqueIdentifier>{a4c1fc1d-52c8-4ae2-84da-f029407d9788}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="module\Detection">
+      <UniqueIdentifier>{2f482b7c-e452-4ad2-9d2a-581d5f5b4322}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="module\Meshing">
+      <UniqueIdentifier>{7e210b6e-c793-49db-8e94-81a6a2ee6530}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="module\Registration">
+      <UniqueIdentifier>{862c3fd2-495e-4ca4-9f9e-81309de65f46}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="module\Rendering">
+      <UniqueIdentifier>{2c7fd247-5b21-4f4c-a157-75897b0950ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="module\System">
+      <UniqueIdentifier>{ec214562-f5e3-4691-b195-5a5dc7c5ac59}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

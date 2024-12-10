@@ -1,10 +1,14 @@
-#pragma once
+Ôªø#pragma once
 
 #ifndef __CSC_FILE__
-#error "°∆(§√°„ß•°„ ;)§√ : require module"
+#error "‚àë(„Å£¬∞–î¬∞ ;)„Å£ : require module"
 #endif
 
 #include "csc_file.hpp"
+
+#include "csc_end.h"
+#include <cstdio>
+#include "csc_begin.h"
 
 namespace CSC {
 template class External<PathHolder ,PathLayout> ;
@@ -207,6 +211,16 @@ exports VFat<BufferFileHolder> BufferFileHolder::hold (VREF<BufferFileLayout> th
 
 exports CFat<BufferFileHolder> BufferFileHolder::hold (CREF<BufferFileLayout> that) {
 	return CFat<BufferFileHolder> (External<BufferFileHolder ,BufferFileLayout>::linkage () ,that) ;
+}
+
+template class External<UartFileHolder ,UartFileLayout> ;
+
+exports VFat<UartFileHolder> UartFileHolder::hold (VREF<UartFileLayout> that) {
+	return VFat<UartFileHolder> (External<UartFileHolder ,UartFileLayout>::linkage () ,that) ;
+}
+
+exports CFat<UartFileHolder> UartFileHolder::hold (CREF<UartFileLayout> that) {
+	return CFat<UartFileHolder> (External<UartFileHolder ,UartFileLayout>::linkage () ,that) ;
 }
 
 template class External<ConsoleHolder ,ConsoleLayout> ;

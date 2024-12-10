@@ -36,7 +36,7 @@
 
 #define implicit
 #define exports __macro_exports
-#define imports static
+#define imports __macro_imports
 #define forceinline __macro_forceinline
 #define leftvalue &
 #define rightvalue &&

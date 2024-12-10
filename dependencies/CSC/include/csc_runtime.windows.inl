@@ -15,16 +15,8 @@
 #endif
 
 #include "csc_end.h"
-#include <cstdio>
 #include <cstdlib>
-#include <clocale>
-#include <ctime>
-#include <chrono>
-#include <mutex>
-#include <condition_variable>
-#include <atomic>
 #include <thread>
-#include <random>
 #include "csc_begin.h"
 
 namespace CSC {
@@ -39,8 +31,7 @@ public:
 	}
 
 	FLAG thread_uid () const override {
-		const auto r1x = std::this_thread::get_id () ;
-		return FLAG (bitwise[TYPE<CHAR>::expr] (r1x)) ;
+		return FLAG (GetCurrentThreadId ()) ;
 	}
 
 	void thread_sleep (CREF<Time> time) const override {
@@ -60,24 +51,9 @@ public:
 		std::quick_exit (0) ;
 	}
 
-	String<STR> working_path () const override {
-		String<STR> ret = String<STR>::make () ;
-		GetCurrentDirectory (csc_enum_t (ret.size ()) ,ret) ;
-		ret = Path (ret).child (slice (".")).path () ;
-		return move (ret) ;
-	}
-
-	String<STR> library_path () const override {
+	String<STR> library_file () const override {
 		String<STR> ret = String<STR>::make () ;
 		GetModuleFileName (NULL ,ret ,csc_enum_t (ret.size ())) ;
-		ret = Path (ret).path () ;
-		return move (ret) ;
-	}
-
-	String<STR> library_name () const override {
-		String<STR> ret = String<STR>::make () ;
-		GetModuleFileName (NULL ,ret ,csc_enum_t (ret.size ())) ;
-		ret = Path (ret).name () ;
 		return move (ret) ;
 	}
 } ;
@@ -201,7 +177,7 @@ class LibraryImplHolder final implement Fat<LibraryHolder ,LibraryLayout> {
 public:
 	void initialize (CREF<String<STR>> file) override {
 		fake.mThis = AutoRef<LibraryImplLayout>::make () ;
-		fake.mThis->mFile = Path (file).fetch () ;
+		fake.mThis->mFile = move (file) ;
 		assert (fake.mThis->mFile.length () > 0) ;
 		fake.mThis->mLibrary = UniqueRef<HMODULE> ([&] (VREF<HMODULE> me) {
 			me = GetModuleHandle (fake.mThis->mFile) ;
@@ -217,7 +193,7 @@ public:
 		}) ;
 	}
 
-	String<STR> pathname () const {
+	String<STR> library_file () const {
 		return fake.mThis->mFile ;
 	}
 

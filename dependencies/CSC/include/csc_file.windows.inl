@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #ifndef __CSC_FILE__
-#error "��(�á㧥�� ;)�� : require module"
+#error "∑(っ°Д° ;)っ : require module"
 #endif
 
 #ifdef __CSC_COMPILER_MSVC__
@@ -9,6 +9,10 @@
 #endif
 
 #include "csc_file.hpp"
+
+#ifndef _INC_WINDOWS
+#error "∑(っ°Д° ;)っ : require windows.h"
+#endif
 
 namespace CSC {
 struct PathImplLayout {
@@ -28,7 +32,7 @@ public:
 			if (!is_separator (rax.mPathName[i]))
 				continue ;
 			rax.mSeparator.add (i) ;
-			rax.mPathName[i] = STR ('/') ;
+			rax.mPathName[i] = STR ('\\') ;
 		}
 		rax.mSeparator.add (r1x) ;
 		if ifdo (TRUE) {
@@ -43,6 +47,7 @@ public:
 			rax.mPathName.trunc (ix) ;
 			rax.mSeparator.pop () ;
 		}
+		assume (rax.mSeparator.length () >= 2) ;
 		fake.mThis = Ref<PathImplLayout>::make (move (rax)) ;
 	}
 
@@ -59,36 +64,75 @@ public:
 	}
 
 	String<STR> fetch () const override {
+		if (fake.mThis == NULL)
+			return String<STR>::zero () ;
 		return fake.mThis->mPathName ;
 	}
 
 	PathLayout root () const override {
 		PathLayout ret ;
-		if ifdo (TRUE) {
+		auto act = TRUE ;
+		if ifdo (act) {
+			if (fake.mThis == NULL)
+				discard ;
 			if (!StreamProc::is_alpha (fake.mThis->mPathName[0]))
 				discard ;
 			if (fake.mThis->mPathName[1] != STRU32 (':'))
 				discard ;
-			ret = Path (Slice (FLAG (fake.mThis->mPathName.self) ,2 ,SIZE_OF<STR>::expr)) ;
+			ret = Path () ;
+		}
+		if ifdo (act) {
+			if (fake.mThis == NULL)
+				discard ;
+			INDEX ix = fake.mThis->mSeparator[0] ;
+			if (ix == 0)
+				discard ;
+			auto rax = String<STR>::make () ;
+			GetCurrentDirectory (csc_enum_t (rax.size ()) ,rax) ;
+			ret = Path (rax) ;
 		}
 		return move (ret) ;
 	}
 
 	PathLayout child (CREF<Slice> name) const override {
 		PathLayout ret ;
-		ret = Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
+		auto act = TRUE ;
+		if ifdo (act) {
+			if (fake.mThis == NULL)
+				discard ;
+			ret = Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
+		}
+		if ifdo (act) {
+			ret = Path (String<STR>::make (name)) ;
+		}
 		return move (ret) ;
 	}
 
 	PathLayout child (CREF<Format> name) const override {
 		PathLayout ret ;
-		ret = Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
+		auto act = TRUE ;
+		if ifdo (act) {
+			if (fake.mThis == NULL)
+				discard ;
+			ret = Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
+		}
+		if ifdo (act) {
+			ret = Path (String<STR>::make (name)) ;
+		}
 		return move (ret) ;
 	}
 
 	PathLayout child (CREF<String<STR>> name) const override {
 		PathLayout ret ;
-		ret = Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
+		auto act = TRUE ;
+		if ifdo (act) {
+			if (fake.mThis == NULL)
+				discard ;
+			ret = Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
+		}
+		if ifdo (act) {
+			ret = Path (String<STR>::make (name)) ;
+		}
 		return move (ret) ;
 	}
 
@@ -107,12 +151,14 @@ public:
 		if ifdo (TRUE) {
 			if (r2x == NULL)
 				discard ;
-			assert (Slice (rax.cFileName).eos () == slice (".")) ;
+			const auto r3x = Slice (address (rax.cFileName) ,3 ,SIZE_OF<STR>::expr) ;
+			noop (r3x) ;
+			assert (r3x.eos () == slice (".")) ;
 			FindNextFile (r2x ,(&rax)) ;
-			assert (Slice (rax.cFileName).eos () == slice ("..")) ;
+			assert (r3x.eos () == slice ("..")) ;
 			while (TRUE) {
-				const auto r3x = FindNextFile (r2x ,(&rax)) ;
-				if (!r3x)
+				const auto r4x = FindNextFile (r2x ,(&rax)) ;
+				if (!r4x)
 					break ;
 				rbx.add (Slice (rax.cFileName)) ;
 			}
@@ -138,12 +184,14 @@ public:
 		if ifdo (TRUE) {
 			if (r2x == NULL)
 				discard ;
-			assert (Slice (rax.cFileName).eos () == slice (".")) ;
+			const auto r3x = Slice (address (rax.cFileName) ,3 ,SIZE_OF<STR>::expr) ;
+			noop (r3x) ;
+			assert (r3x.eos () == slice (".")) ;
 			FindNextFile (r2x ,(&rax)) ;
-			assert (Slice (rax.cFileName).eos () == slice ("..")) ;
+			assert (r3x.eos () == slice ("..")) ;
 			while (TRUE) {
-				const auto r3x = FindNextFile (r2x ,(&rax)) ;
-				if (!r3x)
+				const auto r4x = FindNextFile (r2x ,(&rax)) ;
+				if (!r4x)
 					break ;
 				if (rbx.length () >= size_)
 					break ;
@@ -151,19 +199,28 @@ public:
 			}
 		}
 		Array<PathLayout> ret = Array<PathLayout> (size_) ;
-		const auto r4x = inline_min (rbx.length () ,size_) ;
-		for (auto &&i : iter (0 ,r4x))
+		const auto r5x = inline_min (rbx.length () ,size_) ;
+		for (auto &&i : iter (0 ,r5x))
 			ret[i] = child (rbx[i]) ;
-		for (auto &&i : iter (r4x ,size_))
+		for (auto &&i : iter (r5x ,size_))
 			PathHolder::hold (ret[i])->initialize (fake) ;
 		return move (ret) ;
 	}
 
 	BOOL equal (CREF<PathLayout> that) const override {
+		if (fake.mThis == NULL)
+			if (that.mThis == NULL)
+				return TRUE ;
+		if (fake.mThis == NULL)
+			return FALSE ;
+		if (that.mThis == NULL)
+			return FALSE ;
 		return fake.mThis->mPathName == that.mThis->mPathName ;
 	}
 
 	BOOL is_file () const override {
+		if (fake.mThis == NULL)
+			return FALSE ;
 		const auto r1x = CHAR (GetFileAttributes (fake.mThis->mPathName)) ;
 		if (r1x == CHAR (INVALID_FILE_ATTRIBUTES))
 			return FALSE ;
@@ -171,6 +228,8 @@ public:
 	}
 
 	BOOL is_dire () const override {
+		if (fake.mThis == NULL)
+			return FALSE ;
 		const auto r1x = CHAR (GetFileAttributes (fake.mThis->mPathName)) ;
 		if (r1x == CHAR (INVALID_FILE_ATTRIBUTES))
 			return FALSE ;
@@ -178,10 +237,36 @@ public:
 	}
 
 	BOOL is_link () const override {
+		if (fake.mThis == NULL)
+			return FALSE ;
 		const auto r1x = CHAR (GetFileAttributes (fake.mThis->mPathName)) ;
 		if (r1x == CHAR (INVALID_FILE_ATTRIBUTES))
 			return FALSE ;
 		return ByteProc::bit_any (r1x ,FILE_ATTRIBUTE_REPARSE_POINT) ;
+	}
+
+	String<STR> absolute () const {
+		if (!is_link ())
+			return fetch () ;
+		String<STR> ret = String<STR>::make () ;
+		const auto r1x = UniqueRef<HANDLE> ([&] (VREF<HANDLE> me) {
+			me = CreateFile (fake.mThis->mPathName ,GENERIC_READ ,FILE_SHARE_READ ,NULL ,OPEN_EXISTING ,FILE_FLAG_BACKUP_SEMANTICS ,NULL) ;
+			replace (me ,INVALID_HANDLE_VALUE ,NULL) ;
+			assume (me != NULL) ;
+		} ,[&] (VREF<HANDLE> me) {
+			CloseHandle (me) ;
+		}) ;
+		GetFinalPathNameByHandle (r1x ,ret ,csc_enum_t (ret.size ()) ,FILE_NAME_OPENED) ;
+		if ifdo (TRUE) {
+			const auto r2x = ret.length () ;
+			if (r2x < 4)
+				discard ;
+			const auto r3x = Slice (address (ret[0]) ,4 ,SIZE_OF<STR>::expr) ;
+			if (r3x != slice ("\\\\?\\"))
+				discard ;
+			ret = String<STR> (Slice (address (ret[4]) ,r2x - 4 ,SIZE_OF<STR>::expr)) ;
+		}
+		return move (ret) ;
 	}
 
 	Deque<String<STR>> decouple () const override {
@@ -927,6 +1012,82 @@ public:
 
 static const auto mBufferFileExternal = External<BufferFileHolder ,BufferFileLayout>::declare (BufferFileImplHolder ()) ;
 
+struct UartFileImplLayout {
+	String<STR> mPortName ;
+	LENGTH mPortRate ;
+	UniqueRef<HANDLE> mPipe ;
+	DCB mSerialParams ;
+	COMSTAT mSerialStat ;
+	csc_enum_t mSerialError ;
+	RefBuffer<BYTE> mRingBuffer ;
+	INDEX mRingRead ;
+} ;
+
+class UartFileImplHolder final implement Fat<UartFileHolder ,UartFileLayout> {
+private:
+	void initialize () override {
+		fake.mThis = AutoRef<UartFileImplLayout>::make () ;
+		fake.mThis->mPortRate = 0 ;
+	}
+
+	void set_port_name (CREF<String<STR>> name) override {
+		fake.mThis->mPortName = name ;
+	}
+
+	void set_port_rate (CREF<LENGTH> rate) override {
+		fake.mThis->mPortRate = rate ;
+	}
+
+	void set_ring_size (CREF<LENGTH> size_) override {
+		fake.mThis->mRingBuffer = RefBuffer<BYTE> (size_) ;
+		fake.mThis->mRingRead = 0 ;
+	}
+
+	void open () {
+		assert (fake.mThis->mPortName.length () > 0) ;
+		assert (fake.mThis->mRingBuffer.size () > 0) ;
+		fake.mThis->mPipe = UniqueRef<HANDLE> ([&] (VREF<HANDLE> me) {
+			me = CreateFile (fake.mThis->mPortName ,GENERIC_READ | GENERIC_WRITE ,0 ,0 ,OPEN_EXISTING ,FILE_ATTRIBUTE_NORMAL ,0) ;
+			replace (me ,INVALID_HANDLE_VALUE ,NULL) ;
+			assume (me != NULL) ;
+		} ,[&] (VREF<HANDLE> me) {
+			CloseHandle (me) ;
+		}) ;
+		inline_memset (fake.mThis->mSerialParams) ;
+		fake.mThis->mSerialParams.DCBlength = csc_enum_t (SIZE_OF<DCB>::expr) ;
+		GetCommState (fake.mThis->mPipe ,(&fake.mThis->mSerialParams)) ;
+		fake.mThis->mSerialParams.BaudRate = csc_enum_t (fake.mThis->mPortRate) ;
+		fake.mThis->mSerialParams.ByteSize = 8 ;
+		fake.mThis->mSerialParams.StopBits = ONESTOPBIT ;
+		fake.mThis->mSerialParams.Parity = NOPARITY ;
+		SetCommState (fake.mThis->mPipe ,(&fake.mThis->mSerialParams)) ;
+		ClearCommError (fake.mThis->mPipe ,(&fake.mThis->mSerialError) ,(&fake.mThis->mSerialStat)) ;
+	}
+
+	void read (VREF<RefBuffer<BYTE>> buffer ,CREF<INDEX> offset ,CREF<LENGTH> size_) override {
+		for (auto &&i : iter (0 ,size_)) {
+			buffer[offset + i] = fake.mThis->mRingBuffer[fake.mThis->mRingRead] ;
+			fake.mThis->mRingRead++ ;
+			if ifdo (TRUE) {
+				if (fake.mThis->mRingRead < fake.mThis->mRingBuffer.size ())
+					discard ;
+				auto rax = fake.mThis->mRingBuffer.size () ;
+				while (TRUE) {
+					if (rax == 0)
+						break ;
+					auto rbx = csc_enum_t (rax) ;
+					const auto r1x = ReadFile (fake.mThis->mPipe ,fake.mThis->mRingBuffer ,rbx ,(&rbx) ,NULL) ;
+					assume (r1x) ;
+					rax -= LENGTH (rbx) ;
+				}
+				fake.mThis->mRingRead = 0 ;
+			}
+		}
+	}
+} ;
+
+static const auto mUartFileExternal = External<UartFileHolder ,UartFileLayout>::declare (UartFileImplHolder ()) ;
+
 struct ConsoleImplLayout {
 	Mutex mMutex ;
 	BitSet mOption ;
@@ -936,6 +1097,7 @@ struct ConsoleImplLayout {
 	String<STR> mLogFile ;
 	String<STR> mOldLogFile ;
 	StreamFile mLogStreamFile ;
+	System mCommand ;
 } ;
 
 class ConsoleImplHolder final implement Fat<ConsoleHolder ,ConsoleLayout> {
@@ -946,6 +1108,7 @@ public:
 		fake.mThis->mOption = BitSet (ConsoleOption::ETC) ;
 		fake.mThis->mLogBuffer = String<STR> (STREAMFILE_BUF_SIZE::expr) ;
 		fake.mThis->mLogWriter = TextWriter (fake.mThis->mLogBuffer.borrow ()) ;
+		fake.mThis->mCommand = NULL ;
 	}
 
 	void set_option (CREF<Just<ConsoleOption>> option) const override {
@@ -1129,18 +1292,14 @@ public:
 		}
 		const auto r2x = csc_uint16_t (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE) ;
 		SetConsoleTextAttribute (fake.mThis->mConsole ,r2x) ;
-		const auto r3x = String<STRA> (slice ("pause")) ;
-		const auto r4x = std::system (r3x) ;
-		noop (r4x) ;
+		fake.mThis->mCommand.execute (slice ("pause")) ;
 	}
 
 	void clear () const override {
 		Scope<Mutex> anonymous (fake.mThis->mMutex) ;
 		const auto r1x = csc_uint16_t (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE) ;
 		SetConsoleTextAttribute (fake.mThis->mConsole ,r1x) ;
-		const auto r2x = String<STRA> (slice ("cls")) ;
-		const auto r3x = std::system (r2x) ;
-		noop (r3x) ;
+		fake.mThis->mCommand.execute (slice ("cls")) ;
 	}
 } ;
 

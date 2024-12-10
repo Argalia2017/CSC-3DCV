@@ -5,7 +5,6 @@
 #endif
 
 #include "csc_core.hpp"
-
 #include "csc_end.h"
 #include <cstdlib>
 #include <cstring>
@@ -13,10 +12,21 @@
 #include <typeinfo>
 #include <initializer_list>
 #include <atomic>
+
+#ifdef __CSC_SYSTEM_WINDOWS__
+#include <debugapi.h>
+#endif
 #include "csc_begin.h"
 
 namespace CSC {
 exports void FUNCTION_inline_abort::invoke () noexcept {
+#ifdef __CSC_SYSTEM_WINDOWS__
+	if ifdo (TRUE) {
+		if (!IsDebuggerPresent ())
+			discard ;
+		__macro_break () ;
+	}
+#endif
 	std::abort () ;
 }
 

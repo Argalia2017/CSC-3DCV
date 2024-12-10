@@ -1671,9 +1671,11 @@ public:
 			}
 			iy = fake.mSet.bt (ix).mUp ;
 		}
-		if (ix == NONE)
-			return ;
-		fake.mSet.bt (ix).mRed = FALSE ;
+		if ifdo (TRUE) {
+			if (ix == NONE)
+				discard ;
+			fake.mSet.bt (ix).mRed = FALSE ;
+		}
 	}
 
 	void update_remove_left (CREF<INDEX> curr) {
@@ -1881,7 +1883,8 @@ exports CFat<SetHolder> SetHolder::hold (CREF<SetLayout> that) {
 #ifdef __CSC_CONFIG_VAL32__
 struct FUNCTION_fnvhash {
 	forceinline CHAR operator() () const {
-		return HashProc::fnvhash32 (Pointer::make (0) ,0) ;
+		const auto r1x = ZERO ;
+		return HashProc::fnvhash32 (Pointer::from (r1x) ,0) ;
 	}
 
 	template <class ARG1>
@@ -1894,7 +1897,8 @@ struct FUNCTION_fnvhash {
 #ifdef __CSC_CONFIG_VAL64__
 struct FUNCTION_fnvhash {
 	forceinline QUAD operator() () const {
-		return HashProc::fnvhash64 (Pointer::make (0) ,0) ;
+		const auto r1x = ZERO ;
+		return HashProc::fnvhash64 (Pointer::from (r1x) ,0) ;
 	}
 
 	template <class ARG1>
@@ -1906,45 +1910,45 @@ struct FUNCTION_fnvhash {
 
 static constexpr auto fnvhash = FUNCTION_fnvhash () ;
 
-class HashcodeVisitor implement VisitorFriend {
-protected:
-	BYTE_BASE<VAL> mCode ;
-	LENGTH mDepth ;
-
+class HashcodeVisitorFriendBinder final implement Fat<VisitorFriend ,HashcodeVisitor> {
 public:
+	imports VFat<VisitorFriend> hold (VREF<HashcodeVisitor> that) {
+		return VFat<VisitorFriend> (HashcodeVisitorFriendBinder () ,that) ;
+	}
+
 	void reset () override {
-		mCode = fnvhash () ;
-		mDepth = 0 ;
+		fake.mCode = fnvhash () ;
+		fake.mDepth = 0 ;
 	}
 
 	void enter () override {
-		mDepth++ ;
+		fake.mDepth++ ;
 	}
 
 	void leave () override {
-		mDepth-- ;
+		fake.mDepth-- ;
 	}
 
 	FLAG fetch () const override {
-		const auto r1x = FLAG (mCode) ;
+		const auto r1x = FLAG (fake.mCode) ;
 		const auto r2x = r1x & VAL_MAX ;
 		return r2x ;
 	}
 
 	void push (CREF<BYTE> a) override {
-		mCode = fnvhash (a ,mCode) ;
+		fake.mCode = fnvhash (a ,fake.mCode) ;
 	}
 
 	void push (CREF<WORD> a) override {
-		mCode = fnvhash (a ,mCode) ;
+		fake.mCode = fnvhash (a ,fake.mCode) ;
 	}
 
 	void push (CREF<CHAR> a) override {
-		mCode = fnvhash (a ,mCode) ;
+		fake.mCode = fnvhash (a ,fake.mCode) ;
 	}
 
 	void push (CREF<QUAD> a) override {
-		mCode = fnvhash (a ,mCode) ;
+		fake.mCode = fnvhash (a ,fake.mCode) ;
 	}
 } ;
 
@@ -2042,10 +2046,11 @@ public:
 	}
 
 	FLAG hashcode (CREF<Pointer> item) const {
-		fake.mVisitor->reset () ;
-		const auto r1x = RFat<ReflectVisit> (fake.mSet.unknown ()) ;
-		r1x->visit (fake.mVisitor.self ,item) ;
-		return fake.mVisitor->fetch () ;
+		const auto r1x = HashcodeVisitorFriendBinder::hold (fake.mVisitor) ;
+		r1x->reset () ;
+		const auto r2x = RFat<ReflectVisit> (fake.mSet.unknown ()) ;
+		r2x->visit (r1x ,item) ;
+		return r1x->fetch () ;
 	}
 
 	void update_emplace (CREF<INDEX> curr) {

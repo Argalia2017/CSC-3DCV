@@ -533,22 +533,27 @@ class KMMatchImplHolder final implement Fat<KMMatchHolder ,KMMatchLayout> {
 public:
 	void initialize (CREF<LENGTH> size_) override {
 		fake.mSize = size_ ;
-		fake.mInfinity = VAL32_MAX ;
-		fake.mUser = Array<VAL32> (fake.mSize) ;
-		fake.mWork = Array<VAL32> (fake.mSize) ;
+		fake.mThreshold = FLT32 (0.1) ;
+		fake.mUser = Array<FLT32> (fake.mSize) ;
+		fake.mWork = Array<FLT32> (fake.mSize) ;
 		fake.mUserVisit = BitSet (fake.mSize) ;
 		fake.mWorkVisit = BitSet (fake.mSize) ;
 		fake.mMatch = Array<INDEX> (fake.mSize) ;
-		fake.mLack = Array<VAL32> (fake.mSize) ;
+		fake.mLack = Array<FLT32> (fake.mSize) ;
+	}
+
+	void set_threshold (CREF<FLT64> threshold) override {
+		fake.mThreshold = FLT32 (threshold) ;
 	}
 
 	LENGTH size () const override {
 		return fake.mSize ;
 	}
 
-	Array<INDEX> sort (CREF<Array<VAL32>> love) override {
+	Array<INDEX> sort (RREF<Array<FLT32>> love) override {
 		assert (fake.mMatch.size () > 0) ;
 		assert (love.size () == MathProc::square (fake.mSize)) ;
+		fake.mLove = move (love) ;
 		fake.mUser.fill (0) ;
 		fake.mWork.fill (0) ;
 		fake.mUserVisit.clear () ;
@@ -561,20 +566,20 @@ public:
 
 	void solve () {
 		for (auto &&i : iter (0 ,fake.mSize)) {
-			fake.mUser[i] = -fake.mInfinity ;
+			fake.mUser[i] = -infinity ;
 			for (auto &&j : iter (0 ,fake.mSize)) {
 				fake.mUser[i] = MathProc::max_of (fake.mUser[i] ,fake.mLove[i * fake.mSize + j]) ;
 			}
 		}
 		for (auto &&i : iter (0 ,fake.mSize)) {
-			fake.mLack.fill (fake.mInfinity) ;
+			fake.mLack.fill (infinity) ;
 			while (TRUE) {
 				fake.mUserVisit.clear () ;
 				fake.mWorkVisit.clear () ;
 				if (dfs (i))
 					break ;
 				const auto r1x = invoke ([&] () {
-					VAL32 ret = fake.mInfinity ;
+					FLT32 ret = infinity ;
 					for (auto &&j : iter (0 ,fake.mSize)) {
 						if (fake.mWorkVisit[j])
 							continue ;
@@ -610,11 +615,11 @@ public:
 				continue ;
 			const auto r1x = fake.mUser[user] + fake.mWork[i] - fake.mLove[user * fake.mSize + i] ;
 			if ifdo (TRUE) {
-				if (r1x == 0)
+				if (r1x < fake.mThreshold)
 					discard ;
 				fake.mLack[i] = MathProc::min_of (fake.mLack[i] ,r1x) ;
 			}
-			if (r1x != 0)
+			if (r1x >= fake.mThreshold)
 				continue ;
 			fake.mWorkVisit[i] = TRUE ;
 			const auto r2x = fake.mMatch[i] ;
