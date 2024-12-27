@@ -55,7 +55,7 @@ struct WorkThreadHolder implement Interface {
 	virtual void start (CREF<Function<CREF<INDEX>>> func) const = 0 ;
 	virtual void post (CREF<INDEX> begin_ ,CREF<INDEX> end_) const = 0 ;
 	virtual void join () const = 0 ;
-	virtual BOOL join (CREF<Time> interval ,CREF<Function<VREF<BOOL>>> predicate) const = 0 ;
+	virtual BOOL join (CREF<Time> interval) const = 0 ;
 	virtual void stop () const = 0 ;
 } ;
 
@@ -90,8 +90,8 @@ public:
 		return WorkThreadHolder::hold (thiz)->join () ;
 	}
 
-	BOOL join (CREF<Time> interval ,CREF<Function<VREF<BOOL>>> predicate) const {
-		return WorkThreadHolder::hold (thiz)->join (interval ,predicate) ;
+	BOOL join (CREF<Time> interval) const {
+		return WorkThreadHolder::hold (thiz)->join (interval) ;
 	}
 
 	void stop () const {
@@ -100,8 +100,9 @@ public:
 } ;
 
 struct CalcSolution {
-	INDEX mIndex ;
-	FLT64 mError ;
+	INDEX mIteration ;
+	FLT64 mAvgError ;
+	FLT64 mStdError ;
 	BitSet mInput ;
 } ;
 

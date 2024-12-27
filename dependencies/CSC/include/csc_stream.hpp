@@ -124,10 +124,10 @@ struct StreamShape {
 	INDEX mWrite ;
 } ;
 
-static constexpr auto CLS = TYPE<PlaceHolder<RANK1>>::expr ;
-static constexpr auto BOM = TYPE<PlaceHolder<RANK2>>::expr ;
-static constexpr auto GAP = TYPE<PlaceHolder<RANK3>>::expr ;
-static constexpr auto EOS = TYPE<PlaceHolder<RANK4>>::expr ;
+static constexpr auto CLS = RANK1 () ;
+static constexpr auto BOM = RANK2 () ;
+static constexpr auto GAP = RANK3 () ;
+static constexpr auto EOS = RANK4 () ;
 
 struct ReaderFriend ;
 
@@ -285,6 +285,7 @@ public:
 
 struct ByteReaderLayout {
 	Ref<RefBuffer<BYTE>> mStream ;
+	BOOL mDiffEndian ;
 	Function<VREF<ByteReaderLayout>> mOverflow ;
 	INDEX mRead ;
 	INDEX mWrite ;
@@ -327,6 +328,7 @@ struct ByteReaderHolder implement Interface {
 class ByteReader implement ByteReaderLayout {
 protected:
 	using ByteReaderLayout::mStream ;
+	using ByteReaderLayout::mDiffEndian ;
 	using ByteReaderLayout::mOverflow ;
 	using ByteReaderLayout::mRead ;
 	using ByteReaderLayout::mWrite ;
@@ -567,6 +569,7 @@ public:
 
 struct TextReaderLayout {
 	Ref<RefBuffer<BYTE>> mStream ;
+	BOOL mDiffEndian ;
 	Function<VREF<TextReaderLayout>> mOverflow ;
 	INDEX mRead ;
 	INDEX mWrite ;
@@ -609,6 +612,7 @@ struct TextReaderHolder implement Interface {
 class TextReader implement TextReaderLayout {
 protected:
 	using TextReaderLayout::mStream ;
+	using TextReaderLayout::mDiffEndian ;
 	using TextReaderLayout::mOverflow ;
 	using TextReaderLayout::mRead ;
 	using TextReaderLayout::mWrite ;
@@ -1003,6 +1007,7 @@ public:
 
 struct ByteWriterLayout {
 	Ref<RefBuffer<BYTE>> mStream ;
+	BOOL mDiffEndian ;
 	Function<VREF<ByteWriterLayout>> mOverflow ;
 	INDEX mRead ;
 	INDEX mWrite ;
@@ -1045,6 +1050,7 @@ struct ByteWriterHolder implement Interface {
 class ByteWriter implement ByteWriterLayout {
 protected:
 	using ByteWriterLayout::mStream ;
+	using ByteWriterLayout::mDiffEndian ;
 	using ByteWriterLayout::mOverflow ;
 	using ByteWriterLayout::mRead ;
 	using ByteWriterLayout::mWrite ;
@@ -1278,6 +1284,7 @@ public:
 
 struct TextWriterLayout {
 	Ref<RefBuffer<BYTE>> mStream ;
+	BOOL mDiffEndian ;
 	Function<VREF<TextWriterLayout>> mOverflow ;
 	INDEX mRead ;
 	INDEX mWrite ;
@@ -1320,6 +1327,7 @@ struct TextWriterHolder implement Interface {
 class TextWriter implement TextWriterLayout {
 protected:
 	using TextWriterLayout::mStream ;
+	using TextWriterLayout::mDiffEndian ;
 	using TextWriterLayout::mOverflow ;
 	using TextWriterLayout::mRead ;
 	using TextWriterLayout::mWrite ;
@@ -1897,8 +1905,8 @@ struct RegexHolder implement Interface {
 	imports CFat<RegexHolder> hold (CREF<RegexLayout> that) ;
 
 	virtual void initialize (CREF<String<STR>> format) = 0 ;
-	virtual INDEX search (CREF<String<STR>> text ,CREF<INDEX> offset) = 0 ;
-	virtual String<STR> match (CREF<INDEX> index) const = 0 ;
+	virtual INDEX search (RREF<Ref<String<STR>>> text ,CREF<INDEX> offset) = 0 ;
+	virtual Slice match (CREF<INDEX> index) const = 0 ;
 } ;
 
 class Regex implement RegexLayout {
@@ -1912,11 +1920,11 @@ public:
 		RegexHolder::hold (thiz)->initialize (format) ;
 	}
 
-	INDEX search (CREF<String<STR>> text ,CREF<INDEX> offset) {
-		return RegexHolder::hold (thiz)->search (text ,offset) ;
+	INDEX search (RREF<Ref<String<STR>>> text ,CREF<INDEX> offset) {
+		return RegexHolder::hold (thiz)->search (move (text) ,offset) ;
 	}
 
-	String<STR> match (CREF<INDEX> index) const {
+	Slice match (CREF<INDEX> index) const {
 		return RegexHolder::hold (thiz)->match (index) ;
 	}
 } ;

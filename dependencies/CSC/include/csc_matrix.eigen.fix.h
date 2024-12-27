@@ -1,4 +1,13 @@
 ﻿
+
+#ifdef _HAS_DEPRECATED_NEGATORS
+#if _HAS_DEPRECATED_NEGATORS
+#undef EIGEN_HAS_STD_NEGATORS
+#endif
+#endif
+
+#ifdef EIGEN_HAS_STD_NEGATORS
+#if !EIGEN_HAS_STD_NEGATORS
 namespace std {
 template<class _Fn>
 class unary_negate {	// functor adapter !_Func(left)
@@ -38,3 +47,5 @@ private:
 	_Fn _Functor;	// the functor to apply
 };
 } ;
+#endif
+#endif

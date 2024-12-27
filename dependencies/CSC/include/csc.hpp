@@ -22,6 +22,10 @@
 #error "∑(っ°Д° ;)っ : unsupported"
 #endif
 
+#ifdef __CUDACC__
+#define __CSC_COMPILER_NVCC__
+#endif
+
 #if defined (linux) || defined (__linux) || defined (__linux__)
 #define __CSC_SYSTEM_LINUX__
 #elif defined (WIN32) || defined (_WIN32) || defined (__WIN32__)
@@ -103,6 +107,7 @@
 #pragma warning (disable :4625) //@info: warning C4625: 'xxx': copy constructor was implicitly defined as deleted
 #pragma warning (disable :4626) //@info: warning C4626: 'xxx': assignment operator was implicitly defined as deleted
 #pragma warning (disable :4643) //@info: warning C4643: Forward declaring 'initializer_list' in namespace std is not permitted by the C++ Standard.
+#pragma warning (disable :4661) //@info: 'xxx': no suitable definition provided for explicit template instantiation request
 #pragma warning (disable :4668) //@info: warning C4668: 'xxx' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
 #pragma warning (disable :4686) //@info: warning C4686: 'xxx': possible change in behavior, change in UDT return calling convention
 #pragma warning (disable :4702) //@info: warning C4702: unreachable code
@@ -117,6 +122,8 @@
 #pragma warning (disable :5045) //@info: warning C5045: 'xxx': move assignment operator was implicitly defined as deleted
 #pragma warning (disable :5246) //@info: warning C5246: 'xxx': the initialization of a subobject should be wrapped in braces
 #pragma warning (disable :5039) //@info: warning C5039: 'xxx': pointer or reference to potentially throwing function passed to 'xxx' function under -EHc. Undefined behavior may occur if this function throws an exception.
+#pragma warning (disable :26495) //@info: Variable 'xxx' is uninitialized. Always initialize a member variable (type.6).
+#pragma warning (disable :26820) //@info: This is a potentially expensive copy operation. Consider using a reference unless a copy is required (p.9).
 #endif
 
 #ifdef __CSC_COMPILER_GNUC__
@@ -126,6 +133,7 @@
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
 #pragma GCC diagnostic ignored "-Wuninitialized"
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#pragma GCC diagnostic warning "-Wsuggest-override"
 #endif
 
 #ifdef __CSC_COMPILER_CLANG__
@@ -138,60 +146,64 @@
 
 #include "csc_end.h"
 #ifdef __CSC_COMPILER_GNUC__
-//@fatal: fuck gnuc
+#if __GLIBCXX__ <= 20230528L
+//@fatal: GCC is so bad
 #include <type_traits>
 #define __is_constructible(...) std::is_constructible<__VA_ARGS__>::value
 #define __is_nothrow_constructible(...) std::is_nothrow_constructible<__VA_ARGS__>::value
 #define __is_nothrow_destructible(...) std::is_nothrow_destructible<__VA_ARGS__>::value
 #define __is_assignable(...) std::is_assignable<__VA_ARGS__>::value
-#define __is_convertible_to(...) std::is_convertible<__VA_ARGS__>::value
-#define __is_trivially_constructible __has_trivial_constructor
-#define __is_trivially_destructible __has_trivial_destructor
+#define __is_trivially_constructible(...) std::is_trivially_constructible<__VA_ARGS__>::value
+#define __is_trivially_destructible(...) std::is_trivially_destructible<__VA_ARGS__>::value
+#endif
 #endif
 
 namespace std {
+//@fatal: STL is so bad
 template <class>
 class initializer_list ;
 } ;
 #include "csc_begin.h"
 
-#ifndef __CSC_CXX_LATEST__
-#ifdef __CSC_COMPILER_GNUC__
-#if __GLIBCXX__ <= 20140522L
-//@fatal: fuck gnuc
-namespace std {
-template <class A>
-struct is_trivially_default_constructible :integral_constant<bool ,__has_trivial_constructor (A)> {} ;
-} ;
+#ifndef __macro_dllextern
+#ifdef __CSC_COMPILER_MSVC__
+#define __macro_dllextern __declspec (dllexport)
 #endif
+
+#ifdef __CSC_COMPILER_GNUC__
+#define __macro_dllextern
+#endif
+
+#ifdef __CSC_COMPILER_CLANG__
+#define __macro_dllextern
 #endif
 #endif
 
 #ifndef __macro_exports
 #ifdef __CSC_COMPILER_MSVC__
-#define __macro_exports
+#define __macro_exports __macro_dllextern
 #endif
 
 #ifdef __CSC_COMPILER_GNUC__
-#define __macro_exports __attribute__ ((visibility ("default")))
+#define __macro_exports __attribute__ ((visibility ("default"))) __macro_dllextern
 #endif
 
 #ifdef __CSC_COMPILER_CLANG__
-#define __macro_exports
+#define __macro_exports __attribute__ ((visibility ("default"))) __macro_dllextern
 #endif
 #endif
 
 #ifndef __macro_imports
 #ifdef __CSC_COMPILER_MSVC__
-#define __macro_imports static
+#define __macro_imports static __macro_dllextern
 #endif
 
 #ifdef __CSC_COMPILER_GNUC__
-#define __macro_imports static
+#define __macro_imports static __macro_dllextern
 #endif
 
 #ifdef __CSC_COMPILER_CLANG__
-#define __macro_imports static
+#define __macro_imports static __macro_dllextern
 #endif
 #endif
 
@@ -209,14 +221,18 @@ struct is_trivially_default_constructible :integral_constant<bool ,__has_trivial
 #endif
 #endif
 
+#ifndef __macro_exp
+#define __macro_exp(a) a
+#endif
+
 #ifndef __macro_str
 #define __macro_str_impl(...) #__VA_ARGS__
-#define __macro_str(...) __macro_str_impl (__VA_ARGS__)
+#define __macro_str(...) __macro_exp (__macro_str_impl (__VA_ARGS__))
 #endif
 
 #ifndef __macro_cat
-#define __macro_cat_impl(A ,B) A##B
-#define __macro_cat(A ,B) __macro_cat_impl (A ,B)
+#define __macro_cat_impl(a ,b) a##b
+#define __macro_cat(...) __macro_exp (__macro_cat_impl (__VA_ARGS__))
 #endif
 
 #ifndef __macro_require
@@ -257,7 +273,7 @@ struct is_trivially_default_constructible :integral_constant<bool ,__has_trivial
 #endif
 
 #ifdef __CSC_VER_UNITTEST__
-#define __macro_assert(...) do { if (__VA_ARGS__) break ; inline_abort () ; } while (false)
+#define __macro_assert(...) do { if (__VA_ARGS__) break ; if (inline_unittest ()) { __macro_break () ; } else  { inline_abort () ; } } while (false)
 #endif
 
 #ifdef __CSC_VER_RELEASE__
@@ -293,22 +309,22 @@ struct is_trivially_default_constructible :integral_constant<bool ,__has_trivial
 #endif
 #endif
 
-#ifndef __macro_output
+#ifndef __macro_watch
 #ifdef __CSC_VER_DEBUG__
-#define __macro_output(...) do { struct LINE ; CSC::inline_output (TYPE<LINE>::expr ,CSC::csc_pointer_t (&__VA_ARGS__)) ; } while (false)
+#define __macro_watch(...) do { struct LINE ; CSC::inline_watch (TYPE<LINE>::expr ,__VA_ARGS__) ; } while (false)
 #endif
 
 #ifdef __CSC_VER_UNITTEST__
-#define __macro_output(...) do { struct LINE ; CSC::inline_output (TYPE<LINE>::expr ,CSC::csc_pointer_t (&__VA_ARGS__)) ; } while (false)
+#define __macro_watch(...) do { struct LINE ; CSC::inline_watch (TYPE<LINE>::expr ,__VA_ARGS__) ; } while (false)
 #endif
 
 #ifdef __CSC_VER_RELEASE__
-#define __macro_output(...) do {} while (false)
+#define __macro_watch(...) do {} while (false)
 #endif
 #endif
 
 #ifndef __macro_ifdo
-#define __macro_ifdo(A) (A) for (CSC::csc_bool_t anonymous = true ; anonymous ; anonymous = CSC::inline_ifdo (A))
+#define __macro_ifdo(a) (a) for (auto anonymous = true ; anonymous ; anonymous = CSC::inline_ifdo (a))
 #endif
 
 #ifndef __macro_typeof
@@ -317,6 +333,23 @@ struct is_trivially_default_constructible :integral_constant<bool ,__has_trivial
 
 #ifndef __macro_nullof
 #define __macro_nullof(...) (*CSC::DEF<typename CSC::REMOVE_CVR1_HELP<__VA_ARGS__>::RET *> (0X1000))
+#endif
+
+#ifndef __macro_for_bind
+#define __macro_for_bind_0(F ,...)
+#define __macro_for_bind_1(F ,a) F (a)
+#define __macro_for_bind_2(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_1 (F ,__VA_ARGS__))
+#define __macro_for_bind_3(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_2 (F ,__VA_ARGS__))
+#define __macro_for_bind_4(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_3 (F ,__VA_ARGS__))
+#define __macro_for_bind_5(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_4 (F ,__VA_ARGS__))
+#define __macro_for_bind_6(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_5 (F ,__VA_ARGS__))
+#define __macro_for_bind_7(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_6 (F ,__VA_ARGS__))
+#define __macro_for_bind_8(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_7 (F ,__VA_ARGS__))
+#define __macro_for_bind_9(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_8 (F ,__VA_ARGS__))
+#define __macro_for_bind_X(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_9 (F ,__VA_ARGS__))
+#define __macro_for_bind_choose(F ,a0 ,a1 ,a2 ,a3 ,a4 ,a5 ,a6 ,a7 ,a8 ,a9 ,ax ,...) ax
+#define __macro_for_bind_impl(F ,...) __macro_exp (__macro_for_bind_choose(F ,__VA_ARGS__ ,__macro_for_bind_X ,__macro_for_bind_9 ,__macro_for_bind_8 ,__macro_for_bind_7 ,__macro_for_bind_6 ,__macro_for_bind_5 ,__macro_for_bind_4 ,__macro_for_bind_3 ,__macro_for_bind_2 ,__macro_for_bind_1 ,__macro_for_bind_0) (F ,__VA_ARGS__))
+#define __macro_for_bind(F ,...) __macro_exp (__macro_for_bind_impl (F ,__VA_ARGS__))
 #endif
 
 namespace CSC {
@@ -433,6 +466,7 @@ trait KILL_HELP<A ,B> {
 template <class A ,class B>
 using KILL = typename KILL_HELP<A ,B>::RET ;
 
+#ifdef __CSC_COMPILER_MSVC__
 template <class...>
 trait IS_SAME_HELP ;
 
@@ -448,6 +482,17 @@ trait IS_SAME_HELP<A ,B> {
 
 template <class A ,class B>
 using IS_SAME = typename IS_SAME_HELP<A ,B>::RET ;
+#endif
+
+#ifdef __CSC_COMPILER_GNUC__
+template <class A ,class B>
+using IS_SAME = ENUM<(__is_same (A ,B))> ;
+#endif
+
+#ifdef __CSC_COMPILER_CLANG__
+template <class A ,class B>
+using IS_SAME = ENUM<(__is_same (A ,B))> ;
+#endif
 
 template <class...>
 trait REMOVE_CVR1_HELP ;

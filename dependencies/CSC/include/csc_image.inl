@@ -207,11 +207,11 @@ exports CREF<ImageProcLayout> ImageProcHolder::instance () {
 }
 
 exports VFat<ImageProcHolder> ImageProcHolder::hold (VREF<ImageProcLayout> that) {
-	return VFat<ImageProcHolder> (External<ImageProcHolder ,ImageProcLayout>::linkage () ,that) ;
+	return VFat<ImageProcHolder> (External<ImageProcHolder ,ImageProcLayout>::declare () ,that) ;
 }
 
 exports CFat<ImageProcHolder> ImageProcHolder::hold (CREF<ImageProcLayout> that) {
-	return CFat<ImageProcHolder> (External<ImageProcHolder ,ImageProcLayout>::linkage () ,that) ;
+	return CFat<ImageProcHolder> (External<ImageProcHolder ,ImageProcLayout>::declare () ,that) ;
 }
 
 struct ReflectTensorCopy implement Interface {
@@ -265,6 +265,8 @@ public:
 	}
 
 	Just<TensorDataType> type () const override {
+		if (!fake.mTensor.exist ())
+			return TensorDataType::ETC ;
 		return fake.mType ;
 	}
 
@@ -293,27 +295,19 @@ public:
 	}
 
 	TensorLayout recast (CREF<Just<TensorDataType>> type_) override {
+		if (type () == type_)
+			return move (fake) ;
 		TensorLayout ret ;
-		auto act = TRUE ;
-		if ifdo (act) {
-			if (!fake.mTensor.exist ())
-				discard ;
-			if (type () == type_)
-				discard ;
-			const auto r1x = size () ;
-			TensorHolder::hold (ret)->initialize (r1x ,type_) ;
-			const auto r2x = choose_tensor_copy (type_ ,type ()) ;
-			const auto r3x = RFat<ReflectTensorCopy> (r2x) ;
-			const auto r6x = address (ret.mTensor[ret.mOffset]) ;
-			const auto r7x = address (fake.mTensor[fake.mOffset]) ;
-			for (auto &&i : iter (0 ,r1x)) {
-				const auto r4x = r6x + i * ret.mSX ;
-				const auto r5x = r7x + i * fake.mSX ;
-				r3x->xcopy (Pointer::make (r4x) ,Pointer::make (r5x)) ;
-			}
-		}
-		if ifdo (act) {
-			ret = move (fake) ;
+		const auto r1x = size () ;
+		TensorHolder::hold (ret)->initialize (r1x ,type_) ;
+		const auto r2x = choose_tensor_copy (type_ ,type ()) ;
+		const auto r3x = RFat<ReflectTensorCopy> (r2x) ;
+		const auto r4x = address (ret.mTensor[ret.mOffset]) ;
+		const auto r5x = address (fake.mTensor[fake.mOffset]) ;
+		for (auto &&i : iter (0 ,r1x)) {
+			const auto r6x = r4x + i * ret.mSX ;
+			const auto r7x = r5x + i * fake.mSX ;
+			r3x->xcopy (Pointer::make (r6x) ,Pointer::make (r7x)) ;
 		}
 		return move (ret) ;
 	}

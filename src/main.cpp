@@ -18,15 +18,14 @@ int main (int argc ,DEF<char **> argv) {
 	Singleton<Console>::instance ().start () ;
 	Singleton<Console>::instance ().open (slice (".")) ;
 	try {
-		Singleton<Console>::instance ().info (slice ("process_uid = ") ,RuntimeProc::process_uid ()) ;
-		Singleton<Console>::instance ().info (slice ("thread_uid = ") ,RuntimeProc::thread_uid ()) ;
-		Singleton<Console>::instance ().info (slice ("library_file = ") ,RuntimeProc::library_file ()) ;
-		Singleton<Console>::instance ().info (slice ("heap_address = ") ,QUAD (address (Heap::instance ()))) ;
+		Singleton<Console>::instance ().debug (slice ("library_file = ") ,RuntimeProc::library_file ()) ;
 		assume (argc >= 2) ;
-		const auto r1x = Path (Slice (FLAG (argv[1]) ,SLICE_MAX_SIZE::expr ,1)) ;
-		const auto r2x = r1x.root ().child (r1x.fetch ()) ;
-		Singleton<Console>::instance ().info (slice ("working_path = ") ,r2x) ;
-		assume (1 == 2) ;
+		const auto r1x = Path (Slice (FLAG (argv[1]) ,SLICE_MAX_SIZE::expr ,1)).absolute () ;
+		Singleton<Console>::instance ().info (slice ("working_path = ") ,r1x.fetch ()) ;
+		ConfigProc::instance ().set_data_dire (r1x) ;
+		watch (r1x) ;
+		watch (r1x) ;
+		watch (r1x) ;
 	} catch (CREF<Exception> e) {
 		Singleton<Console>::instance ().trace () ;
 		Singleton<Console>::instance ().error (slice ("ERROR")) ;

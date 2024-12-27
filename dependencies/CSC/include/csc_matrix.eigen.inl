@@ -12,9 +12,9 @@
 
 #include "csc_end.h"
 #ifdef __CSC_COMPILER_MSVC__
-#ifdef __CSC_CXX_LATEST__
-#include "csc_matrix.eigen.fix.h"
-#endif
+#define EIGEN_HAS_STD_RESULT_OF 0
+//@warn: actually eigen do not have 'EIGEN_HAS_STD_NEGATORS' ,you need merge 'csc_matrix.eigen.fix.h' to 'Eigen/src/Core/functors/StlFunctors.h'
+#define EIGEN_HAS_STD_NEGATORS 0
 #endif
 
 #include <Eigen/Dense>
@@ -136,7 +136,7 @@ public:
 	}
 } ;
 
-static const auto mMatrixProcExternal = External<MatrixProcHolder ,MatrixProcLayout>::declare (MatrixProcImplHolder ()) ;
+static const auto mMatrixProcExternal = External<MatrixProcHolder ,MatrixProcLayout> (MatrixProcImplHolder ()) ;
 
 class LinearProcImplHolder final implement Fat<LinearProcHolder ,LinearProcLayout> {
 public:
@@ -189,5 +189,5 @@ public:
 	}
 } ;
 
-static const auto mLinearProcExternal = External<LinearProcHolder ,LinearProcLayout>::declare (LinearProcImplHolder ()) ;
+static const auto mLinearProcExternal = External<LinearProcHolder ,LinearProcLayout> (LinearProcImplHolder ()) ;
 } ;

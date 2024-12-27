@@ -1,9 +1,7 @@
-#include "export.h"
+﻿#include "export.h"
 
 namespace CSC3DCV {
-class FeatureImplHolder implement FeatureHolder {
-protected:
-
+class FeatureImplHolder final implement Fat<FeatureHolder ,FeatureLayout> {
 public:
 	void initialize () override {
 
@@ -14,7 +12,11 @@ public:
 	}
 } ;
 
-exports DLLEXTERN AutoRef<FeatureHolder> FeatureHolder::create () {
-	return AutoRef<FeatureImplHolder>::make () ;
+exports VFat<FeatureHolder> FeatureHolder::hold (VREF<FeatureLayout> that) {
+	return VFat<FeatureHolder> (FeatureImplHolder () ,that) ;
+}
+
+exports CFat<FeatureHolder> FeatureHolder::hold (CREF<FeatureLayout> that) {
+	return CFat<FeatureHolder> (FeatureImplHolder () ,that) ;
 }
 } ;

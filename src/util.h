@@ -14,16 +14,6 @@
 #include <csc_file.hpp>
 #include <csc_thread.hpp>
 
-#ifndef DLLEXTERN
-#ifdef __CSC_COMPILER_MSVC__
-#define DLLEXTERN __declspec (dllexport)
-#endif
-
-#ifdef __CSC_COMPILER_GNUC__
-#define DLLEXTERN __attribute__ ((visibility("default")))
-#endif
-#endif
-
 namespace CSC3DCV {
 using namespace CSC ;
 

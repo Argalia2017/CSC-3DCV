@@ -1,9 +1,7 @@
-#include "export.h"
+﻿#include "export.h"
 
 namespace CSC3DCV {
-class CameraOptimizerImplHolder implement CameraOptimizerHolder {
-protected:
-
+class CameraOptimizerImplHolder final implement Fat<CameraOptimizerHolder ,CameraOptimizerLayout> {
 public:
 	void initialize () override {
 
@@ -12,7 +10,11 @@ public:
 
 } ;
 
-exports DLLEXTERN AutoRef<CameraOptimizerHolder> CameraOptimizerHolder::create () {
-	return AutoRef<CameraOptimizerImplHolder>::make () ;
+exports VFat<CameraOptimizerHolder> CameraOptimizerHolder::hold (VREF<CameraOptimizerLayout> that) {
+	return VFat<CameraOptimizerHolder> (CameraOptimizerImplHolder () ,that) ;
+}
+
+exports CFat<CameraOptimizerHolder> CameraOptimizerHolder::hold (CREF<CameraOptimizerLayout> that) {
+	return CFat<CameraOptimizerHolder> (CameraOptimizerImplHolder () ,that) ;
 }
 } ;

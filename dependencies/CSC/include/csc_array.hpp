@@ -757,7 +757,7 @@ struct PriorityNode {
 
 struct PriorityLayout {
 	RefBuffer<Pointer> mPriority ;
-	FLAG mOffset ;
+	LENGTH mOffset ;
 	INDEX mWrite ;
 } ;
 
@@ -1126,9 +1126,7 @@ public:
 	}
 } ;
 
-struct ArrayListNode implement AllocatorNode {
-	INDEX mIndex ;
-} ;
+struct ArrayListNode implement AllocatorNode {} ;
 
 struct ArrayListLayout {
 	Allocator<Pointer ,ArrayListNode> mList ;
@@ -1300,6 +1298,7 @@ public:
 
 struct SortedMapNode implement AllocatorNode {
 	INDEX mMap ;
+	INDEX mDown ;
 } ;
 
 struct SortedMapImplLayout {
@@ -1309,6 +1308,7 @@ struct SortedMapImplLayout {
 
 struct SortedMapLayout {
 	SharedRef<SortedMapImplLayout> mThis ;
+	INDEX mRoot ;
 	RefBuffer<INDEX> mRange ;
 	INDEX mWrite ;
 	BOOL mRemap ;
@@ -1326,7 +1326,7 @@ struct SortedMapHolder implement Interface {
 	virtual LENGTH size () const = 0 ;
 	virtual LENGTH step () const = 0 ;
 	virtual LENGTH length () const = 0 ;
-	virtual CREF<Pointer> at (CREF<INDEX> index) const leftvalue = 0 ;
+	virtual CREF<INDEX> at (CREF<INDEX> index) const leftvalue = 0 ;
 	virtual INDEX ibegin () const = 0 ;
 	virtual INDEX iend () const = 0 ;
 	virtual INDEX inext (CREF<INDEX> index) const = 0 ;
@@ -1374,6 +1374,7 @@ template <class A>
 class SortedMap implement SortedMapRealLayout<A> {
 protected:
 	using SortedMapRealLayout<A>::mThis ;
+	using SortedMapRealLayout<A>::mRoot ;
 	using SortedMapRealLayout<A>::mRange ;
 	using SortedMapRealLayout<A>::mWrite ;
 	using SortedMapRealLayout<A>::mRemap ;
@@ -1411,11 +1412,11 @@ public:
 		return SortedMapHolder::hold (thiz)->length () ;
 	}
 
-	CREF<A> at (CREF<INDEX> index) const leftvalue {
+	CREF<INDEX> at (CREF<INDEX> index) const leftvalue {
 		return SortedMapHolder::hold (thiz)->at (index) ;
 	}
 
-	forceinline CREF<A> operator[] (CREF<INDEX> index) const leftvalue {
+	forceinline CREF<INDEX> operator[] (CREF<INDEX> index) const leftvalue {
 		return at (index) ;
 	}
 

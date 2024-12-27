@@ -1,16 +1,36 @@
 ﻿#include "export.h"
 
 namespace CSC3DCV {
-class ConfigImplHolder implement ConfigHolder {
-protected:
+struct ConfigProcImplLayout {
+	Path mDataPath ;
+} ;
 
+class ConfigProcImplHolder final implement Fat<ConfigProcHolder ,ConfigProcLayout> {
 public:
 	void initialize () override {
+		fake.mThis = SharedRef<ConfigProcImplLayout>::make () ;
+	}
 
+	void set_data_dire (CREF<String<STR>> dire) const override {
+		fake.mThis->mDataPath = Path (dire) ;
+		const auto r1x = FileProc::lock_dire (slice (".")) ;
+		assume (r1x) ;
 	}
 } ;
 
-exports DLLEXTERN AutoRef<ConfigHolder> ConfigHolder::create () {
-	return AutoRef<ConfigImplHolder>::make () ;
+exports CREF<ConfigProcLayout> ConfigProcHolder::instance () {
+	return memorize ([&] () {
+		ConfigProcLayout ret ;
+		ConfigProcHolder::hold (ret)->initialize () ;
+		return move (ret) ;
+	}) ;
+}
+
+exports VFat<ConfigProcHolder> ConfigProcHolder::hold (VREF<ConfigProcLayout> that) {
+	return VFat<ConfigProcHolder> (ConfigProcImplHolder () ,that) ;
+}
+
+exports CFat<ConfigProcHolder> ConfigProcHolder::hold (CREF<ConfigProcLayout> that) {
+	return CFat<ConfigProcHolder> (ConfigProcImplHolder () ,that) ;
 }
 } ;

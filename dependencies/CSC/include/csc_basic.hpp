@@ -76,9 +76,9 @@ struct KeyNodeHolder implement Interface {
 	virtual void initialize () = 0 ;
 	virtual void initialize (CREF<Unknown> holder ,CREF<FLAG> pointer) = 0 ;
 	virtual void destroy () = 0 ;
-	virtual FLAG keyid () const = 0 ;
-	virtual FLAG keyap () const = 0 ;
-	virtual FLAG keyap (CREF<Unknown> holder ,CREF<FLAG> id) const = 0 ;
+	virtual FLAG key_uid () const = 0 ;
+	virtual FLAG spwan () const = 0 ;
+	virtual FLAG spwan (CREF<Unknown> holder ,CREF<FLAG> uid) const = 0 ;
 } ;
 
 inline KeyNodeLayout::~KeyNodeLayout () noexcept {
@@ -86,8 +86,17 @@ inline KeyNodeLayout::~KeyNodeLayout () noexcept {
 }
 
 template <class A>
-struct KeyId {
-	FLAG mKeyId ;
+struct KeyUid {
+	FLAG mUid ;
+} ;
+
+class KeyRoot implement KeyNodeLayout {
+public:
+	implicit KeyRoot () = default ;
+
+	implicit KeyRoot (CREF<typeof (NULL)>) {
+		KeyNodeHolder::hold (thiz)->initialize () ;
+	}
 } ;
 
 template <class A>
@@ -101,9 +110,9 @@ public:
 		KeyNodeHolder::hold (thiz)->initialize (RefUnknownBinder<A> () ,r1x) ;
 	}
 
-	KeyId<A> keyid () const {
-		const auto r1x = KeyNodeHolder::hold (thiz)->keyid () ;
-		return KeyId<A> (r1x) ;
+	KeyUid<A> key_uid () const {
+		const auto r1x = KeyNodeHolder::hold (thiz)->key_uid () ;
+		return KeyUid<A> (r1x) ;
 	}
 } ;
 
@@ -119,7 +128,7 @@ public:
 template <class A>
 class Key implement KeyLayout {
 public:
-	using Id = KeyId<A> ;
+	using Id = KeyUid<A> ;
 
 protected:
 	using KeyLayout::mPointer ;
@@ -127,13 +136,13 @@ protected:
 public:
 	implicit Key () = default ;
 
-	implicit Key (VREF<KeyNode<A>> gc) {
-		mPointer = KeyNodeHolder::hold (gc)->keyap () ;
+	implicit Key (VREF<KeyNode<A>> node) {
+		mPointer = KeyNodeHolder::hold (node)->spwan () ;
 	}
 
 	template <class ARG1 = A>
-	explicit Key (VREF<KeyNodeLayout> gc ,CREF<KeyId<A>> id) {
-		mPointer = KeyNodeHolder::hold (gc)->keyap (RefUnknownBinder<KILL<A ,ARG1>> () ,id.mKeyId) ;
+	explicit Key (VREF<KeyNodeLayout> node ,CREF<KeyUid<A>> uid) {
+		mPointer = KeyNodeHolder::hold (node)->spwan (RefUnknownBinder<KILL<A ,ARG1>> () ,uid.mUid) ;
 	}
 
 	BOOL equal (CREF<Key> that) const {
@@ -408,7 +417,7 @@ public:
 
 	template <class ARG1 ,class...ARG2>
 	forceinline void invoke_impl (CREF<ARG1> func ,TYPE<ARG2...>) const {
-		//@fatal: workaround for GCC bug
+		//@fatal: GCC is so bad
 		return func (keep[TYPE<XREF<A>>::expr] (Pointer::make (mWrapper.self[ARG2::expr]))...) ;
 	}
 
@@ -850,6 +859,7 @@ struct UniqueRefHolder implement Interface {
 	virtual BOOL exist () const = 0 ;
 	virtual VREF<BoxLayout> raw () leftvalue = 0 ;
 	virtual CREF<BoxLayout> raw () const leftvalue = 0 ;
+	virtual void depend (VREF<UniqueRefLayout> that) const = 0 ;
 	virtual CREF<Pointer> self_m () const leftvalue = 0 ;
 	virtual UniqueRefLayout recast (CREF<Unknown> simple) = 0 ;
 } ;
@@ -914,6 +924,10 @@ public:
 	forceinline BOOL operator== (CREF<UniqueRef> that) = delete ;
 
 	forceinline BOOL operator!= (CREF<UniqueRef> that) = delete ;
+
+	void depend (VREF<UniqueRefLayout> that) const {
+		return UniqueRefHolder::hold (thiz)->depend (that) ;
+	}
 
 	template <class ARG1>
 	UniqueRef<ARG1> recast (TYPE<ARG1>) {
@@ -1208,17 +1222,17 @@ struct AllocatorNode {
 
 struct AllocatorLayout {
 	RefBuffer<Pointer> mAllocator ;
-	FLAG mOffset ;
+	LENGTH mOffset ;
 	LENGTH mWidth ;
 	LENGTH mLength ;
 	INDEX mFree ;
 
 public:
 	implicit AllocatorLayout () noexcept {
-		mOffset = ZERO ;
+		mOffset = 0 ;
 		mWidth = 0 ;
 		mLength = 0 ;
-		mFree = ZERO ;
+		mFree = 0 ;
 	}
 
 	implicit ~AllocatorLayout () noexcept ;
@@ -1384,6 +1398,7 @@ public:
 	}
 
 	void resize (CREF<LENGTH> size_) {
+		AllocatorHolder::hold (thiz)->prepare (AllocatorUnknownBinder<A ,B> ()) ;
 		return AllocatorHolder::hold (thiz)->resize (size_) ;
 	}
 } ;

@@ -34,10 +34,8 @@ struct FUNCTION_calendar_from_timepoint {
 #ifdef __CSC_COMPILER_GNUC__
 struct FUNCTION_calendar_from_timepoint {
 	forceinline std::tm operator() (CREF<std::time_t> time) const {
-		std::tm ret ;
 		const auto r1x = FLAG (std::localtime (&time)) ;
-		inline_memcpy (Pointer::from (ret) ,Pointer::make (r1x) ,SIZE_OF<std::tm>::expr) ;
-		return move (ret) ;
+		return bitwise[TYPE<std::tm>::expr] (Pointer::make (r1x)) ;
 	}
 } ;
 #endif
@@ -61,6 +59,12 @@ struct TimeImplLayout {
 
 class TimeImplHolder final implement Fat<TimeHolder ,TimeLayout> {
 public:
+	void initialize () override {
+		fake.mThis = Box<TimeImplLayout>::make () ;
+		const auto r1x = std::chrono::system_clock::now () ;
+		fake.mThis->mTime = r1x.time_since_epoch () ;
+	}
+
 	void initialize (CREF<LENGTH> milliseconds_) override {
 		fake.mThis = Box<TimeImplLayout>::make () ;
 		const auto r1x = std::chrono::milliseconds (milliseconds_) ;
@@ -137,14 +141,14 @@ public:
 		const auto r1x = std::chrono::system_clock::time_point (fake.mThis->mTime) ;
 		const auto r2x = std::time_t (std::chrono::system_clock::to_time_t (r1x)) ;
 		const auto r3x = calendar_from_timepoint (r2x) ;
-		ret.mYear = r3x.tm_year + 1900 ;
-		ret.mMonth = r3x.tm_mon + 1 ;
-		ret.mDay = r3x.tm_mday ;
-		ret.mWDay = r3x.tm_wday + 1 ;
-		ret.mYDay = r3x.tm_yday + 1 ;
-		ret.mHour = r3x.tm_hour ;
-		ret.mMinute = r3x.tm_min ;
-		ret.mSecond = r3x.tm_sec ;
+		ret.mYear = LENGTH (r3x.tm_year) + 1900 ;
+		ret.mMonth = LENGTH (r3x.tm_mon) + 1 ;
+		ret.mDay = LENGTH (r3x.tm_mday) ;
+		ret.mWDay = LENGTH (r3x.tm_wday) + 1 ;
+		ret.mYDay = LENGTH (r3x.tm_yday) + 1 ;
+		ret.mHour = LENGTH (r3x.tm_hour) ;
+		ret.mMinute = LENGTH (r3x.tm_min) ;
+		ret.mSecond = LENGTH (r3x.tm_sec) ;
 		return move (ret) ;
 	}
 
@@ -171,23 +175,6 @@ exports CFat<TimeHolder> TimeHolder::hold (CREF<TimeLayout> that) {
 	return CFat<TimeHolder> (TimeImplHolder () ,that) ;
 }
 
-class MakeTimeImplHolder final implement Fat<MakeTimeHolder ,TimeLayout> {
-public:
-	void CurrentTime_initialize () override {
-		fake.mThis = Box<TimeImplLayout>::make () ;
-		const auto r1x = std::chrono::system_clock::now () ;
-		fake.mThis->mTime = r1x.time_since_epoch () ;
-	}
-} ;
-
-exports VFat<MakeTimeHolder> MakeTimeHolder::hold (VREF<TimeLayout> that) {
-	return VFat<MakeTimeHolder> (MakeTimeImplHolder () ,that) ;
-}
-
-exports CFat<MakeTimeHolder> MakeTimeHolder::hold (CREF<TimeLayout> that) {
-	return CFat<MakeTimeHolder> (MakeTimeImplHolder () ,that) ;
-}
-
 template class External<RuntimeProcHolder ,RuntimeProcLayout> ;
 
 exports CREF<RuntimeProcLayout> RuntimeProcHolder::instance () {
@@ -199,11 +186,11 @@ exports CREF<RuntimeProcLayout> RuntimeProcHolder::instance () {
 }
 
 exports VFat<RuntimeProcHolder> RuntimeProcHolder::hold (VREF<RuntimeProcLayout> that) {
-	return VFat<RuntimeProcHolder> (External<RuntimeProcHolder ,RuntimeProcLayout>::linkage () ,that) ;
+	return VFat<RuntimeProcHolder> (External<RuntimeProcHolder ,RuntimeProcLayout>::declare () ,that) ;
 }
 
 exports CFat<RuntimeProcHolder> RuntimeProcHolder::hold (CREF<RuntimeProcLayout> that) {
-	return CFat<RuntimeProcHolder> (External<RuntimeProcHolder ,RuntimeProcLayout>::linkage () ,that) ;
+	return CFat<RuntimeProcHolder> (External<RuntimeProcHolder ,RuntimeProcLayout>::declare () ,that) ;
 }
 
 struct AtomicImplLayout {
@@ -322,20 +309,20 @@ exports CFat<MutexHolder> MutexHolder::hold (CREF<MutexLayout> that) {
 
 class MakeMutexImplHolder final implement Fat<MakeMutexHolder ,MutexLayout> {
 public:
-	void OnceMutex_initialize () override {
+	void make_OnceMutex () override {
 		fake.mThis = SharedRef<MutexImplLayout>::make () ;
 		fake.mThis->mType = MutexType::Once ;
 		fake.mThis->mBasic.remake () ;
 	}
 
-	void SharedMutex_initialize () override {
+	void make_SharedMutex () override {
 		fake.mThis = SharedRef<MutexImplLayout>::make () ;
 		fake.mThis->mType = MutexType::Shared ;
 		fake.mThis->mBasic.remake () ;
 		fake.mThis->mShared = NULL ;
 	}
 
-	void UniqueMutex_initialize () override {
+	void make_UniqueMutex () override {
 		fake.mThis = SharedRef<MutexImplLayout>::make () ;
 		fake.mThis->mType = MutexType::Unique ;
 		fake.mThis->mBasic.remake () ;
@@ -538,21 +525,21 @@ exports CFat<ThreadHolder> ThreadHolder::hold (CREF<ThreadLayout> that) {
 template class External<ProcessHolder ,ProcessLayout> ;
 
 exports VFat<ProcessHolder> ProcessHolder::hold (VREF<ProcessLayout> that) {
-	return VFat<ProcessHolder> (External<ProcessHolder ,ProcessLayout>::linkage () ,that) ;
+	return VFat<ProcessHolder> (External<ProcessHolder ,ProcessLayout>::declare () ,that) ;
 }
 
 exports CFat<ProcessHolder> ProcessHolder::hold (CREF<ProcessLayout> that) {
-	return CFat<ProcessHolder> (External<ProcessHolder ,ProcessLayout>::linkage () ,that) ;
+	return CFat<ProcessHolder> (External<ProcessHolder ,ProcessLayout>::declare () ,that) ;
 }
 
 template class External<LibraryHolder ,LibraryLayout> ;
 
 exports VFat<LibraryHolder> LibraryHolder::hold (VREF<LibraryLayout> that) {
-	return VFat<LibraryHolder> (External<LibraryHolder ,LibraryLayout>::linkage () ,that) ;
+	return VFat<LibraryHolder> (External<LibraryHolder ,LibraryLayout>::declare () ,that) ;
 }
 
 exports CFat<LibraryHolder> LibraryHolder::hold (CREF<LibraryLayout> that) {
-	return CFat<LibraryHolder> (External<LibraryHolder ,LibraryLayout>::linkage () ,that) ;
+	return CFat<LibraryHolder> (External<LibraryHolder ,LibraryLayout>::declare () ,that) ;
 }
 
 struct SystemImplLayout {
@@ -620,11 +607,11 @@ public:
 		return QUAD (fake.mThis->mRandom.self ()) ;
 	}
 
-	INDEX random_value (CREF<INDEX> lb ,CREF<INDEX> rb) const override {
-		assert (lb <= rb) ;
-		const auto r1x = VAL64 (rb) - VAL64 (lb) + 1 ;
+	INDEX random_value (CREF<INDEX> min_ ,CREF<INDEX> max_) const override {
+		assert (min_ <= max_) ;
+		const auto r1x = VAL64 (max_) - VAL64 (min_) + 1 ;
 		const auto r2x = VAL64 (random_byte ()) & VAL64_MAX ;
-		const auto r3x = INDEX (r2x % r1x) + lb ;
+		const auto r3x = INDEX (r2x % r1x) + min_ ;
 		return r3x ;
 	}
 
@@ -663,14 +650,16 @@ public:
 		if ifdo (act) {
 			if (length_ >= size_ / 2)
 				discard ;
+			result.clear () ;
 			const auto r1x = random_shuffle (length_ ,size_) ;
 			for (auto &&i : iter (0 ,length_))
 				result.add (r1x[i]) ;
 		}
 		if ifdo (act) {
+			result.fill (BYTE (0XFF)) ;
 			const auto r2x = random_shuffle (size_ - length_ ,size_) ;
 			for (auto &&i : iter (size_ - length_ ,size_))
-				result.add (r2x[i]) ;
+				result.erase (r2x[i]) ;
 		}
 	}
 
@@ -721,11 +710,11 @@ exports CREF<SingletonProcLayout> SingletonProcHolder::instance () {
 }
 
 exports VFat<SingletonProcHolder> SingletonProcHolder::hold (VREF<SingletonProcLayout> that) {
-	return VFat<SingletonProcHolder> (External<SingletonProcHolder ,SingletonProcLayout>::linkage () ,that) ;
+	return VFat<SingletonProcHolder> (External<SingletonProcHolder ,SingletonProcLayout>::declare () ,that) ;
 }
 
 exports CFat<SingletonProcHolder> SingletonProcHolder::hold (CREF<SingletonProcLayout> that) {
-	return CFat<SingletonProcHolder> (External<SingletonProcHolder ,SingletonProcLayout>::linkage () ,that) ;
+	return CFat<SingletonProcHolder> (External<SingletonProcHolder ,SingletonProcLayout>::declare () ,that) ;
 }
 
 struct GlobalNode {

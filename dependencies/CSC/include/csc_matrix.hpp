@@ -612,118 +612,118 @@ struct MakeMatrixHolder implement Interface {
 	imports VFat<MakeMatrixHolder> hold (VREF<MatrixLayout> that) ;
 	imports CFat<MakeMatrixHolder> hold (CREF<MatrixLayout> that) ;
 
-	virtual void DiagMatrix_initialize (CREF<FLT64> x ,CREF<FLT64> y ,CREF<FLT64> z ,CREF<FLT64> w) = 0 ;
-	virtual void ShearMatrix_initialize (CREF<Vector> x ,CREF<Vector> y ,CREF<Vector> z) = 0 ;
-	virtual void RotationMatrix_initialize (CREF<Vector> normal ,CREF<FLT64> angle) = 0 ;
-	virtual void TranslationMatrix_initialize (CREF<FLT64> x ,CREF<FLT64> y ,CREF<FLT64> z) = 0 ;
-	virtual void PerspectiveMatrix_initialize (CREF<FLT64> fx ,CREF<FLT64> fy ,CREF<FLT64> wx ,CREF<FLT64> wy) = 0 ;
-	virtual void ProjectionMatrix_initialize (CREF<Vector> normal ,CREF<Vector> center ,CREF<Vector> light) = 0 ;
-	virtual void ViewMatrix_initialize (CREF<Vector> vx ,CREF<Vector> vy) = 0 ;
-	virtual void ViewMatrix_initialize (CREF<Vector> vx ,CREF<Vector> vy ,CREF<Just<ViewMatrixOption>> option) = 0 ;
-	virtual void CrossProductMatrix_initialize (CREF<Vector> xyz) = 0 ;
-	virtual void SymmetryMatrix_initialize (CREF<Vector> x ,CREF<Vector> y) = 0 ;
-	virtual void AffineMatrix_initialize (CREF<Array<FLT64>> a) = 0 ;
+	virtual void make_DiagMatrix (CREF<FLT64> x ,CREF<FLT64> y ,CREF<FLT64> z ,CREF<FLT64> w) = 0 ;
+	virtual void make_ShearMatrix (CREF<Vector> x ,CREF<Vector> y ,CREF<Vector> z) = 0 ;
+	virtual void make_RotationMatrix (CREF<Vector> normal ,CREF<FLT64> angle) = 0 ;
+	virtual void make_TranslationMatrix (CREF<FLT64> x ,CREF<FLT64> y ,CREF<FLT64> z) = 0 ;
+	virtual void make_PerspectiveMatrix (CREF<FLT64> fx ,CREF<FLT64> fy ,CREF<FLT64> wx ,CREF<FLT64> wy) = 0 ;
+	virtual void make_ProjectionMatrix (CREF<Vector> normal ,CREF<Vector> center ,CREF<Vector> light) = 0 ;
+	virtual void make_ViewMatrix (CREF<Vector> vx ,CREF<Vector> vy) = 0 ;
+	virtual void make_ViewMatrix (CREF<Vector> vx ,CREF<Vector> vy ,CREF<Just<ViewMatrixOption>> option) = 0 ;
+	virtual void make_CrossProductMatrix (CREF<Vector> xyz) = 0 ;
+	virtual void make_SymmetryMatrix (CREF<Vector> x ,CREF<Vector> y) = 0 ;
+	virtual void make_AffineMatrix (CREF<Array<FLT64>> a) = 0 ;
 } ;
 
 inline Matrix DiagMatrix (CREF<FLT64> x ,CREF<FLT64> y ,CREF<FLT64> z) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->DiagMatrix_initialize (x ,y ,z ,1) ;
+	MakeMatrixHolder::hold (ret)->make_DiagMatrix (x ,y ,z ,1) ;
 	return move (ret) ;
 }
 
 inline Matrix DiagMatrix (CREF<FLT64> x ,CREF<FLT64> y ,CREF<FLT64> z ,CREF<FLT64> w) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->DiagMatrix_initialize (x ,y ,z ,w) ;
+	MakeMatrixHolder::hold (ret)->make_DiagMatrix (x ,y ,z ,w) ;
 	return move (ret) ;
 }
 
 inline Matrix ShearMatrix (CREF<Vector> x ,CREF<Vector> y ,CREF<Vector> z) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->ShearMatrix_initialize (x ,y ,z) ;
+	MakeMatrixHolder::hold (ret)->make_ShearMatrix (x ,y ,z) ;
 	return move (ret) ;
 }
 
 inline Matrix RotationMatrix (CREF<Vector> normal ,CREF<FLT64> angle) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->RotationMatrix_initialize (normal ,angle) ;
+	MakeMatrixHolder::hold (ret)->make_RotationMatrix (normal ,angle) ;
 	return move (ret) ;
 }
 
 inline Matrix TranslationMatrix (CREF<Vector> xyz) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->TranslationMatrix_initialize (xyz[0] ,xyz[1] ,xyz[2]) ;
+	MakeMatrixHolder::hold (ret)->make_TranslationMatrix (xyz[0] ,xyz[1] ,xyz[2]) ;
 	return move (ret) ;
 }
 
 inline Matrix TranslationMatrix (CREF<FLT64> x ,CREF<FLT64> y ,CREF<FLT64> z) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->TranslationMatrix_initialize (x ,y ,z) ;
+	MakeMatrixHolder::hold (ret)->make_TranslationMatrix (x ,y ,z) ;
 	return move (ret) ;
 }
 
 inline Matrix PerspectiveMatrix (CREF<FLT64> fx ,CREF<FLT64> fy ,CREF<FLT64> wx ,CREF<FLT64> wy) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->PerspectiveMatrix_initialize (fx ,fy ,wx ,wy) ;
+	MakeMatrixHolder::hold (ret)->make_PerspectiveMatrix (fx ,fy ,wx ,wy) ;
 	return move (ret) ;
 }
 
 inline Matrix ProjectionMatrix (CREF<Vector> normal ,CREF<Vector> center ,CREF<Vector> light) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->ProjectionMatrix_initialize (normal ,center ,light) ;
+	MakeMatrixHolder::hold (ret)->make_ProjectionMatrix (normal ,center ,light) ;
 	return move (ret) ;
 }
 
 inline Matrix ViewMatrixXYZ (CREF<Vector> x ,CREF<Vector> y) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->ViewMatrix_initialize (x ,y ,ViewMatrixOption::XYZ) ;
+	MakeMatrixHolder::hold (ret)->make_ViewMatrix (x ,y ,ViewMatrixOption::XYZ) ;
 	return move (ret) ;
 }
 
 inline Matrix ViewMatrixXZY (CREF<Vector> x ,CREF<Vector> z) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->ViewMatrix_initialize (x ,z ,ViewMatrixOption::XZY) ;
+	MakeMatrixHolder::hold (ret)->make_ViewMatrix (x ,z ,ViewMatrixOption::XZY) ;
 	return move (ret) ;
 }
 
 inline Matrix ViewMatrixYXZ (CREF<Vector> y ,CREF<Vector> x) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->ViewMatrix_initialize (y ,x ,ViewMatrixOption::YXZ) ;
+	MakeMatrixHolder::hold (ret)->make_ViewMatrix (y ,x ,ViewMatrixOption::YXZ) ;
 	return move (ret) ;
 }
 
 inline Matrix ViewMatrixYZX (CREF<Vector> y ,CREF<Vector> z) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->ViewMatrix_initialize (y ,z ,ViewMatrixOption::YZX) ;
+	MakeMatrixHolder::hold (ret)->make_ViewMatrix (y ,z ,ViewMatrixOption::YZX) ;
 	return move (ret) ;
 }
 
 inline Matrix ViewMatrixZXY (CREF<Vector> z ,CREF<Vector> x) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->ViewMatrix_initialize (z ,x ,ViewMatrixOption::ZXY) ;
+	MakeMatrixHolder::hold (ret)->make_ViewMatrix (z ,x ,ViewMatrixOption::ZXY) ;
 	return move (ret) ;
 }
 
 inline Matrix ViewMatrixZYX (CREF<Vector> z ,CREF<Vector> y) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->ViewMatrix_initialize (z ,y ,ViewMatrixOption::ZYX) ;
+	MakeMatrixHolder::hold (ret)->make_ViewMatrix (z ,y ,ViewMatrixOption::ZYX) ;
 	return move (ret) ;
 }
 
 inline Matrix CrossProductMatrix (CREF<Vector> xyz) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->CrossProductMatrix_initialize (xyz) ;
+	MakeMatrixHolder::hold (ret)->make_CrossProductMatrix (xyz) ;
 	return move (ret) ;
 }
 
 inline Matrix SymmetryMatrix (CREF<Vector> x ,CREF<Vector> y) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->SymmetryMatrix_initialize (x ,y) ;
+	MakeMatrixHolder::hold (ret)->make_SymmetryMatrix (x ,y) ;
 	return move (ret) ;
 }
 
 inline Matrix AffineMatrix (CREF<Array<FLT64>> a) {
 	Matrix ret ;
-	MakeMatrixHolder::hold (ret)->AffineMatrix_initialize (a) ;
+	MakeMatrixHolder::hold (ret)->make_AffineMatrix (a) ;
 	return move (ret) ;
 }
 

@@ -14,11 +14,11 @@ namespace CSC {
 template class External<PathHolder ,PathLayout> ;
 
 exports VFat<PathHolder> PathHolder::hold (VREF<PathLayout> that) {
-	return VFat<PathHolder> (External<PathHolder ,PathLayout>::linkage () ,that) ;
+	return VFat<PathHolder> (External<PathHolder ,PathLayout>::declare () ,that) ;
 }
 
 exports CFat<PathHolder> PathHolder::hold (CREF<PathLayout> that) {
-	return CFat<PathHolder> (External<PathHolder ,PathLayout>::linkage () ,that) ;
+	return CFat<PathHolder> (External<PathHolder ,PathLayout>::declare () ,that) ;
 }
 
 template class External<FileProcHolder ,FileProcLayout> ;
@@ -32,21 +32,21 @@ exports CREF<FileProcLayout> FileProcHolder::instance () {
 }
 
 exports VFat<FileProcHolder> FileProcHolder::hold (VREF<FileProcLayout> that) {
-	return VFat<FileProcHolder> (External<FileProcHolder ,FileProcLayout>::linkage () ,that) ;
+	return VFat<FileProcHolder> (External<FileProcHolder ,FileProcLayout>::declare () ,that) ;
 }
 
 exports CFat<FileProcHolder> FileProcHolder::hold (CREF<FileProcLayout> that) {
-	return CFat<FileProcHolder> (External<FileProcHolder ,FileProcLayout>::linkage () ,that) ;
+	return CFat<FileProcHolder> (External<FileProcHolder ,FileProcLayout>::declare () ,that) ;
 }
 
 template class External<StreamFileHolder ,StreamFileLayout> ;
 
 exports VFat<StreamFileHolder> StreamFileHolder::hold (VREF<StreamFileLayout> that) {
-	return VFat<StreamFileHolder> (External<StreamFileHolder ,StreamFileLayout>::linkage () ,that) ;
+	return VFat<StreamFileHolder> (External<StreamFileHolder ,StreamFileLayout>::declare () ,that) ;
 }
 
 exports CFat<StreamFileHolder> StreamFileHolder::hold (CREF<StreamFileLayout> that) {
-	return CFat<StreamFileHolder> (External<StreamFileHolder ,StreamFileLayout>::linkage () ,that) ;
+	return CFat<StreamFileHolder> (External<StreamFileHolder ,StreamFileLayout>::declare () ,that) ;
 }
 
 struct StreamFileByteWriterImplLayout {
@@ -106,10 +106,6 @@ public:
 	}
 
 	VREF<ByteWriter> self_m () leftvalue override {
-		return fake.mThis->mFileWriter ;
-	}
-
-	CREF<ByteWriter> self_m () const leftvalue override {
 		return fake.mThis->mFileWriter ;
 	}
 
@@ -186,10 +182,6 @@ public:
 		return fake.mThis->mFileWriter ;
 	}
 
-	CREF<TextWriter> self_m () const leftvalue override {
-		return fake.mThis->mFileWriter ;
-	}
-
 	void flush () override {
 		return ptr (fake).flush () ;
 	}
@@ -206,21 +198,21 @@ exports CFat<StreamFileTextWriterHolder> StreamFileTextWriterHolder::hold (CREF<
 template class External<BufferFileHolder ,BufferFileLayout> ;
 
 exports VFat<BufferFileHolder> BufferFileHolder::hold (VREF<BufferFileLayout> that) {
-	return VFat<BufferFileHolder> (External<BufferFileHolder ,BufferFileLayout>::linkage () ,that) ;
+	return VFat<BufferFileHolder> (External<BufferFileHolder ,BufferFileLayout>::declare () ,that) ;
 }
 
 exports CFat<BufferFileHolder> BufferFileHolder::hold (CREF<BufferFileLayout> that) {
-	return CFat<BufferFileHolder> (External<BufferFileHolder ,BufferFileLayout>::linkage () ,that) ;
+	return CFat<BufferFileHolder> (External<BufferFileHolder ,BufferFileLayout>::declare () ,that) ;
 }
 
 template class External<UartFileHolder ,UartFileLayout> ;
 
 exports VFat<UartFileHolder> UartFileHolder::hold (VREF<UartFileLayout> that) {
-	return VFat<UartFileHolder> (External<UartFileHolder ,UartFileLayout>::linkage () ,that) ;
+	return VFat<UartFileHolder> (External<UartFileHolder ,UartFileLayout>::declare () ,that) ;
 }
 
 exports CFat<UartFileHolder> UartFileHolder::hold (CREF<UartFileLayout> that) {
-	return CFat<UartFileHolder> (External<UartFileHolder ,UartFileLayout>::linkage () ,that) ;
+	return CFat<UartFileHolder> (External<UartFileHolder ,UartFileLayout>::declare () ,that) ;
 }
 
 template class External<ConsoleHolder ,ConsoleLayout> ;
@@ -234,10 +226,10 @@ exports CREF<ConsoleLayout> ConsoleHolder::instance () {
 }
 
 exports VFat<ConsoleHolder> ConsoleHolder::hold (VREF<ConsoleLayout> that) {
-	return VFat<ConsoleHolder> (External<ConsoleHolder ,ConsoleLayout>::linkage () ,that) ;
+	return VFat<ConsoleHolder> (External<ConsoleHolder ,ConsoleLayout>::declare () ,that) ;
 }
 
 exports CFat<ConsoleHolder> ConsoleHolder::hold (CREF<ConsoleLayout> that) {
-	return CFat<ConsoleHolder> (External<ConsoleHolder ,ConsoleLayout>::linkage () ,that) ;
+	return CFat<ConsoleHolder> (External<ConsoleHolder ,ConsoleLayout>::declare () ,that) ;
 }
 } ;

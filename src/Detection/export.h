@@ -1,29 +1,28 @@
-#include "../util.h"
+﻿#include "../util.h"
 
 namespace CSC3DCV {
+struct FeatureImplLayout ;
+
+struct FeatureLayout implement ThisLayout<AutoRef<FeatureImplLayout>> {} ;
+
 struct FeatureHolder implement Interface {
-	imports DLLEXTERN AutoRef<FeatureHolder> create () ;
+	imports VFat<FeatureHolder> hold (VREF<FeatureLayout> that) ;
+	imports CFat<FeatureHolder> hold (CREF<FeatureLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual void execute () = 0 ;
 } ;
 
-struct FeatureLayout implement ThisLayout<AutoRef<FeatureHolder>> {} ;
-
 class Feature implement FeatureLayout {
-public:
-	using FeatureLayout::mThis ;
-
 public:
 	implicit Feature () = default ;
 
 	explicit Feature (CREF<typeof (NULL)>) {
-		mThis = FeatureHolder::create () ;
-		mThis->initialize () ;
+		FeatureHolder::hold (thiz)->initialize () ;
 	}
 
 	void execute () {
-		return mThis->execute () ;
+		return FeatureHolder::hold (thiz)->execute () ;
 	}
 } ;
 } ;

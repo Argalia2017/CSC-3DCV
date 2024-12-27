@@ -17,17 +17,17 @@ using VAL64 = csc_int64_t ;
 
 static constexpr auto VAL32_MAX = VAL32 (2147483647) ;
 static constexpr auto VAL32_MIN = -VAL32_MAX ;
-static constexpr auto VAL32_LOW = VAL32_MIN - 1 ;
+static constexpr auto VAL32_ABS = VAL32_MIN - 1 ;
 static constexpr auto VAL64_MAX = VAL64 (9223372036854775807) ;
 static constexpr auto VAL64_MIN = -VAL64_MAX ;
-static constexpr auto VAL64_LOW = VAL64_MIN - 1 ;
+static constexpr auto VAL64_ABS = VAL64_MIN - 1 ;
 
 #ifdef __CSC_CONFIG_VAL32__
 using VAL = VAL32 ;
 
 static constexpr auto VAL_MAX = VAL32_MAX ;
 static constexpr auto VAL_MIN = VAL32_MIN ;
-static constexpr auto VAL_LOW = VAL32_LOW ;
+static constexpr auto VAL_ABS = VAL32_ABS ;
 #endif
 
 #ifdef __CSC_CONFIG_VAL64__
@@ -35,7 +35,7 @@ using VAL = VAL64 ;
 
 static constexpr auto VAL_MAX = VAL64_MAX ;
 static constexpr auto VAL_MIN = VAL64_MIN ;
-static constexpr auto VAL_LOW = VAL64_LOW ;
+static constexpr auto VAL_ABS = VAL64_ABS ;
 #endif
 
 static constexpr auto ZERO = VAL (+0) ;
@@ -69,10 +69,10 @@ enum class WORD :csc_uint16_t ;
 enum class CHAR :csc_uint32_t ;
 enum class QUAD :csc_uint64_t ;
 
-static constexpr auto BYTE_ENDIAN = BYTE (0X0F) ;
-static constexpr auto WORD_ENDIAN = WORD (0X00FF) ;
-static constexpr auto CHAR_ENDIAN = CHAR (0X0000FFFF) ;
-static constexpr auto QUAD_ENDIAN = QUAD (0X00000000FFFFFFFF) ;
+static constexpr auto BYTE_ENDIAN = BYTE (0X1F) ;
+static constexpr auto WORD_ENDIAN = WORD (0X11FF) ;
+static constexpr auto CHAR_ENDIAN = CHAR (0X1111FFFF) ;
+static constexpr auto QUAD_ENDIAN = QUAD (0X11111111FFFFFFFF) ;
 
 forceinline constexpr BYTE operator| (CREF<BYTE> a ,CREF<BYTE> b) noexcept {
 	return BYTE (csc_uint8_t (a) | csc_uint8_t (b)) ;
@@ -130,6 +130,10 @@ forceinline constexpr WORD operator^ (CREF<WORD> a ,CREF<WORD> b) noexcept {
 	return WORD (csc_uint16_t (a) ^ csc_uint16_t (b)) ;
 }
 
+forceinline void operator^= (VREF<WORD> a ,CREF<WORD> b) noexcept {
+	a = a ^ b ;
+}
+
 forceinline constexpr WORD operator~ (CREF<WORD> a) noexcept {
 	return WORD (~csc_uint16_t (a)) ;
 }
@@ -162,6 +166,10 @@ forceinline constexpr CHAR operator^ (CREF<CHAR> a ,CREF<CHAR> b) noexcept {
 	return CHAR (csc_uint32_t (a) ^ csc_uint32_t (b)) ;
 }
 
+forceinline void operator^= (VREF<CHAR> a ,CREF<CHAR> b) noexcept {
+	a = a ^ b ;
+}
+
 forceinline constexpr CHAR operator~ (CREF<CHAR> a) noexcept {
 	return CHAR (~csc_uint32_t (a)) ;
 }
@@ -192,6 +200,10 @@ forceinline void operator&= (VREF<QUAD> a ,CREF<QUAD> b) noexcept {
 
 forceinline constexpr QUAD operator^ (CREF<QUAD> a ,CREF<QUAD> b) noexcept {
 	return QUAD (csc_uint64_t (a) ^ csc_uint64_t (b)) ;
+}
+
+forceinline void operator^= (VREF<QUAD> a ,CREF<QUAD> b) noexcept {
+	a = a ^ b ;
 }
 
 forceinline constexpr QUAD operator~ (CREF<QUAD> a) noexcept {
@@ -579,7 +591,8 @@ template <class A>
 trait ENUM_ALL_HELP<A ,REQUIRE<ENUM_GT_ZERO<RANK_OF<A>>>> {
 	using R1X = TYPE_M1ST_ITEM<A> ;
 	using R2X = typename ENUM_ALL_HELP<TYPE_M1ST_REST<A> ,ALWAYS>::RET ;
-	using RET = CONDITIONAL<R1X ,R2X ,ENUM_FALSE> ;
+	using R3X = CONDITIONAL<R1X ,R2X ,ENUM_FALSE> ;
+	using RET = ENUM<R3X::expr> ;
 } ;
 
 template <class...A>
@@ -597,7 +610,8 @@ template <class A>
 trait ENUM_ANY_HELP<A ,REQUIRE<ENUM_GT_ZERO<RANK_OF<A>>>> {
 	using R1X = TYPE_M1ST_ITEM<A> ;
 	using R2X = typename ENUM_ANY_HELP<TYPE_M1ST_REST<A> ,ALWAYS>::RET ;
-	using RET = CONDITIONAL<R1X ,ENUM_TRUE ,R2X> ;
+	using R3X = CONDITIONAL<R1X ,ENUM_TRUE ,R2X> ;
+	using RET = ENUM<R3X::expr> ;
 } ;
 
 template <class...A>
@@ -633,7 +647,8 @@ template <class A>
 trait ENUM_MAX_HELP<A ,REQUIRE<ENUM_GT_ZERO<RANK_OF<A>>>> {
 	using R1X = TYPE_M1ST_ITEM<A> ;
 	using R2X = typename ENUM_MAX_HELP<TYPE_M1ST_REST<A> ,ALWAYS>::RET ;
-	using RET = CONDITIONAL<ENUM_COMPR_GTEQ<R1X ,R2X> ,R1X ,R2X> ;
+	using R3X = CONDITIONAL<ENUM_COMPR_GTEQ<R1X ,R2X> ,R1X ,R2X> ;
+	using RET = ENUM<R3X::expr> ;
 } ;
 
 template <class...A>
@@ -651,7 +666,8 @@ template <class A>
 trait ENUM_MIN_HELP<A ,REQUIRE<ENUM_GT_ZERO<RANK_OF<A>>>> {
 	using R1X = TYPE_M1ST_ITEM<A> ;
 	using R2X = typename ENUM_MIN_HELP<TYPE_M1ST_REST<A> ,ALWAYS>::RET ;
-	using RET = CONDITIONAL<ENUM_COMPR_LTEQ<R1X ,R2X> ,R1X ,R2X> ;
+	using R3X = CONDITIONAL<ENUM_COMPR_LTEQ<R1X ,R2X> ,R1X ,R2X> ;
+	using RET = ENUM<R3X::expr> ;
 } ;
 
 template <class...A>

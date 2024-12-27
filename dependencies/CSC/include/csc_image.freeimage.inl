@@ -14,7 +14,9 @@
 #include <FreeImage.h>
 #include "csc_begin.h"
 
+inline namespace {
 using HFIBITMAP = CSC::DEF<FIBITMAP *> ;
+} ;
 
 namespace CSC {
 struct ImageProcImplLayout {
@@ -216,7 +218,6 @@ public:
 
 	template <class ARG1>
 	forceinline ARG1 sampler_f32_impl (CREF<Image<ARG1>> image ,CREF<FLT32> x ,CREF<FLT32> y) const {
-		ARG1 ret ;
 		const auto r1x = INDEX (MathProc::round (x ,FLT32 (1))) ;
 		const auto r2x = INDEX (MathProc::round (y ,FLT32 (1))) ;
 		const auto r3x = MathProc::clamp (r1x ,ZERO ,image.cx () - 1) ;
@@ -229,23 +230,20 @@ public:
 		const auto r10x = r7x * (1 - r8x) ;
 		const auto r11x = (1 - r7x) * (1 - r8x) ;
 		const auto r12x = (1 - r7x) * r8x ;
-		if ifdo (TRUE) {
-			const auto r13x = cvt_colorf (image.at (r5x ,r6x)) ;
-			const auto r14x = cvt_colorf (image.at (r5x ,r4x)) ;
-			const auto r15x = cvt_colorf (image.at (r3x ,r4x)) ;
-			const auto r16x = cvt_colorf (image.at (r3x ,r6x)) ;
-			auto rax = Buffer<FLT32 ,SIZE_OF<ARG1>> () ;
-			for (auto &&i : iter (0 ,rax.size ())) {
-				rax[i] = 0 ;
-				rax[i] += r13x[i] * r9x ;
-				rax[i] += r14x[i] * r10x ;
-				rax[i] += r15x[i] * r11x ;
-				rax[i] += r16x[i] * r12x ;
-				rax[i] = MathProc::clamp (rax[i] ,FLT32 (0) ,FLT32 (255)) ;
-			}
-			ret = cvt_colorb (rax) ;
+		const auto r13x = cvt_colorf (image.at (r5x ,r6x)) ;
+		const auto r14x = cvt_colorf (image.at (r5x ,r4x)) ;
+		const auto r15x = cvt_colorf (image.at (r3x ,r4x)) ;
+		const auto r16x = cvt_colorf (image.at (r3x ,r6x)) ;
+		auto rax = Buffer<FLT32 ,SIZE_OF<ARG1>> () ;
+		for (auto &&i : iter (0 ,rax.size ())) {
+			rax[i] = 0 ;
+			rax[i] += r13x[i] * r9x ;
+			rax[i] += r14x[i] * r10x ;
+			rax[i] += r15x[i] * r11x ;
+			rax[i] += r16x[i] * r12x ;
+			rax[i] = MathProc::clamp (rax[i] ,FLT32 (0) ,FLT32 (255)) ;
 		}
-		return move (ret) ;
+		return cvt_colorb (rax) ;
 	}
 
 	Buffer1<FLT32> cvt_colorf (CREF<Color1B> a) const {
@@ -318,7 +316,6 @@ public:
 
 	template <class ARG1>
 	forceinline ARG1 sampler_f64_impl (CREF<Image<ARG1>> image ,CREF<FLT64> x ,CREF<FLT64> y) const {
-		ARG1 ret ;
 		const auto r1x = INDEX (MathProc::round (x ,FLT64 (1))) ;
 		const auto r2x = INDEX (MathProc::round (y ,FLT64 (1))) ;
 		const auto r3x = MathProc::clamp (r1x ,ZERO ,image.cx () - 1) ;
@@ -331,21 +328,18 @@ public:
 		const auto r10x = r7x * (1 - r8x) ;
 		const auto r11x = (1 - r7x) * (1 - r8x) ;
 		const auto r12x = (1 - r7x) * r8x ;
-		if ifdo (TRUE) {
-			const auto r13x = image.at (r5x ,r6x) ;
-			const auto r14x = image.at (r5x ,r4x) ;
-			const auto r15x = image.at (r3x ,r4x) ;
-			const auto r16x = image.at (r3x ,r6x) ;
-			auto rax = FLT64 (0) ;
-			rax += r13x * r9x ;
-			rax += r14x * r10x ;
-			rax += r15x * r11x ;
-			rax += r16x * r12x ;
-			ret = ARG1 (rax) ;
-		}
-		return move (ret) ;
+		const auto r13x = image.at (r5x ,r6x) ;
+		const auto r14x = image.at (r5x ,r4x) ;
+		const auto r15x = image.at (r3x ,r4x) ;
+		const auto r16x = image.at (r3x ,r6x) ;
+		auto rax = FLT64 (0) ;
+		rax += r13x * r9x ;
+		rax += r14x * r10x ;
+		rax += r15x * r11x ;
+		rax += r16x * r12x ;
+		return ARG1 (rax) ;
 	}
 } ;
 
-static const auto mImageProcExternal = External<ImageProcHolder ,ImageProcLayout>::declare (ImageProcImplHolder ()) ;
+static const auto mImageProcExternal = External<ImageProcHolder ,ImageProcLayout> (ImageProcImplHolder ()) ;
 } ;

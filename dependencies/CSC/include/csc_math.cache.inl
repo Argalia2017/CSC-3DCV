@@ -44,7 +44,7 @@ public:
 	}
 } ;
 
-static const auto mFEXP2CacheExternal = External<FEXP2CacheHolder ,FEXP2CacheLayout>::declare (FEXP2CacheImplHolder ()) ;
+static const auto mFEXP2CacheExternal = External<FEXP2CacheHolder ,FEXP2CacheLayout> (FEXP2CacheImplHolder ()) ;
 
 class FEXP10CacheImplHolder final implement Fat<FEXP10CacheHolder ,FEXP10CacheLayout> {
 private:
@@ -79,5 +79,5 @@ public:
 	}
 } ;
 
-static const auto mFEXP10CacheExternal = External<FEXP10CacheHolder ,FEXP10CacheLayout>::declare (FEXP10CacheImplHolder ()) ;
+static const auto mFEXP10CacheExternal = External<FEXP10CacheHolder ,FEXP10CacheLayout> (FEXP10CacheImplHolder ()) ;
 } ;

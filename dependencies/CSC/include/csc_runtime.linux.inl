@@ -29,13 +29,11 @@
 #include <thread>
 #include "csc_begin.h"
 
-#ifndef USE_LINUX_HANDLE
-#define USE_LINUX_HANDLE
-
+inline namespace {
 using HMODULE = CSC::csc_pointer_t ;
 using HANDLE = CSC::csc_pointer_t ;
 using HFILE = int ;
-#endif
+} ;
 
 namespace CSC {
 class RuntimeProcImplHolder final implement Fat<RuntimeProcHolder ,RuntimeProcLayout> {
@@ -70,19 +68,25 @@ public:
 	}
 
 	String<STR> library_file () const override {
+		auto &&rax = keep[TYPE<HeapLayout>::expr] (Heap::instance ()) ;
+		const auto r1x = csc_pointer_t (rax.mHolder) ;
+		auto rbx = Dl_info () ;
+		const auto r2x = dladdr (r1x ,(&rbx)) ;
+		assume (r2x != ZERO) ;
+		const auto r3x = Slice (FLAG (rbx.dli_fname) ,SLICE_MAX_SIZE::expr ,1).eos () ;
+		return String<STR> (r3x) ;
+	}
+
+	String<STR> library_main () const override {
 		String<STR> ret = String<STR>::make () ;
-		if ifdo (TRUE) {
-			const auto r1x = String<STR> (slice ("/proc/self/exe")) ;
-			const auto r2x = readlink (r1x ,ret ,csc_size_t (ret.size ())) ;
-			if (r2x >= 0)
-				discard ;
-			ret.clear () ;
-		}
+		const auto r1x = String<STR> (slice ("/proc/self/exe")) ;
+		const auto r2x = INDEX (readlink (r1x ,ret ,csc_size_t (ret.size ()))) ;
+		ret.trunc (r2x) ;
 		return move (ret) ;
 	}
 } ;
 
-static const auto mRuntimeProcExternal = External<RuntimeProcHolder ,RuntimeProcLayout>::declare (RuntimeProcImplHolder ()) ;
+static const auto mRuntimeProcExternal = External<RuntimeProcHolder ,RuntimeProcLayout> (RuntimeProcImplHolder ()) ;
 
 struct ProcessImplLayout {
 	FLAG mUid ;
@@ -105,12 +109,19 @@ public:
 
 	String<STRU8> load_proc_file (CREF<FLAG> uid) const {
 		String<STRU8> ret = String<STRU8>::make () ;
+		ret.fill (STRU32 (0X00)) ;
 		const auto r1x = String<STR>::make (Format (slice ("/proc/$1/stat")) (uid)) ;
-		auto rax = StreamFile (r1x) ;
-		rax.open_r () ;
-		auto rbx = ret.borrow () ;
-		auto &&rcx = keep[TYPE<RefBuffer<BYTE>>::expr] (rbx.pin ().self) ;
-		rax.read (rcx) ;
+		try {
+			auto rax = StreamFile (r1x) ;
+			rax.open_r () ;
+			auto rbx = ret.borrow () ;
+			auto &&rcx = keep[TYPE<RefBuffer<BYTE>>::expr] (rbx.pin ().self) ;
+			rax.set_short_read (TRUE) ;
+			rax.read (rcx) ;
+		} catch (CREF<Exception> e) {
+			noop (e) ;
+			ret.clear () ;
+		}
 		return move (ret) ;
 	}
 
@@ -119,10 +130,12 @@ public:
 	}
 
 	QUAD process_time (CREF<String<STRU8>> info ,CREF<FLAG> uid) const {
+		if (info.length () == 0)
+			return QUAD (0X00) ;
 		auto rax = TextReader (info.borrow ()) ;
 		auto rbx = String<STRU8> () ;
 		rax >> GAP ;
-		rax >> rbx ;
+		rax >> BlankText::from (rbx) ;
 		const auto r1x = StringParse<VAL64>::make (rbx) ;
 		assume (r1x == uid) ;
 		rax >> GAP ;
@@ -136,23 +149,16 @@ public:
 			assume (r2x != STRU32 ('(')) ;
 		}
 		rax >> GAP ;
-		rax >> rbx ;
+		rax >> BlankText::from (rbx) ;
 		assume (rbx.length () == 1) ;
 		for (auto &&i : iter (0 ,18)) {
 			noop (i) ;
 			rax >> GAP ;
-			rax >> rbx ;
+			rax >> BlankText::from (rbx) ;
 		}
 		rax >> GAP ;
-		rax >> rbx ;
+		rax >> BlankText::from (rbx) ;
 		const auto r3x = StringParse<VAL64>::make (rbx) ;
-		for (auto &&i : iter (19 ,49)) {
-			noop (i) ;
-			rax >> GAP ;
-			rax >> rbx ;
-		}
-		rax >> GAP ;
-		rax >> EOS ;
 		return QUAD (r3x) ;
 	}
 
@@ -164,7 +170,7 @@ public:
 			auto rax = ByteReader (Ref<RefBuffer<BYTE>>::reference (snapshot_)) ;
 			rax >> slice ("CSC_Process") ;
 			rax >> GAP ;
-			const auto r1x = rax.poll (TYPE<VAL32>::expr) ;
+			const auto r1x = rax.poll (TYPE<VAL64>::expr) ;
 			fake.mThis->mUid = FLAG (r1x) ;
 			rax >> GAP ;
 			rax >> fake.mThis->mProcessCode ;
@@ -197,22 +203,22 @@ public:
 	RefBuffer<BYTE> snapshot () const override {
 		RefBuffer<BYTE> ret = RefBuffer<BYTE> (PROCESS_SNAPSHOT_SIZE::expr) ;
 		auto rax = ByteWriter (Ref<RefBuffer<BYTE>>::reference (ret)) ;
-		rax << slice ("CSC_Process") ;
 		if ifdo (TRUE) {
+			rax << slice ("CSC_Process") ;
 			rax << GAP ;
 			rax << VAL64 (fake.mThis->mUid) ;
 			rax << GAP ;
 			rax << fake.mThis->mProcessCode ;
 			rax << GAP ;
 			rax << fake.mThis->mProcessTime ;
+			rax << GAP ;
+			rax << EOS ;
 		}
-		rax << GAP ;
-		rax << EOS ;
 		return move (ret) ;
 	}
 } ;
 
-static const auto mProcessExternal = External<ProcessHolder ,ProcessLayout>::declare (ProcessImplHolder ()) ;
+static const auto mProcessExternal = External<ProcessHolder ,ProcessLayout> (ProcessImplHolder ()) ;
 
 struct LibraryImplLayout {
 	String<STR> mFile ;
@@ -242,7 +248,7 @@ public:
 		}) ;
 	}
 
-	String<STR> library_file () const {
+	String<STR> library_file () const override {
 		return fake.mThis->mFile ;
 	}
 
@@ -268,7 +274,7 @@ public:
 	}
 } ;
 
-static const auto mLibraryExternal = External<LibraryHolder ,LibraryLayout>::declare (LibraryImplHolder ()) ;
+static const auto mLibraryExternal = External<LibraryHolder ,LibraryLayout> (LibraryImplHolder ()) ;
 
 struct SingletonLayout {
 	Mutex mMutex ;
@@ -277,12 +283,14 @@ struct SingletonLayout {
 
 class SingletonRoot implement Pin<SingletonLayout> {
 public:
-	static CREF<SingletonRoot> instance () {
-		return memorize ([&] () {
-			return SingletonRoot () ;
-		}) ;
-	}
+	imports CREF<SingletonRoot> instance () ;
 } ;
+
+exports CREF<SingletonRoot> SingletonRoot::instance () {
+	return memorize ([&] () {
+		return SingletonRoot () ;
+	}) ;
+}
 
 struct SingletonPipe {
 	QUAD mReserve1 ;
@@ -296,8 +304,8 @@ struct SingletonProcImplLayout {
 	FLAG mUid ;
 	String<STR> mName ;
 	UniqueRef<Tuple<HFILE ,String<STR>>> mPipe ;
+	SingletonPipe mLocal ;
 	Ref<SingletonLayout> mRoot ;
-	FLAG mAddress ;
 
 public:
 	implicit SingletonProcImplLayout () = default ;
@@ -315,7 +323,7 @@ public:
 		fake.mThis = AutoRef<SingletonProcImplLayout>::make () ;
 		fake.mThis->mUid = RuntimeProc::process_uid () ;
 		fake.mThis->mName = String<STR>::make (slice ("/CSC_Singleton_") ,fake.mThis->mUid) ;
-		fake.mThis->mAddress = ZERO ;
+		inline_memset (fake.mThis->mLocal) ;
 		link_pipe () ;
 	}
 
@@ -339,13 +347,11 @@ public:
 				discard ;
 			}
 		}
-		if ifdo (act) {
-			try {
-				load_pipe () ;
-			} catch (CREF<Exception> e) {
-				noop (e) ;
-				discard ;
-			}
+		if ifdo (TRUE) {
+			const auto r1x = FLAG (fake.mThis->mLocal.mAddress1) ;
+			assume (r1x != ZERO) ;
+			auto &&rax = keep[TYPE<SingletonLayout>::expr] (Pointer::make (r1x)) ;
+			fake.mThis->mRoot = Ref<SingletonLayout>::reference (rax) ;
 		}
 	}
 
@@ -367,10 +373,14 @@ public:
 		} ,[&] (VREF<LENGTH> me) {
 			noop () ;
 		}) ;
-		fake.mThis->mAddress = address (SingletonRoot::instance ().self) ;
-		auto &&rax = keep[TYPE<SingletonRoot>::expr] (Pointer::make (fake.mThis->mAddress)) ;
-		auto &&rbx = keep[TYPE<SingletonLayout>::expr] (rax.self) ;
-		rbx.mMutex = NULL ;
+		const auto r4x = address (SingletonRoot::instance ().self) ;
+		auto &&rax = keep[TYPE<SingletonLayout>::expr] (Pointer::make (r4x)) ;
+		rax.mMutex = NULL ;
+		fake.mThis->mLocal.mReserve1 = QUAD (fake.mThis->mUid) ;
+		fake.mThis->mLocal.mAddress1 = QUAD (r4x) ;
+		fake.mThis->mLocal.mReserve2 = abi_reserve () ;
+		fake.mThis->mLocal.mAddress2 = QUAD (r4x) ;
+		fake.mThis->mLocal.mReserve3 = ctx_reserve () ;
 	}
 
 	void load_pipe () {
@@ -391,13 +401,11 @@ public:
 		auto rax = SingletonPipe () ;
 		inline_memcpy (Pointer::from (rax) ,Pointer::make (r3x) ,SIZE_OF<SingletonPipe>::expr) ;
 		assume (rax.mReserve1 == QUAD (fake.mThis->mUid)) ;
+		assume (rax.mAddress1 != QUAD (0X00)) ;
+		assume (rax.mAddress1 == rax.mAddress2) ;
 		assume (rax.mReserve2 == abi_reserve ()) ;
 		assume (rax.mReserve3 == ctx_reserve ()) ;
-		assume (rax.mAddress1 == rax.mAddress2) ;
-		const auto r4x = FLAG (rax.mAddress1) ;
-		assume (r4x != ZERO) ;
-		auto &&rbx = keep[TYPE<SingletonLayout>::expr] (Pointer::make (r4x)) ;
-		fake.mThis->mRoot = Ref<SingletonLayout>::reference (rbx) ;
+		fake.mThis->mLocal = rax ;
 	}
 
 	void save_pipe () {
@@ -415,12 +423,12 @@ public:
 			munmap (me ,SIZE_OF<SingletonPipe>::expr) ;
 		}) ;
 		const auto r3x = FLAG (r2x.self) ;
-		auto rax = SingletonPipe () ;
-		rax.mReserve1 = QUAD (fake.mThis->mUid) ;
-		rax.mAddress1 = QUAD (fake.mThis->mAddress) ;
-		rax.mReserve2 = abi_reserve () ;
-		rax.mAddress2 = QUAD (fake.mThis->mAddress) ;
-		rax.mReserve3 = ctx_reserve () ;
+		auto rax = fake.mThis->mLocal ;
+		assume (rax.mReserve1 == QUAD (fake.mThis->mUid)) ;
+		assume (rax.mAddress1 != QUAD (0X00)) ;
+		assume (rax.mAddress1 == rax.mAddress2) ;
+		assume (rax.mReserve2 == abi_reserve ()) ;
+		assume (rax.mReserve3 == ctx_reserve ()) ;
 		inline_memcpy (Pointer::make (r3x) ,Pointer::from (rax) ,SIZE_OF<SingletonPipe>::expr) ;
 	}
 
@@ -429,15 +437,19 @@ public:
 #ifdef __CSC_VER_DEBUG__
 		ret |= QUAD (0X00000001) ;
 #elif defined __CSC_VER_UNITTEST__
-		ret |= QUAD (0X00000001) ;
+		ret |= QUAD (0X00000002) ;
 #elif defined __CSC_VER_RELEASE__
-		ret |= QUAD (0X00000001) ;
+		ret |= QUAD (0X00000003) ;
 #endif
+#ifndef __CSC_COMPILER_NVCC__
 #ifdef __CSC_COMPILER_MSVC__
 		ret |= QUAD (0X00000010) ;
 #elif defined __CSC_COMPILER_GNUC__
 		ret |= QUAD (0X00000020) ;
 #elif defined __CSC_COMPILER_CLANG__
+		ret |= QUAD (0X00000030) ;
+#endif
+#else
 		ret |= QUAD (0X00000040) ;
 #endif
 #ifdef __CSC_SYSTEM_WINDOWS__
@@ -445,42 +457,30 @@ public:
 #elif defined __CSC_SYSTEM_LINUX__
 		ret |= QUAD (0X00000200) ;
 #endif
-#ifdef __CSC_TARGET_EXE__
-		ret |= QUAD (0X00001000) ;
-#elif defined __CSC_TARGET_DLL__
-		ret |= QUAD (0X00001000) ;
-#elif defined __CSC_TARGET_LIB__
-		ret |= QUAD (0X00001000) ;
-#endif
 #ifdef __CSC_PLATFORM_X86__
-		ret |= QUAD (0X00010000) ;
+		ret |= QUAD (0X00001000) ;
 #elif defined __CSC_PLATFORM_X64__
-		ret |= QUAD (0X00020000) ;
+		ret |= QUAD (0X00002000) ;
 #elif defined __CSC_PLATFORM_ARM__
-		ret |= QUAD (0X00030000) ;
+		ret |= QUAD (0X00003000) ;
 #elif defined __CSC_PLATFORM_ARM64__
-		ret |= QUAD (0X00040000) ;
+		ret |= QUAD (0X00004000) ;
 #endif
 #ifdef __CSC_CONFIG_VAL32__
-		ret |= QUAD (0X00100000) ;
+		ret |= QUAD (0X00010000) ;
 #elif defined __CSC_CONFIG_VAL64__
-		ret |= QUAD (0X00200000) ;
+		ret |= QUAD (0X00020000) ;
 #endif
 #ifdef __CSC_CONFIG_STRA__
-		ret |= QUAD (0X01000000) ;
+		ret |= QUAD (0X00100000) ;
 #elif defined __CSC_CONFIG_STRW__
-		ret |= QUAD (0X02000000) ;
-#endif
-#ifdef __CSC_CXX_LATEST__
-		ret |= QUAD (0X10000000) ;
-#else
-		ret |= QUAD (0X10000000) ;
+		ret |= QUAD (0X00200000) ;
 #endif
 		return move (ret) ;
 	}
 
 	QUAD ctx_reserve () const override {
-		return QUAD (0XAAAABBBBCCCCDDDD) ;
+		return QUAD (0X0FEDCBA987654321) ;
 	}
 
 	FLAG load (CREF<Clazz> clazz) const override {
@@ -497,6 +497,7 @@ public:
 		assert (pointer != ZERO) ;
 		assert (pointer != NONE) ;
 		Scope<Mutex> anonymous (fake.mThis->mRoot->mMutex) ;
+		assume (fake.mThis->mPipe.exist ()) ;
 		auto rax = Set<Clazz> () ;
 		fake.mThis->mRoot->mClazzSet.get (rax) ;
 		rax.add (clazz ,pointer) ;
@@ -504,5 +505,5 @@ public:
 	}
 } ;
 
-static const auto mSingletonProcExternal = External<SingletonProcHolder ,SingletonProcLayout>::declare (SingletonProcImplHolder ()) ;
+static const auto mSingletonProcExternal = External<SingletonProcHolder ,SingletonProcLayout> (SingletonProcImplHolder ()) ;
 } ;

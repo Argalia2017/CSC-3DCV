@@ -5,75 +5,153 @@
 #endif
 
 #include "csc_core.hpp"
+
 #include "csc_end.h"
+#ifdef __CSC_SYSTEM_WINDOWS__
+#include <debugapi.h>
+#endif
+
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <new>
 #include <malloc.h>
 #include <typeinfo>
 #include <initializer_list>
 #include <atomic>
-
-#ifdef __CSC_SYSTEM_WINDOWS__
-#include <debugapi.h>
-#endif
 #include "csc_begin.h"
 
 namespace CSC {
-exports void FUNCTION_inline_abort::invoke () noexcept {
 #ifdef __CSC_SYSTEM_WINDOWS__
-	if ifdo (TRUE) {
-		if (!IsDebuggerPresent ())
-			discard ;
-		__macro_break () ;
+struct FUNCTION_has_debugger {
+	forceinline BOOL operator() () const noexcept {
+		return IsDebuggerPresent () ;
 	}
+} ;
 #endif
-	std::abort () ;
-}
 
-exports FLAG FUNCTION_inline_type_name::invoke (CREF<Pointer> squalor) noexcept {
-	auto &&rax = keep[TYPE<std::type_info>::expr] (squalor) ;
-	return FLAG (rax.name ()) ;
-}
+#ifdef __CSC_SYSTEM_LINUX__
+struct FUNCTION_has_debugger {
+	forceinline BOOL operator() () const noexcept {
+		return FALSE ;
+	}
+} ;
+#endif
+
+static constexpr auto has_debugger = FUNCTION_has_debugger () ;
+
+exports BOOL FUNCTION_inline_unittest::invoke () {
+	return has_debugger () ;
+} ;
+
+exports void FUNCTION_inline_abort::invoke () {
+	std::abort () ;
+} ;
 
 #ifdef __CSC_COMPILER_MSVC__
-exports Tuple<FLAG ,FLAG> FUNCTION_inline_list_pair::invoke (CREF<Pointer> squalor ,CREF<LENGTH> step_) noexcept {
-	Tuple<FLAG ,FLAG> ret ;
-	auto &&rax = keep[TYPE<std::initializer_list<Pointer>>::expr] (squalor) ;
-	ret.m1st = FLAG (rax.begin ()) ;
-	ret.m2nd = FLAG (rax.end ()) ;
-	return move (ret) ;
-}
+struct FUNCTION_side_effect {
+	forceinline void operator() (CREF<Pointer> src) const noexcept {
+		noop () ;
+	}
+} ;
 #endif
 
 #ifdef __CSC_COMPILER_GNUC__
-exports Tuple<FLAG ,FLAG> FUNCTION_inline_list_pair::invoke (CREF<Pointer> squalor ,CREF<LENGTH> step_) noexcept {
-	Tuple<FLAG ,FLAG> ret ;
-	auto &&rax = keep[TYPE<std::initializer_list<Pointer>>::expr] (squalor) ;
-	ret.m1st = FLAG (rax.begin ()) ;
-	ret.m2nd = FLAG (rax.begin ()) + LENGTH (rax.size ()) * step_ ;
-	return move (ret) ;
-}
+struct FUNCTION_side_effect {
+	forceinline void operator() (CREF<Pointer> src) const noexcept {
+		noop () ;
+	}
+} ;
 #endif
 
 #ifdef __CSC_COMPILER_CLANG__
-exports Tuple<FLAG ,FLAG> FUNCTION_inline_list_pair::invoke (CREF<Pointer> squalor ,CREF<LENGTH> step_) noexcept {
-	Tuple<FLAG ,FLAG> ret ;
-	auto &&rax = keep[TYPE<std::initializer_list<Pointer>>::expr] (squalor) ;
-	ret.m1st = FLAG (rax.begin ()) ;
-	ret.m2nd = FLAG (rax.end ()) ;
-	return move (ret) ;
-}
+struct FUNCTION_side_effect {
+	forceinline void operator() (CREF<Pointer> src) const noexcept {
+		noop () ;
+	}
+} ;
 #endif
 
-exports void FUNCTION_inline_memset::invoke (VREF<Pointer> dst ,CREF<LENGTH> size_) noexcept {
+static constexpr auto side_effect = FUNCTION_side_effect () ;
+
+exports void FUNCTION_inline_watch::invoke (CREF<Pointer> src) {
+	side_effect (src) ;
+}
+
+#ifdef __CSC_CXX_RTTI__
+struct FUNCTION_core_type_name {
+	forceinline FLAG operator() (CREF<Interface> squalor) const noexcept {
+		return FLAG (typeid (squalor).name ()) ;
+	}
+} ;
+#endif
+
+#ifndef __CSC_CXX_RTTI__
+struct FUNCTION_core_type_name {
+	forceinline FLAG operator() (CREF<Interface> squalor) const noexcept {
+		assert (FALSE) ;
+		return ZERO ;
+	}
+} ;
+#endif
+
+static constexpr auto core_type_name = FUNCTION_core_type_name () ;
+
+exports FLAG FUNCTION_inline_type_name::invoke (CREF<Interface> squalor) {
+	return core_type_name (squalor) ;
+}
+
+#ifdef __CSC_COMPILER_MSVC__
+struct FUNCTION_core_list_pair {
+	forceinline Tuple<FLAG ,FLAG> operator() (CREF<Pointer> squalor ,CREF<LENGTH> step_) const noexcept {
+		Tuple<FLAG ,FLAG> ret ;
+		auto &&rax = keep[TYPE<std::initializer_list<Pointer>>::expr] (squalor) ;
+		ret.m1st = FLAG (rax.begin ()) ;
+		ret.m2nd = FLAG (rax.end ()) ;
+		return move (ret) ;
+	}
+} ;
+#endif
+
+#ifdef __CSC_COMPILER_GNUC__
+struct FUNCTION_core_list_pair {
+	forceinline Tuple<FLAG ,FLAG> operator() (CREF<Pointer> squalor ,CREF<LENGTH> step_) const noexcept {
+		Tuple<FLAG ,FLAG> ret ;
+		auto &&rax = keep[TYPE<std::initializer_list<Pointer>>::expr] (squalor) ;
+		ret.m1st = FLAG (rax.begin ()) ;
+		ret.m2nd = FLAG (rax.begin ()) + LENGTH (rax.size ()) * step_ ;
+		return move (ret) ;
+	}
+} ;
+#endif
+
+#ifdef __CSC_COMPILER_CLANG__
+struct FUNCTION_core_list_pair {
+	forceinline Tuple<FLAG ,FLAG> operator() (CREF<Pointer> squalor ,CREF<LENGTH> step_) const noexcept {
+		Tuple<FLAG ,FLAG> ret ;
+		auto &&rax = keep[TYPE<std::initializer_list<Pointer>>::expr] (squalor) ;
+		ret.m1st = FLAG (rax.begin ()) ;
+		ret.m2nd = FLAG (rax.end ()) ;
+		return move (ret) ;
+	}
+} ;
+#endif
+
+static constexpr auto core_list_pair = FUNCTION_core_list_pair () ;
+
+exports Tuple<FLAG ,FLAG> FUNCTION_inline_list_pair::invoke (CREF<Pointer> squalor ,CREF<LENGTH> step_) {
+	return core_list_pair (squalor ,step_) ;
+}
+
+exports void FUNCTION_inline_memset::invoke (VREF<Pointer> dst ,CREF<LENGTH> size_) {
 	std::memset ((&dst) ,0 ,size_) ;
 }
 
-exports void FUNCTION_inline_memcpy::invoke (VREF<Pointer> dst ,CREF<Pointer> src ,CREF<LENGTH> size_) noexcept {
+exports void FUNCTION_inline_memcpy::invoke (VREF<Pointer> dst ,CREF<Pointer> src ,CREF<LENGTH> size_) {
 	std::memcpy ((&dst) ,(&src) ,size_) ;
 }
 
-exports FLAG FUNCTION_inline_memcmp::invoke (CREF<Pointer> dst ,CREF<Pointer> src ,CREF<LENGTH> size_) noexcept {
+exports FLAG FUNCTION_inline_memcmp::invoke (CREF<Pointer> dst ,CREF<Pointer> src ,CREF<LENGTH> size_) {
 	return FLAG (std::memcmp ((&dst) ,(&src) ,size_)) ;
 }
 
@@ -193,6 +271,20 @@ public:
 		ptr (fake).mCounter = 1 ;
 	}
 
+	void initialize (CREF<Unknown> holder ,CREF<FLAG> pointer) override {
+		assert (!exist ()) ;
+		const auto r1x = RFat<ReflectSize> (holder) ;
+		const auto r2x = r1x->type_align () ;
+		noop (r2x) ;
+		assert (r2x <= ALIGN_OF<RefImplLayout>::expr) ;
+		const auto r3x = pointer - SIZE_OF<RefImplLayout>::expr ;
+		auto &&rax = keep[TYPE<RefImplLayout>::expr] (Pointer::make (r3x)) ;
+		assert (rax.mCounter > 0) ;
+		fake.mHandle = r3x ;
+		fake.mPointer = pointer ;
+		ptr (fake).mCounter++ ;
+	}
+
 	void destroy () override {
 		if ifdo (TRUE) {
 			if (fake.mHandle < REFIMPLLAYOUT_MIN_HANDLE)
@@ -280,7 +372,7 @@ exports CFat<RefHolder> RefHolder::hold (CREF<RefLayout> that) {
 	return CFat<RefHolder> (RefImplHolder () ,that) ;
 }
 
-#ifdef __CSC_SYSTEM_WINDOWS__
+#ifdef __CSC_COMPILER_MSVC__
 struct FUNCTION_dump_memory_leaks {
 	forceinline void operator() () const {
 		_CrtSetDbgFlag (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF) ;
@@ -288,7 +380,15 @@ struct FUNCTION_dump_memory_leaks {
 } ;
 #endif
 
-#ifdef __CSC_SYSTEM_LINUX__
+#ifdef __CSC_COMPILER_GNUC__
+struct FUNCTION_dump_memory_leaks {
+	forceinline void operator() () const {
+		noop () ;
+	}
+} ;
+#endif
+
+#ifdef __CSC_COMPILER_CLANG__
 struct FUNCTION_dump_memory_leaks {
 	forceinline void operator() () const {
 		noop () ;
@@ -306,18 +406,10 @@ struct FUNCTION_memsize {
 } ;
 #endif
 
-#ifdef __CSC_COMPILER_GNUC__
+#ifdef __CSC_SYSTEM_LINUX__
 struct FUNCTION_memsize {
 	forceinline LENGTH operator() (CREF<csc_pointer_t> pointer) const {
 		return LENGTH (malloc_usable_size (pointer)) ;
-	}
-} ;
-#endif
-
-#ifdef __CSC_COMPILER_CLANG__
-struct FUNCTION_memsize {
-	forceinline LENGTH operator() (CREF<csc_pointer_t> pointer) const {
-		return LENGTH (_msize (pointer)) ;
 	}
 } ;
 #endif
@@ -331,12 +423,14 @@ struct HeapImplLayout {
 
 class HeapImplRoot implement Pin<HeapImplLayout> {
 public:
-	static CREF<HeapImplRoot> instance () {
-		return memorize ([&] () {
-			return HeapImplRoot () ;
-		}) ;
-	}
+	imports CREF<HeapImplRoot> instance () ;
 } ;
+
+exports CREF<HeapImplRoot> HeapImplRoot::instance () {
+	return memorize ([&] () {
+		return HeapImplRoot () ;
+	}) ;
+}
 
 class HeapImplHolder final implement Fat<HeapHolder ,HeapLayout> {
 public:
@@ -513,6 +607,49 @@ exports VFat<SliceHolder> SliceHolder::hold (VREF<SliceLayout> that) {
 
 exports CFat<SliceHolder> SliceHolder::hold (CREF<SliceLayout> that) {
 	return CFat<SliceHolder> (SliceImplHolder () ,that) ;
+}
+
+class ExceptionImplHolder final implement Fat<ExceptionHolder ,ExceptionLayout> {
+public:
+	void initialize (CREF<Slice> what_ ,CREF<Slice> func_ ,CREF<Slice> file_ ,CREF<Slice> line_) override {
+		fake.mWhat = what_ ;
+		fake.mFunc = func_ ;
+		fake.mFile = file_ ;
+		fake.mLine = line_ ;
+	}
+
+	Slice what () const override {
+		return fake.mWhat ;
+	}
+
+	Slice func () const override {
+		return fake.mFunc ;
+	}
+
+	Slice file () const override {
+		return fake.mFile ;
+	}
+
+	Slice line () const override {
+		return fake.mLine ;
+	}
+
+	void event () const override {
+		unimplemented () ;
+	}
+
+	void raise () const override {
+		auto &&rax = keep[TYPE<Exception>::expr] (fake) ;
+		throw rax ;
+	}
+} ;
+
+exports VFat<ExceptionHolder> ExceptionHolder::hold (VREF<ExceptionLayout> that) {
+	return VFat<ExceptionHolder> (ExceptionImplHolder () ,that) ;
+}
+
+exports CFat<ExceptionHolder> ExceptionHolder::hold (CREF<ExceptionLayout> that) {
+	return CFat<ExceptionHolder> (ExceptionImplHolder () ,that) ;
 }
 
 struct ClazzImplLayout {

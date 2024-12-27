@@ -34,6 +34,7 @@ struct TimeHolder implement Interface {
 	imports VFat<TimeHolder> hold (VREF<TimeLayout> that) ;
 	imports CFat<TimeHolder> hold (CREF<TimeLayout> that) ;
 
+	virtual void initialize () = 0 ;
 	virtual void initialize (CREF<LENGTH> milliseconds_) = 0 ;
 	virtual void initialize (CREF<TimeCalendar> calendar_) = 0 ;
 	virtual void initialize (CREF<TimeLayout> that) = 0 ;
@@ -135,16 +136,9 @@ public:
 	}
 } ;
 
-struct MakeTimeHolder implement Interface {
-	imports VFat<MakeTimeHolder> hold (VREF<TimeLayout> that) ;
-	imports CFat<MakeTimeHolder> hold (CREF<TimeLayout> that) ;
-
-	virtual void CurrentTime_initialize () = 0 ;
-} ;
-
 inline Time CurrentTime () {
 	Time ret ;
-	MakeTimeHolder::hold (ret)->CurrentTime_initialize () ;
+	TimeHolder::hold (ret)->initialize () ;
 	return move (ret) ;
 }
 
@@ -163,6 +157,7 @@ struct RuntimeProcHolder implement Interface {
 	virtual FLAG process_uid () const = 0 ;
 	virtual void process_exit () const = 0 ;
 	virtual String<STR> library_file () const = 0 ;
+	virtual String<STR> library_main () const = 0 ;
 } ;
 
 class RuntimeProc implement RuntimeProcLayout {
@@ -200,6 +195,10 @@ public:
 
 	static String<STR> library_file () {
 		return RuntimeProcHolder::hold (instance ())->library_file () ;
+	}
+
+	static String<STR> library_main () {
+		return RuntimeProcHolder::hold (instance ())->library_main () ;
 	}
 } ;
 
@@ -321,26 +320,26 @@ struct MakeMutexHolder implement Interface {
 	imports VFat<MakeMutexHolder> hold (VREF<MutexLayout> that) ;
 	imports CFat<MakeMutexHolder> hold (CREF<MutexLayout> that) ;
 
-	virtual void OnceMutex_initialize () = 0 ;
-	virtual void SharedMutex_initialize () = 0 ;
-	virtual void UniqueMutex_initialize () = 0 ;
+	virtual void make_OnceMutex () = 0 ;
+	virtual void make_SharedMutex () = 0 ;
+	virtual void make_UniqueMutex () = 0 ;
 } ;
 
 inline Mutex OnceMutex () {
 	Mutex ret ;
-	MakeMutexHolder::hold (ret)->OnceMutex_initialize () ;
+	MakeMutexHolder::hold (ret)->make_OnceMutex () ;
 	return move (ret) ;
 }
 
 inline Mutex SharedMutex () {
 	Mutex ret ;
-	MakeMutexHolder::hold (ret)->SharedMutex_initialize () ;
+	MakeMutexHolder::hold (ret)->make_SharedMutex () ;
 	return move (ret) ;
 }
 
 inline Mutex UniqueMutex () {
 	Mutex ret ;
-	MakeMutexHolder::hold (ret)->UniqueMutex_initialize () ;
+	MakeMutexHolder::hold (ret)->make_UniqueMutex () ;
 	return move (ret) ;
 }
 
@@ -614,7 +613,7 @@ struct RandomHolder implement Interface {
 	virtual void initialize () = 0 ;
 	virtual void initialize (CREF<FLAG> seed) = 0 ;
 	virtual FLAG seed () const = 0 ;
-	virtual INDEX random_value (CREF<INDEX> lb ,CREF<INDEX> rb) const = 0 ;
+	virtual INDEX random_value (CREF<INDEX> min_ ,CREF<INDEX> max_) const = 0 ;
 	virtual Array<INDEX> random_shuffle (CREF<LENGTH> length_ ,CREF<LENGTH> size_) const = 0 ;
 	virtual void random_shuffle (CREF<LENGTH> length_ ,CREF<LENGTH> size_ ,VREF<Array<INDEX>> result) const = 0 ;
 	virtual BitSet random_pick (CREF<LENGTH> length_ ,CREF<LENGTH> size_) const = 0 ;
@@ -638,8 +637,8 @@ public:
 		return RandomHolder::hold (thiz)->seed () ;
 	}
 
-	INDEX random_value (CREF<INDEX> lb ,CREF<INDEX> rb) const {
-		return RandomHolder::hold (thiz)->random_value (lb ,rb) ;
+	INDEX random_value (CREF<INDEX> min_ ,CREF<INDEX> max_) const {
+		return RandomHolder::hold (thiz)->random_value (min_ ,max_) ;
 	}
 
 	Array<INDEX> random_shuffle (CREF<LENGTH> length_ ,CREF<LENGTH> size_) const {
@@ -718,22 +717,25 @@ public:
 template <class A>
 class Singleton implement Proxy {
 public:
-	static CREF<A> instance () {
-		return memorize ([&] () {
-			const auto r1x = Clazz (TYPE<A>::expr) ;
-			auto rax = SingletonProc::load (r1x) ;
-			if ifdo (TRUE) {
-				if (rax != ZERO)
-					discard ;
-				rax = address (A::instance ()) ;
-				SingletonProc::save (r1x ,rax) ;
-				rax = SingletonProc::load (r1x) ;
-			}
-			auto &&rbx = keep[TYPE<A>::expr] (Pointer::make (rax)) ;
-			return Ref<A>::reference (rbx) ;
-		}).self ;
-	}
+	static CREF<A> instance () ;
 } ;
+
+template <class A>
+inline CREF<A> Singleton<A>::instance () {
+	return memorize ([&] () {
+		const auto r1x = Clazz (TYPE<A>::expr) ;
+		auto rax = SingletonProc::load (r1x) ;
+		if ifdo (TRUE) {
+			if (rax != ZERO)
+				discard ;
+			rax = address (A::instance ()) ;
+			SingletonProc::save (r1x ,rax) ;
+			rax = SingletonProc::load (r1x) ;
+		}
+		auto &&rbx = keep[TYPE<A>::expr] (Pointer::make (rax)) ;
+		return Ref<A>::reference (rbx) ;
+	}).self ;
+}
 
 struct GlobalImplLayout ;
 
@@ -763,12 +765,12 @@ public:
 		return keep[TYPE<GlobalRoot>::expr] (GlobalHolder::instance ()) ;
 	}
 
-	void startup () const {
-		return GlobalHolder::hold (thiz)->startup () ;
+	static void startup () {
+		return GlobalHolder::hold (instance ())->startup () ;
 	}
 
-	void shutdown () const {
-		return GlobalHolder::hold (thiz)->shutdown () ;
+	static void shutdown () {
+		return GlobalHolder::hold (instance ())->shutdown () ;
 	}
 } ;
 

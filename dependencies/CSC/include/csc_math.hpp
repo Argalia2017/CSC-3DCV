@@ -28,6 +28,8 @@ struct MathProcHolder implement Interface {
 	virtual void initialize () = 0 ;
 	virtual BOOL is_inf (CREF<FLT32> a) const = 0 ;
 	virtual BOOL is_inf (CREF<FLT64> a) const = 0 ;
+	virtual BOOL is_low (CREF<FLT32> a) const = 0 ;
+	virtual BOOL is_low (CREF<FLT64> a) const = 0 ;
 	virtual VAL32 step (CREF<VAL32> a) const = 0 ;
 	virtual VAL64 step (CREF<VAL64> a) const = 0 ;
 	virtual FLT32 step (CREF<FLT32> a) const = 0 ;
@@ -48,6 +50,10 @@ struct MathProcHolder implement Interface {
 	virtual FLT64 cubic (CREF<FLT64> a) const = 0 ;
 	virtual FLT32 cbrt (CREF<FLT32> a) const = 0 ;
 	virtual FLT64 cbrt (CREF<FLT64> a) const = 0 ;
+	virtual FLT32 pow (CREF<FLT32> a ,CREF<VAL32> b) const = 0 ;
+	virtual FLT64 pow (CREF<FLT64> a ,CREF<VAL32> b) const = 0 ;
+	virtual FLT32 hypot (CREF<FLT32> a ,CREF<FLT32> b) const = 0 ;
+	virtual FLT64 hypot (CREF<FLT64> a ,CREF<FLT64> b) const = 0 ;
 	virtual VAL32 abs (CREF<VAL32> a) const = 0 ;
 	virtual VAL64 abs (CREF<VAL64> a) const = 0 ;
 	virtual FLT32 abs (CREF<FLT32> a) const = 0 ;
@@ -60,24 +66,24 @@ struct MathProcHolder implement Interface {
 	virtual FLT64 round (CREF<FLT64> a ,CREF<FLT64> b) const = 0 ;
 	virtual FLT32 ceil (CREF<FLT32> a ,CREF<FLT32> b) const = 0 ;
 	virtual FLT64 ceil (CREF<FLT64> a ,CREF<FLT64> b) const = 0 ;
-	virtual VAL32 clamp (CREF<VAL32> a ,CREF<VAL32> lb ,CREF<VAL32> rb) const = 0 ;
-	virtual VAL64 clamp (CREF<VAL64> a ,CREF<VAL64> lb ,CREF<VAL64> rb) const = 0 ;
-	virtual FLT32 clamp (CREF<FLT32> a ,CREF<FLT32> lb ,CREF<FLT32> rb) const = 0 ;
-	virtual FLT64 clamp (CREF<FLT64> a ,CREF<FLT64> lb ,CREF<FLT64> rb) const = 0 ;
-	virtual VAL32 lerp (CREF<FLT64> a ,CREF<VAL32> lb ,CREF<VAL32> rb) const = 0 ;
-	virtual VAL64 lerp (CREF<FLT64> a ,CREF<VAL64> lb ,CREF<VAL64> rb) const = 0 ;
+	virtual VAL32 clamp (CREF<VAL32> a ,CREF<VAL32> min_ ,CREF<VAL32> max_) const = 0 ;
+	virtual VAL64 clamp (CREF<VAL64> a ,CREF<VAL64> min_ ,CREF<VAL64> max_) const = 0 ;
+	virtual FLT32 clamp (CREF<FLT32> a ,CREF<FLT32> min_ ,CREF<FLT32> max_) const = 0 ;
+	virtual FLT64 clamp (CREF<FLT64> a ,CREF<FLT64> min_ ,CREF<FLT64> max_) const = 0 ;
+	virtual VAL32 lerp (CREF<FLT64> a ,CREF<VAL32> min_ ,CREF<VAL32> max_) const = 0 ;
+	virtual VAL64 lerp (CREF<FLT64> a ,CREF<VAL64> min_ ,CREF<VAL64> max_) const = 0 ;
 	virtual FLT32 cos (CREF<FLT32> a) const = 0 ;
 	virtual FLT64 cos (CREF<FLT64> a) const = 0 ;
 	virtual FLT32 sin (CREF<FLT32> a) const = 0 ;
 	virtual FLT64 sin (CREF<FLT64> a) const = 0 ;
 	virtual FLT32 tan (CREF<FLT32> a) const = 0 ;
 	virtual FLT64 tan (CREF<FLT64> a) const = 0 ;
-	virtual FLT32 arccos (CREF<FLT32> a) const = 0 ;
-	virtual FLT64 arccos (CREF<FLT64> a) const = 0 ;
-	virtual FLT32 arcsin (CREF<FLT32> a) const = 0 ;
-	virtual FLT64 arcsin (CREF<FLT64> a) const = 0 ;
-	virtual FLT32 arctan (CREF<FLT32> y ,CREF<FLT32> x) const = 0 ;
-	virtual FLT64 arctan (CREF<FLT64> y ,CREF<FLT64> x) const = 0 ;
+	virtual FLT32 acos (CREF<FLT32> a) const = 0 ;
+	virtual FLT64 acos (CREF<FLT64> a) const = 0 ;
+	virtual FLT32 asin (CREF<FLT32> a) const = 0 ;
+	virtual FLT64 asin (CREF<FLT64> a) const = 0 ;
+	virtual FLT32 atan (CREF<FLT32> y ,CREF<FLT32> x) const = 0 ;
+	virtual FLT64 atan (CREF<FLT64> y ,CREF<FLT64> x) const = 0 ;
 	virtual FLT32 exp (CREF<FLT32> a) const = 0 ;
 	virtual FLT64 exp (CREF<FLT64> a) const = 0 ;
 	virtual FLT32 log (CREF<FLT32> a) const = 0 ;
@@ -112,6 +118,11 @@ public:
 		return MathProcHolder::hold (instance ())->is_inf (a) ;
 	}
 
+	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
+	static BOOL is_low (CREF<ARG1> a) {
+		return MathProcHolder::hold (instance ())->is_low (a) ;
+	}
+
 	template <class ARG1 ,class = REQUIRE<IS_SCALAR<ARG1>>>
 	static ARG1 step (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->step (a) ;
@@ -142,6 +153,16 @@ public:
 		return MathProcHolder::hold (instance ())->cbrt (a) ;
 	}
 
+	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
+	static ARG1 pow (CREF<ARG1> a ,CREF<VAL32> b) {
+		return MathProcHolder::hold (instance ())->pow (a ,b) ;
+	}
+
+	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
+	static ARG1 hypot (CREF<ARG1> a ,CREF<ARG1> b) {
+		return MathProcHolder::hold (instance ())->hypot (a ,b) ;
+	}
+
 	template <class ARG1 ,class = REQUIRE<IS_SCALAR<ARG1>>>
 	static ARG1 abs (CREF<ARG1> a) {
 		return MathProcHolder::hold (instance ())->abs (a) ;
@@ -168,13 +189,13 @@ public:
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_SCALAR<ARG1>>>
-	static ARG1 clamp (CREF<ARG1> a ,CREF<ARG1> lb ,CREF<ARG1> rb) {
-		return MathProcHolder::hold (instance ())->clamp (a ,lb ,rb) ;
+	static ARG1 clamp (CREF<ARG1> a ,CREF<ARG1> min_ ,CREF<ARG1> max_) {
+		return MathProcHolder::hold (instance ())->clamp (a ,min_ ,max_) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_VALUE<ARG1>>>
-	static ARG1 lerp (CREF<FLT64> a ,CREF<ARG1> lb ,CREF<ARG1> rb) {
-		return MathProcHolder::hold (instance ())->lerp (a ,lb ,rb) ;
+	static ARG1 lerp (CREF<FLT64> a ,CREF<ARG1> min_ ,CREF<ARG1> max_) {
+		return MathProcHolder::hold (instance ())->lerp (a ,min_ ,max_) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
@@ -193,18 +214,18 @@ public:
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	static ARG1 arccos (CREF<ARG1> a) {
-		return MathProcHolder::hold (instance ())->arccos (a) ;
+	static ARG1 acos (CREF<ARG1> a) {
+		return MathProcHolder::hold (instance ())->acos (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	static ARG1 arcsin (CREF<ARG1> a) {
-		return MathProcHolder::hold (instance ())->arcsin (a) ;
+	static ARG1 asin (CREF<ARG1> a) {
+		return MathProcHolder::hold (instance ())->asin (a) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
-	static ARG1 arctan (CREF<ARG1> y ,CREF<ARG1> x) {
-		return MathProcHolder::hold (instance ())->arctan (y ,x) ;
+	static ARG1 atan (CREF<ARG1> y ,CREF<ARG1> x) {
+		return MathProcHolder::hold (instance ())->atan (y ,x) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_FLOAT<ARG1>>>
@@ -267,7 +288,7 @@ struct NormalErrorHolder implement Interface {
 	imports VFat<NormalErrorHolder> hold (VREF<NormalErrorLayout> that) ;
 	imports CFat<NormalErrorHolder> hold (CREF<NormalErrorLayout> that) ;
 
-	virtual void update (CREF<FLT64> error) = 0 ;
+	virtual void concat (CREF<FLT64> error) = 0 ;
 } ;
 
 class NormalError implement NormalErrorLayout {
@@ -284,12 +305,12 @@ public:
 		return thiz ;
 	}
 
-	void update (CREF<FLT64> error) {
-		return NormalErrorHolder::hold (thiz)->update (error) ;
+	void concat (CREF<FLT64> error) {
+		return NormalErrorHolder::hold (thiz)->concat (error) ;
 	}
 
 	forceinline void operator+= (CREF<FLT64> error) {
-		return update (error) ;
+		return concat (error) ;
 	}
 } ;
 
@@ -408,28 +429,32 @@ struct ByteProcHolder implement Interface {
 	imports CFat<ByteProcHolder> hold (CREF<ByteProcLayout> that) ;
 
 	virtual void initialize () = 0 ;
-	virtual BYTE bit_low (CREF<WORD> a) const = 0 ;
-	virtual WORD bit_low (CREF<CHAR> a) const = 0 ;
-	virtual CHAR bit_low (CREF<QUAD> a) const = 0 ;
-	virtual BYTE bit_high (CREF<WORD> a) const = 0 ;
-	virtual WORD bit_high (CREF<CHAR> a) const = 0 ;
-	virtual CHAR bit_high (CREF<QUAD> a) const = 0 ;
-	virtual WORD bit_merge (CREF<BYTE> high ,CREF<BYTE> low) const = 0 ;
-	virtual CHAR bit_merge (CREF<WORD> high ,CREF<WORD> low) const = 0 ;
-	virtual QUAD bit_merge (CREF<CHAR> high ,CREF<CHAR> low) const = 0 ;
-	virtual BOOL bit_any (CREF<BYTE> curr ,CREF<BYTE> mask) const = 0 ;
-	virtual BOOL bit_any (CREF<WORD> curr ,CREF<WORD> mask) const = 0 ;
-	virtual BOOL bit_any (CREF<CHAR> curr ,CREF<CHAR> mask) const = 0 ;
-	virtual BOOL bit_any (CREF<QUAD> curr ,CREF<QUAD> mask) const = 0 ;
-	virtual BOOL bit_all (CREF<BYTE> curr ,CREF<BYTE> mask) const = 0 ;
-	virtual BOOL bit_all (CREF<WORD> curr ,CREF<WORD> mask) const = 0 ;
-	virtual BOOL bit_all (CREF<CHAR> curr ,CREF<CHAR> mask) const = 0 ;
-	virtual BOOL bit_all (CREF<QUAD> curr ,CREF<QUAD> mask) const = 0 ;
-	virtual BYTE bit_reverse (CREF<BYTE> a) const = 0 ;
-	virtual WORD bit_reverse (CREF<WORD> a) const = 0 ;
-	virtual CHAR bit_reverse (CREF<CHAR> a) const = 0 ;
-	virtual QUAD bit_reverse (CREF<QUAD> a) const = 0 ;
-	virtual INDEX bit_pow (CREF<LENGTH> nth) const = 0 ;
+	virtual BYTE split_low (CREF<WORD> a) const = 0 ;
+	virtual WORD split_low (CREF<CHAR> a) const = 0 ;
+	virtual CHAR split_low (CREF<QUAD> a) const = 0 ;
+	virtual BYTE split_high (CREF<WORD> a) const = 0 ;
+	virtual WORD split_high (CREF<CHAR> a) const = 0 ;
+	virtual CHAR split_high (CREF<QUAD> a) const = 0 ;
+	virtual WORD merge (CREF<BYTE> high_ ,CREF<BYTE> low_) const = 0 ;
+	virtual CHAR merge (CREF<WORD> high_ ,CREF<WORD> low_) const = 0 ;
+	virtual QUAD merge (CREF<CHAR> high_ ,CREF<CHAR> low_) const = 0 ;
+	virtual BYTE reverse (CREF<BYTE> a) const = 0 ;
+	virtual WORD reverse (CREF<WORD> a) const = 0 ;
+	virtual CHAR reverse (CREF<CHAR> a) const = 0 ;
+	virtual QUAD reverse (CREF<QUAD> a) const = 0 ;
+	virtual BOOL any_bit (CREF<BYTE> curr ,CREF<BYTE> mask) const = 0 ;
+	virtual BOOL any_bit (CREF<WORD> curr ,CREF<WORD> mask) const = 0 ;
+	virtual BOOL any_bit (CREF<CHAR> curr ,CREF<CHAR> mask) const = 0 ;
+	virtual BOOL any_bit (CREF<QUAD> curr ,CREF<QUAD> mask) const = 0 ;
+	virtual BOOL all_bit (CREF<BYTE> curr ,CREF<BYTE> mask) const = 0 ;
+	virtual BOOL all_bit (CREF<WORD> curr ,CREF<WORD> mask) const = 0 ;
+	virtual BOOL all_bit (CREF<CHAR> curr ,CREF<CHAR> mask) const = 0 ;
+	virtual BOOL all_bit (CREF<QUAD> curr ,CREF<QUAD> mask) const = 0 ;
+	virtual BYTE binary (CREF<BYTE> a) const = 0 ;
+	virtual WORD binary (CREF<WORD> a) const = 0 ;
+	virtual CHAR binary (CREF<CHAR> a) const = 0 ;
+	virtual QUAD binary (CREF<QUAD> a) const = 0 ;
+	virtual INDEX pow_bit (CREF<LENGTH> nth) const = 0 ;
 	virtual LENGTH popcount (CREF<BYTE> a) const = 0 ;
 	virtual LENGTH lowcount (CREF<BYTE> a) const = 0 ;
 } ;
@@ -443,70 +468,64 @@ public:
 		return keep[TYPE<ByteProc>::expr] (ByteProcHolder::instance ()) ;
 	}
 
-	static BYTE bit_low (CREF<WORD> a) {
-		return ByteProcHolder::hold (instance ())->bit_low (a) ;
+	static BYTE split_low (CREF<WORD> a) {
+		return ByteProcHolder::hold (instance ())->split_low (a) ;
 	}
 
-	static WORD bit_low (CREF<CHAR> a) {
-		return ByteProcHolder::hold (instance ())->bit_low (a) ;
+	static WORD split_low (CREF<CHAR> a) {
+		return ByteProcHolder::hold (instance ())->split_low (a) ;
 	}
 
-	static CHAR bit_low (CREF<QUAD> a) {
-		return ByteProcHolder::hold (instance ())->bit_low (a) ;
+	static CHAR split_low (CREF<QUAD> a) {
+		return ByteProcHolder::hold (instance ())->split_low (a) ;
 	}
 
-	static BYTE bit_high (CREF<WORD> a) {
-		return ByteProcHolder::hold (instance ())->bit_high (a) ;
+	static BYTE split_high (CREF<WORD> a) {
+		return ByteProcHolder::hold (instance ())->split_high (a) ;
 	}
 
-	static WORD bit_high (CREF<CHAR> a) {
-		return ByteProcHolder::hold (instance ())->bit_high (a) ;
+	static WORD split_high (CREF<CHAR> a) {
+		return ByteProcHolder::hold (instance ())->split_high (a) ;
 	}
 
-	static CHAR bit_high (CREF<QUAD> a) {
-		return ByteProcHolder::hold (instance ())->bit_high (a) ;
+	static CHAR split_high (CREF<QUAD> a) {
+		return ByteProcHolder::hold (instance ())->split_high (a) ;
 	}
 
-	static WORD bit_merge (CREF<BYTE> high ,CREF<BYTE> low) {
-		return ByteProcHolder::hold (instance ())->bit_merge (high ,low) ;
+	static WORD merge (CREF<BYTE> high_ ,CREF<BYTE> low_) {
+		return ByteProcHolder::hold (instance ())->merge (high_ ,low_) ;
 	}
 
-	static CHAR bit_merge (CREF<WORD> high ,CREF<WORD> low) {
-		return ByteProcHolder::hold (instance ())->bit_merge (high ,low) ;
+	static CHAR merge (CREF<WORD> high_ ,CREF<WORD> low_) {
+		return ByteProcHolder::hold (instance ())->merge (high_ ,low_) ;
 	}
 
-	static QUAD bit_merge (CREF<CHAR> high ,CREF<CHAR> low) {
-		return ByteProcHolder::hold (instance ())->bit_merge (high ,low) ;
+	static QUAD merge (CREF<CHAR> high_ ,CREF<CHAR> low_) {
+		return ByteProcHolder::hold (instance ())->merge (high_ ,low_) ;
+	}
+
+	template <class ARG1 ,class = REQUIRE<IS_BYTE<ARG1>>>
+	static ARG1 reverse (CREF<ARG1> a) {
+		return ByteProcHolder::hold (instance ())->reverse (a) ;
 	}
 
 	template <class ARG1 ,class ARG2 ,class = REQUIRE<IS_BYTE<ARG1>>>
-	static BOOL bit_any (CREF<ARG1> curr ,CREF<ARG2> mask) {
-		return ByteProcHolder::hold (instance ())->bit_any (curr ,ARG1 (mask)) ;
+	static BOOL any_bit (CREF<ARG1> curr ,CREF<ARG2> mask) {
+		return ByteProcHolder::hold (instance ())->any_bit (curr ,ARG1 (mask)) ;
 	}
 
 	template <class ARG1 ,class ARG2 ,class = REQUIRE<IS_BYTE<ARG1>>>
-	static BOOL bit_all (CREF<ARG1> curr ,CREF<ARG2> mask) {
-		return ByteProcHolder::hold (instance ())->bit_all (curr ,ARG1 (mask)) ;
+	static BOOL all_bit (CREF<ARG1> curr ,CREF<ARG2> mask) {
+		return ByteProcHolder::hold (instance ())->all_bit (curr ,ARG1 (mask)) ;
 	}
 
-	static BYTE bit_reverse (CREF<BYTE> a) {
-		return ByteProcHolder::hold (instance ())->bit_reverse (a) ;
+	template <class ARG1 ,class = REQUIRE<IS_BYTE<ARG1>>>
+	static ARG1 binary (CREF<ARG1> a) {
+		return ByteProcHolder::hold (instance ())->binary (a) ;
 	}
 
-	static WORD bit_reverse (CREF<WORD> a) {
-		return ByteProcHolder::hold (instance ())->bit_reverse (a) ;
-	}
-
-	static CHAR bit_reverse (CREF<CHAR> a) {
-		return ByteProcHolder::hold (instance ())->bit_reverse (a) ;
-	}
-
-	static QUAD bit_reverse (CREF<QUAD> a) {
-		return ByteProcHolder::hold (instance ())->bit_reverse (a) ;
-	}
-
-	static INDEX bit_pow (CREF<LENGTH> nth) {
-		return ByteProcHolder::hold (instance ())->bit_pow (nth) ;
+	static INDEX pow_bit (CREF<LENGTH> nth) {
+		return ByteProcHolder::hold (instance ())->pow_bit (nth) ;
 	}
 
 	static LENGTH popcount (CREF<BYTE> a) {
@@ -520,16 +539,21 @@ public:
 
 struct IntegerLayout {
 	RefBuffer<BYTE> mInteger ;
+	LENGTH mWidth ;
+
+public:
+	implicit IntegerLayout () noexcept {
+		mWidth = 0 ;
+	}
 } ;
 
 struct IntegerHolder implement Interface {
 	imports VFat<IntegerHolder> hold (VREF<IntegerLayout> that) ;
 	imports CFat<IntegerHolder> hold (CREF<IntegerLayout> that) ;
 
-	virtual void initialize (CREF<LENGTH> size_ ,CREF<VAL64> item) = 0 ;
+	virtual void initialize (CREF<LENGTH> size_) = 0 ;
 	virtual void initialize (CREF<IntegerLayout> that) = 0 ;
 	virtual LENGTH size () const = 0 ;
-	virtual LENGTH precision () const = 0 ;
 	virtual VAL64 fetch () const = 0 ;
 	virtual void store (CREF<VAL64> item) = 0 ;
 	virtual BOOL equal (CREF<IntegerLayout> that) const = 0 ;
@@ -538,11 +562,12 @@ struct IntegerHolder implement Interface {
 	virtual IntegerLayout sadd (CREF<IntegerLayout> that) const = 0 ;
 	virtual IntegerLayout ssub (CREF<IntegerLayout> that) const = 0 ;
 	virtual IntegerLayout smul (CREF<IntegerLayout> that) const = 0 ;
-	virtual IntegerLayout smul (CREF<VAL64> scale) const = 0 ;
-	virtual IntegerLayout sdiv (CREF<VAL64> scale) const = 0 ;
-	virtual IntegerLayout smod (CREF<VAL64> scale) const = 0 ;
+	virtual IntegerLayout sdiv (CREF<IntegerLayout> that) const = 0 ;
+	virtual IntegerLayout smod (CREF<IntegerLayout> that) const = 0 ;
 	virtual IntegerLayout sabs () const = 0 ;
 	virtual IntegerLayout minus () const = 0 ;
+	virtual IntegerLayout lshift (CREF<LENGTH> scale) const = 0 ;
+	virtual IntegerLayout rshift (CREF<LENGTH> scale) const = 0 ;
 	virtual void increase () = 0 ;
 	virtual void decrease () = 0 ;
 } ;
@@ -554,8 +579,9 @@ protected:
 public:
 	implicit Integer () = default ;
 
-	explicit Integer (CREF<LENGTH> size_ ,CREF<VAL64> item) {
-		IntegerHolder::hold (thiz)->initialize (size_ ,item) ;
+	explicit Integer (CREF<VAL64> item) {
+		IntegerHolder::hold (thiz)->initialize (SIZE_OF<VAL64>::expr) ;
+		IntegerHolder::hold (thiz)->store (item) ;
 	}
 
 	implicit Integer (CREF<Integer> that) {
@@ -570,12 +596,14 @@ public:
 
 	forceinline VREF<Integer> operator= (RREF<Integer> that) = default ;
 
-	LENGTH size () const {
-		return IntegerHolder::hold (thiz)->size () ;
+	static CREF<Integer> zero () {
+		return memorize ([&] () {
+			return Integer (0) ;
+		}) ;
 	}
 
-	LENGTH precision () const {
-		return IntegerHolder::hold (thiz)->precision () ;
+	LENGTH size () const {
+		return IntegerHolder::hold (thiz)->size () ;
 	}
 
 	VAL64 fetch () const {
@@ -665,43 +693,30 @@ public:
 		thiz = smul (that) ;
 	}
 
-	Integer smul (CREF<VAL64> scale) const {
-		IntegerLayout ret = IntegerHolder::hold (thiz)->smul (scale) ;
+	Integer sdiv (CREF<Integer> that) const {
+		IntegerLayout ret = IntegerHolder::hold (thiz)->sdiv (that) ;
 		return move (keep[TYPE<Integer>::expr] (ret)) ;
 	}
 
-	forceinline Integer operator* (CREF<VAL64> scale) const {
-		return smul (scale) ;
+	forceinline Integer operator/ (CREF<Integer> that) const {
+		return sdiv (that) ;
 	}
 
-	forceinline void operator*= (CREF<VAL64> scale) {
-		thiz = smul (scale) ;
+	forceinline void operator/= (CREF<Integer> that) {
+		thiz = sdiv (that) ;
 	}
 
-	Integer sdiv (CREF<VAL64> scale) const {
-		IntegerLayout ret = IntegerHolder::hold (thiz)->sdiv (scale) ;
+	Integer smod (CREF<Integer> that) const {
+		IntegerLayout ret = IntegerHolder::hold (thiz)->smod (that) ;
 		return move (keep[TYPE<Integer>::expr] (ret)) ;
 	}
 
-	forceinline Integer operator/ (CREF<VAL64> scale) const {
-		return sdiv (scale) ;
+	forceinline Integer operator% (CREF<Integer> that) const {
+		return smod (that) ;
 	}
 
-	forceinline void operator/= (CREF<VAL64> scale) {
-		thiz = sdiv (scale) ;
-	}
-
-	Integer smod (CREF<VAL64> scale) const {
-		IntegerLayout ret = IntegerHolder::hold (thiz)->smod (scale) ;
-		return move (keep[TYPE<Integer>::expr] (ret)) ;
-	}
-
-	forceinline Integer operator% (CREF<VAL64> scale) const {
-		return smod (scale) ;
-	}
-
-	forceinline void operator%= (CREF<VAL64> scale) {
-		thiz = smod (scale) ;
+	forceinline void operator%= (CREF<Integer> that) {
+		thiz = smod (that) ;
 	}
 
 	Integer sabs () const {
@@ -718,6 +733,24 @@ public:
 		return minus () ;
 	}
 
+	Integer lshift (CREF<LENGTH> scale) const {
+		IntegerLayout ret = IntegerHolder::hold (thiz)->lshift (scale) ;
+		return move (keep[TYPE<Integer>::expr] (ret)) ;
+	}
+
+	forceinline Integer operator<< (CREF<LENGTH> scale) const {
+		return lshift (scale) ;
+	}
+
+	Integer rshift (CREF<LENGTH> scale) const {
+		IntegerLayout ret = IntegerHolder::hold (thiz)->rshift (scale) ;
+		return move (keep[TYPE<Integer>::expr] (ret)) ;
+	}
+
+	forceinline Integer operator>> (CREF<LENGTH> scale) const {
+		return rshift (scale) ;
+	}
+
 	void increase () {
 		return IntegerHolder::hold (thiz)->increase () ;
 	}
@@ -732,6 +765,216 @@ public:
 
 	forceinline void operator-- (int) {
 		return decrease () ;
+	}
+} ;
+
+struct JetLayout {
+	FLT64 mFX ;
+	FLT64 mEX ;
+	RefBuffer<FLT64> mDX ;
+} ;
+
+struct JetHolder implement Interface {
+	imports VFat<JetHolder> hold (VREF<JetLayout> that) ;
+	imports CFat<JetHolder> hold (CREF<JetLayout> that) ;
+
+	virtual void initialize (CREF<LENGTH> size_) = 0 ;
+	virtual void initialize (CREF<LENGTH> size_ ,CREF<FLT64> item ,CREF<INDEX> slot) = 0 ;
+	virtual void initialize (CREF<JetLayout> that) = 0 ;
+	virtual FLT64 fx () const = 0 ;
+	virtual FLT64 ex () const = 0 ;
+	virtual FLT64 dx (CREF<INDEX> slot) const = 0 ;
+	virtual JetLayout sadd (CREF<JetLayout> that) const = 0 ;
+	virtual JetLayout ssub (CREF<JetLayout> that) const = 0 ;
+	virtual JetLayout smul (CREF<JetLayout> that) const = 0 ;
+	virtual JetLayout sdiv (CREF<JetLayout> that) const = 0 ;
+	virtual JetLayout inverse () const = 0 ;
+	virtual JetLayout ssqrt () const = 0 ;
+	virtual JetLayout scbrt () const = 0 ;
+	virtual JetLayout spow (CREF<VAL32> that) const = 0 ;
+	virtual JetLayout shypot (CREF<JetLayout> that) const = 0 ;
+	virtual JetLayout sabs () const = 0 ;
+	virtual JetLayout minus () const = 0 ;
+	virtual JetLayout ssin () const = 0 ;
+	virtual JetLayout scos () const = 0 ;
+	virtual JetLayout stan () const = 0 ;
+	virtual JetLayout sasin () const = 0 ;
+	virtual JetLayout sacos () const = 0 ;
+	virtual JetLayout satan (CREF<JetLayout> that) const = 0 ;
+	virtual JetLayout sexp () const = 0 ;
+	virtual JetLayout slog () const = 0 ;
+} ;
+
+template <class A>
+class Jet implement JetLayout {
+protected:
+	using JetLayout::mFX ;
+	using JetLayout::mDX ;
+
+public:
+	implicit Jet () = default ;
+
+	implicit Jet (CREF<FLT64> item) {
+		JetHolder::hold (thiz)->initialize (A::expr ,item ,NONE) ;
+	}
+
+	implicit Jet (CREF<FLT64> item ,CREF<INDEX> slot) {
+		JetHolder::hold (thiz)->initialize (A::expr ,item ,slot) ;
+	}
+
+	implicit Jet (CREF<Jet> that) {
+		JetHolder::hold (thiz)->initialize (that) ;
+	}
+
+	forceinline VREF<Jet> operator= (CREF<Jet> that) {
+		return assign (thiz ,that) ;
+	}
+
+	implicit Jet (RREF<Jet> that) = default ;
+
+	forceinline VREF<Jet> operator= (RREF<Jet> that) = default ;
+
+	FLT64 fx () const {
+		return JetHolder::hold (thiz)->fx () ;
+	}
+
+	FLT64 ex () const {
+		return JetHolder::hold (thiz)->ex () ;
+	}
+
+	FLT64 dx (CREF<INDEX> slot) const {
+		return JetHolder::hold (thiz)->dx (slot) ;
+	}
+
+	Jet sadd (CREF<Jet> that) const {
+		JetLayout ret = JetHolder::hold (thiz)->sadd (that) ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	forceinline Jet operator+ (CREF<Jet> that) const {
+		return sadd (that) ;
+	}
+
+	forceinline VREF<Jet> operator+= (CREF<Jet> that) {
+		thiz = sadd (that) ;
+	}
+
+	Jet ssub (CREF<Jet> that) const {
+		JetLayout ret = JetHolder::hold (thiz)->ssub (that) ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	forceinline Jet operator- (CREF<Jet> that) const {
+		return ssub (that) ;
+	}
+
+	forceinline VREF<Jet> operator-= (CREF<Jet> that) {
+		thiz = ssub (that) ;
+	}
+
+	Jet smul (CREF<Jet> that) const {
+		JetLayout ret = JetHolder::hold (thiz)->smul (that) ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	forceinline Jet operator* (CREF<Jet> that) const {
+		return smul (that) ;
+	}
+
+	forceinline VREF<Jet> operator*= (CREF<Jet> that) {
+		thiz = smul (that) ;
+	}
+
+	Jet sdiv (CREF<Jet> that) const {
+		JetLayout ret = JetHolder::hold (thiz)->sdiv (that) ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	forceinline Jet operator/ (CREF<Jet> that) const {
+		return sdiv (that) ;
+	}
+
+	forceinline VREF<Jet> operator/= (CREF<Jet> that) {
+		thiz = sdiv (that) ;
+	}
+
+	Jet inverse () const {
+		JetLayout ret = JetHolder::hold (thiz)->inverse () ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	Jet ssqrt () const {
+		JetLayout ret = JetHolder::hold (thiz)->ssqrt () ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	Jet scbrt () const {
+		JetLayout ret = JetHolder::hold (thiz)->scbrt () ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	Jet spow (CREF<VAL32> that) const {
+		JetLayout ret = JetHolder::hold (thiz)->spow (that) ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	Jet shypot (CREF<Jet> that) const {
+		JetLayout ret = JetHolder::hold (thiz)->shypot (that) ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	Jet sabs () const {
+		JetLayout ret = JetHolder::hold (thiz)->sabs () ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	Jet minus () const {
+		JetLayout ret = JetHolder::hold (thiz)->minus () ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	forceinline Jet operator- () const {
+		return minus () ;
+	}
+
+	Jet ssin () const {
+		JetLayout ret = JetHolder::hold (thiz)->ssin () ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	Jet scos () const {
+		JetLayout ret = JetHolder::hold (thiz)->scos () ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	Jet stan () const {
+		JetLayout ret = JetHolder::hold (thiz)->stan () ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	Jet sasin () const {
+		JetLayout ret = JetHolder::hold (thiz)->sasin () ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	Jet sacos () const {
+		JetLayout ret = JetHolder::hold (thiz)->sacos () ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	Jet satan (CREF<JetLayout> that) const {
+		JetLayout ret = JetHolder::hold (thiz)->satan (that) ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	Jet sexp () const {
+		JetLayout ret = JetHolder::hold (thiz)->sexp () ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
+	}
+
+	Jet slog () const {
+		JetLayout ret = JetHolder::hold (thiz)->slog () ;
+		return move (keep[TYPE<Jet>::expr] (ret)) ;
 	}
 } ;
 

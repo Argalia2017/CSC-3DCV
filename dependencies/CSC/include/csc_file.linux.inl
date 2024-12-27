@@ -31,20 +31,23 @@
 #include <cstdio>
 #include "csc_begin.h"
 
-#ifndef USE_LINUX_HANDLE
-#define USE_LINUX_HANDLE
-
+inline namespace {
 using HMODULE = CSC::csc_pointer_t ;
 using HANDLE = CSC::csc_pointer_t ;
 using HFILE = int ;
-#endif
+using HDIR = CSC::DEF<DIR *> ;
+using HDIRENT = CSC::DEF<dirent * > ;
+using STAT_INFO = struct stat ;
+using TERMIOS_INFO = struct termios ;
+} ;
 
 namespace std {
-inline namespace extand {
+inline namespace {
 using ::open ;
 using ::close ;
 using ::read ;
 using ::write ;
+using ::stat ;
 using ::lstat ;
 } ;
 } ;
@@ -56,18 +59,12 @@ struct PathImplLayout {
 } ;
 
 class PathImplHolder final implement Fat<PathHolder ,PathLayout> {
-private:
-	using HDIR = DEF<DIR *> ;
-	using HDIRENT = DEF<dirent * > ;
-	using STAT_INFO = DEF<struct stat> ;
-
 public:
 	void initialize (RREF<String<STR>> pathname) override {
 		auto rax = PathImplLayout () ;
 		rax.mPathName = move (pathname) ;
 		rax.mSeparator.add (NONE) ;
 		const auto r1x = rax.mPathName.length () ;
-		assume (r1x > 0) ;
 		for (auto &&i : iter (0 ,r1x)) {
 			if (!is_separator (rax.mPathName[i]))
 				continue ;
@@ -76,19 +73,42 @@ public:
 		}
 		rax.mSeparator.add (r1x) ;
 		if ifdo (TRUE) {
-			if (rax.mSeparator[1] != 0)
+			if (r1x == 0)
 				discard ;
-			rax.mSeparator.take () ;
-		}
-		if ifdo (TRUE) {
-			INDEX ix = rax.mSeparator[rax.mSeparator.length () - 1] ;
+			INDEX ix = rax.mSeparator[rax.mSeparator.length () - 2] ;
 			if (ix != r1x - 1)
 				discard ;
 			rax.mPathName.trunc (ix) ;
 			rax.mSeparator.pop () ;
 		}
+		if ifdo (TRUE) {
+			if (rax.mSeparator.length () != 2)
+				discard ;
+			INDEX ix = rax.mSeparator[0] + 1 ;
+			INDEX iy = rax.mSeparator[1] ;
+			if (!is_root (rax.mPathName ,ix ,iy))
+				discard ;
+			rax.mPathName = String<STR>::make (rax.mPathName ,slice ("/") ,slice (".")) ;
+			rax.mSeparator.add (iy + 2) ;
+		}
 		assume (rax.mSeparator.length () >= 2) ;
 		fake.mThis = Ref<PathImplLayout>::make (move (rax)) ;
+	}
+
+	void initialize (CREF<Deque<String<STR>>> pathname) override {
+		auto rax = String<STR>::make () ;
+		INDEX ix = 0 ;
+		for (auto &&i : pathname.range ()) {
+			if ifdo (TRUE) {
+				if (i == 0)
+					discard ;
+				rax.splice (ix ,slice ("/")) ;
+				ix++ ;
+			}
+			rax.splice (ix ,pathname[i]) ;
+			ix += pathname[i].length () ;
+		}
+		initialize (move (rax)) ;
 	}
 
 	BOOL is_separator (CREF<STRU32> str) const {
@@ -109,76 +129,22 @@ public:
 		return fake.mThis->mPathName ;
 	}
 
-	PathLayout root () const override {
-		PathLayout ret ;
-		auto act = TRUE ;
-		if ifdo (act) {
-			if (fake.mThis == NULL)
-				discard ;
-			if (!StreamProc::is_alpha (fake.mThis->mPathName[0]))
-				discard ;
-			if (fake.mThis->mPathName[1] != STRU32 (':'))
-				discard ;
-			ret = Path () ;
-		}
-		if ifdo (act) {
-			if (fake.mThis == NULL)
-				discard ;
-			INDEX ix = fake.mThis->mSeparator[0] ;
-			if (ix == 0)
-				discard ;
-			auto rax = String<STR>::make () ;
-			if ifdo (TRUE) {
-				const auto r1x = getcwd (rax ,csc_size_t (rax.size ())) ;
-				if (r1x != NULL)
-					discard ;
-				rax.clear () ;
-			}
-			ret = Path (rax) ;
-		}
-		return move (ret) ;
-	}
-
 	PathLayout child (CREF<Slice> name) const override {
-		PathLayout ret ;
-		auto act = TRUE ;
-		if ifdo (act) {
-			if (fake.mThis == NULL)
-				discard ;
-			ret = Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
-		}
-		if ifdo (act) {
-			ret = Path (String<STR>::make (name)) ;
-		}
-		return move (ret) ;
+		if (fake.mThis == NULL)
+			return Path (name) ;
+		return Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
 	}
 
 	PathLayout child (CREF<Format> name) const override {
-		PathLayout ret ;
-		auto act = TRUE ;
-		if ifdo (act) {
-			if (fake.mThis == NULL)
-				discard ;
-			ret = Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
-		}
-		if ifdo (act) {
-			ret = Path (String<STR>::make (name)) ;
-		}
-		return move (ret) ;
+		if (fake.mThis == NULL)
+			return Path (String<STR>::make (name)) ;
+		return Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
 	}
 
 	PathLayout child (CREF<String<STR>> name) const override {
-		PathLayout ret ;
-		auto act = TRUE ;
-		if ifdo (act) {
-			if (fake.mThis == NULL)
-				discard ;
-			ret = Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
-		}
-		if ifdo (act) {
-			ret = Path (String<STR>::make (name)) ;
-		}
-		return move (ret) ;
+		if (fake.mThis == NULL)
+			return Path (name) ;
+		return Path (String<STR>::make (fake.mThis->mPathName ,slice ("/") ,name)) ;
 	}
 
 	Array<PathLayout> list () const override {
@@ -241,12 +207,10 @@ public:
 				rbx.add (Slice (rax->d_name)) ;
 			}
 		}
+		assume (rbx.length () == size_) ;
 		Array<PathLayout> ret = Array<PathLayout> (size_) ;
-		const auto r3x = inline_min (rbx.length () ,size_) ;
-		for (auto &&i : iter (0 ,r3x))
+		for (auto &&i : iter (0 ,size_))
 			ret[i] = child (rbx[i]) ;
-		for (auto &&i : iter (r3x ,size_))
-			PathHolder::hold (ret[i])->initialize (fake) ;
 		return move (ret) ;
 	}
 
@@ -266,7 +230,7 @@ public:
 			return FALSE ;
 		auto rax = STAT_INFO () ;
 		inline_memset (rax) ;
-		const auto r1x = std::lstat (fake.mThis->mPathName ,(&rax)) ;
+		const auto r1x = std::stat (fake.mThis->mPathName ,(&rax)) ;
 		if (r1x != 0)
 			return FALSE ;
 		if (S_ISDIR (rax.st_mode))
@@ -279,7 +243,7 @@ public:
 			return FALSE ;
 		auto rax = STAT_INFO () ;
 		inline_memset (rax) ;
-		const auto r1x = std::lstat (fake.mThis->mPathName ,(&rax)) ;
+		const auto r1x = std::stat (fake.mThis->mPathName ,(&rax)) ;
 		if (r1x != 0)
 			return FALSE ;
 		if (!S_ISDIR (rax.st_mode))
@@ -300,85 +264,129 @@ public:
 		return TRUE ;
 	}
 
-	String<STR> absolute () const {
-		if (!is_link ())
-			return fetch () ;
-		String<STR> ret = String<STR>::make () ;
+	PathLayout symbolic () const override {
+		PathLayout ret ;
+		PathHolder::hold (ret)->initialize (fake) ;
 		if ifdo (TRUE) {
-			const auto r1x = readlink (fake.mThis->mPathName ,ret ,csc_size_t (ret.size ())) ;
-			if (r1x >= 0)
+			if (!is_link ())
 				discard ;
-			ret.clear () ;
+			auto rax = String<STR>::make () ;
+			const auto r1x = INDEX (readlink (fake.mThis->mPathName ,rax ,csc_size_t (rax.size ()))) ;
+			rax.trunc (r1x) ;
+			ret = Path (rax) ;
 		}
 		return move (ret) ;
+	}
+
+	PathLayout absolute () const override {
+		auto rax = Deque<String<STR>> () ;
+		auto rbx = decouple () ;
+		while (TRUE) {
+			if (rbx.empty ())
+				break ;
+			auto act = TRUE ;
+			if ifdo (act) {
+				if (rbx[0] != slice ("."))
+					discard ;
+				if ifdo (TRUE) {
+					if (!rax.empty ())
+						discard ;
+					auto rcx = String<STR>::make () ;
+					if ifdo (TRUE) {
+						const auto r1x = getcwd (rcx ,csc_size_t (rcx.size ())) ;
+						if (r1x != NULL)
+							discard ;
+						rcx.clear () ;
+					}
+					rax = Path (move (rcx)).decouple () ;
+				}
+				rbx.take () ;
+			}
+			if ifdo (act) {
+				if (rbx[0] != slice (".."))
+					discard ;
+				if ifdo (TRUE) {
+					if (!rax.empty ())
+						discard ;
+					auto rcx = String<STR>::make () ;
+					if ifdo (TRUE) {
+						const auto r1x = getcwd (rcx ,csc_size_t (rcx.size ())) ;
+						if (r1x != NULL)
+							discard ;
+						rcx.clear () ;
+					}
+					rax = Path (move (rcx)).decouple () ;
+				}
+				if ifdo (TRUE) {
+					if (rax.length () > 1)
+						discard ;
+					if (!is_root (rax[0] ,0 ,rax[0].length ()))
+						discard ;
+					rax.add (String<STR>::zero ()) ;
+				}
+				rax.pop () ;
+				rbx.take () ;
+			}
+			if ifdo (act) {
+				rax.add (move (rbx[0])) ;
+				rbx.take () ;
+			}
+		}
+		return Path (rax) ;
+	}
+
+	BOOL is_root (CREF<String<STR>> str ,CREF<INDEX> begin_ ,CREF<INDEX> end_) const {
+		if (str.size () == 0)
+			return TRUE ;
+		const auto r1x = Slice (address (str[begin_]) ,end_ - begin_ ,SIZE_OF<STR>::expr) ;
+		if (r1x.size () == 0)
+			return TRUE ;
+		if (r1x.size () != 2)
+			return FALSE ;
+		if (StreamProc::is_alpha (r1x[0]))
+			if (r1x[1] == STRU32 (':'))
+				return TRUE ;
+		return FALSE ;
 	}
 
 	Deque<String<STR>> decouple () const override {
 		const auto r1x = fake.mThis->mSeparator.length () ;
 		Deque<String<STR>> ret = Deque<String<STR>> (r1x) ;
-		for (auto &&i : iter (1 ,r1x)) {
-			const auto r2x = fake.mThis->mSeparator[i - 1] + 1 ;
-			const auto r3x = fake.mThis->mSeparator[i] ;
-			const auto r4x = address (fake.mThis->mPathName.at (r2x)) ;
-			const auto r5x = Slice (r4x ,r3x - r2x ,SIZE_OF<STR>::expr) ;
-			ret.add (r5x) ;
+		for (auto &&i : iter (0 ,r1x - 1)) {
+			INDEX ix = fake.mThis->mSeparator[i] + 1 ;
+			INDEX iy = fake.mThis->mSeparator[i + 1] ;
+			const auto r2x = Slice (address (fake.mThis->mPathName[ix]) ,iy - ix ,SIZE_OF<STR>::expr) ;
+			ret.add (r2x) ;
 		}
 		return move (ret) ;
 	}
 
 	String<STR> path () const override {
 		const auto r1x = fake.mThis->mSeparator.length () ;
-		const auto r2x = fake.mThis->mSeparator[r1x - 2] + 1 ;
-		String<STR> ret = String<STR> (r2x) ;
-		INDEX ix = 0 ;
-		for (auto &&i : iter (0 ,r2x)) {
-			ret[ix] = fake.mThis->mPathName[i] ;
-			ix++ ;
-		}
-		ret.trunc (ix) ;
-		return move (ret) ;
+		INDEX ix = fake.mThis->mSeparator[0] + 1 ;
+		INDEX iy = fake.mThis->mSeparator[r1x - 2] + 1 ;
+		return Slice (address (fake.mThis->mPathName[ix]) ,iy - ix ,SIZE_OF<STR>::expr) ;
 	}
 
 	String<STR> name () const override {
 		const auto r1x = fake.mThis->mSeparator.length () ;
-		const auto r2x = fake.mThis->mSeparator[r1x - 2] + 1 ;
-		const auto r3x = fake.mThis->mSeparator[r1x - 1] ;
-		String<STR> ret = String<STR> (r3x - r2x) ;
-		INDEX ix = 0 ;
-		for (auto &&i : iter (r2x ,r3x)) {
-			ret[ix] = fake.mThis->mPathName[i] ;
-			ix++ ;
-		}
-		ret.trunc (ix) ;
-		return move (ret) ;
+		INDEX ix = fake.mThis->mSeparator[r1x - 2] + 1 ;
+		INDEX iy = fake.mThis->mSeparator[r1x - 1] ;
+		return Slice (address (fake.mThis->mPathName[ix]) ,iy - ix ,SIZE_OF<STR>::expr) ;
 	}
 
 	String<STR> stem () const override {
 		const auto r1x = fake.mThis->mSeparator.length () ;
-		const auto r2x = fake.mThis->mSeparator[r1x - 2] + 1 ;
-		const auto r3x = find_last_dot_word () ;
-		String<STR> ret = String<STR> (r3x - r2x) ;
-		INDEX ix = 0 ;
-		for (auto &&i : iter (r2x ,r3x)) {
-			ret[ix] = fake.mThis->mPathName[i] ;
-			ix++ ;
-		}
-		ret.trunc (ix) ;
-		return move (ret) ;
+		INDEX ix = fake.mThis->mSeparator[r1x - 2] + 1 ;
+		INDEX iy = find_last_dot_word () ;
+		return Slice (address (fake.mThis->mPathName[ix]) ,iy - ix ,SIZE_OF<STR>::expr) ;
 	}
 
 	String<STR> extension () const override {
-		const auto r1x = find_last_dot_word () ;
-		const auto r2x = fake.mThis->mSeparator.length () ;
-		const auto r3x = fake.mThis->mSeparator[r2x - 1] ;
-		String<STR> ret = String<STR> (r3x - r1x) ;
-		INDEX ix = 0 ;
-		for (auto &&i : iter (r1x ,r3x)) {
-			ret[ix] = fake.mThis->mPathName[i] ;
-			ix++ ;
-		}
-		ret.trunc (ix) ;
-		return move (ret) ;
+		const auto r1x = fake.mThis->mSeparator.length () ;
+		INDEX ix = find_last_dot_word () ;
+		INDEX iy = fake.mThis->mSeparator[r1x - 1] ;
+		return Slice (address (fake.mThis->mPathName[ix]) ,iy - ix ,SIZE_OF<STR>::expr) ;
 	}
 
 	INDEX find_last_dot_word () const {
@@ -397,7 +405,7 @@ public:
 	}
 } ;
 
-static const auto mPathExternal = External<PathHolder ,PathLayout>::declare (PathImplHolder ()) ;
+static const auto mPathExternal = External<PathHolder ,PathLayout> (PathImplHolder ()) ;
 
 struct FileProcImplLayout {
 	Mutex mMutex ;
@@ -405,6 +413,9 @@ struct FileProcImplLayout {
 } ;
 
 class FileProcImplHolder final implement Fat<FileProcHolder ,FileProcLayout> {
+private:
+	using FILEPROC_RETRY_TIME = RANK3 ;
+
 public:
 	void initialize () override {
 		auto rax = FileProcImplLayout () ;
@@ -424,13 +435,14 @@ public:
 		const auto r3x = LENGTH (r2x) ;
 		RefBuffer<BYTE> ret = RefBuffer<BYTE> (r3x) ;
 		auto rax = r3x ;
-		while (TRUE) {
-			if (rax == 0)
-				break ;
+		for (auto &&i : iter (0 ,FILEPROC_RETRY_TIME::expr)) {
+			noop (i) ;
 			auto rbx = csc_size_t (rax) ;
 			rbx = std::read (r1x ,(&ret[r3x - rax]) ,rbx) ;
 			assume (rbx >= 0) ;
 			rax -= LENGTH (rbx) ;
+			if (rax == 0)
+				break ;
 		}
 		assume (rax == 0) ;
 		return move (ret) ;
@@ -461,13 +473,14 @@ public:
 		}) ;
 		const auto r4x = item.size () ;
 		auto rax = r4x ;
-		while (TRUE) {
-			if (rax == 0)
-				break ;
+		for (auto &&i : iter (0 ,FILEPROC_RETRY_TIME::expr)) {
+			noop (i) ;
 			auto rbx = csc_size_t (rax) ;
 			rbx = std::write (r1x ,(&item[r4x - rax]) ,rbx) ;
 			assume (rbx >= 0) ;
 			rax -= LENGTH (rbx) ;
+			if (rax == 0)
+				break ;
 		}
 		assume (rax == 0) ;
 	}
@@ -512,11 +525,15 @@ public:
 	}
 
 	void link_file (CREF<String<STR>> dst ,CREF<String<STR>> src) const override {
-		const auto r1x = link (src ,dst) ;
+		if (!Path (src).is_file ())
+			return ;
+		const auto r1x = symlink (src ,dst) ;
 		noop (r1x) ;
 	}
 
 	void erase_file (CREF<String<STR>> file) const override {
+		if (!Path (file).is_file ())
+			return ;
 		const auto r1x = unlink (file) ;
 		noop (r1x) ;
 	}
@@ -524,15 +541,19 @@ public:
 	void build_dire (CREF<String<STR>> dire) const override {
 		const auto r1x = Path (dire).decouple () ;
 		const auto r2x = csc_enum_t (S_IRWXU | S_IRWXG | S_IRWXO) ;
-		auto rax = String<STR>::make () ;
-		INDEX ix = 0 ;
-		for (auto &&i : r1x) {
-			rax.splice (ix ,i) ;
-			ix = rax.length () ;
-			mkdir (rax ,r2x) ;
-			rax.splice (ix ,slice ("/")) ;
-			ix++ ;
+		auto rax = Path () ;
+		for (auto &&i : r1x.range ()) {
+			rax = rax.child (r1x[i]) ;
+			const auto r3x = rax.fetch () ;
+			mkdir (r3x ,r2x) ;
 		}
+	}
+
+	void link_dire (CREF<String<STR>> dst ,CREF<String<STR>> src) const override {
+		if (!Path (src).is_dire ())
+			return ;
+		const auto r1x = symlink (src ,dst) ;
+		noop (r1x) ;
 	}
 
 	void clear_dire (CREF<String<STR>> dire) const override {
@@ -563,14 +584,14 @@ public:
 		for (auto &&i : r1x) {
 			auto act = TRUE ;
 			if ifdo (act) {
-				if (!i.is_link ())
+				if (!i.is_file ())
 					discard ;
 				erase_file (i) ;
 			}
 			if ifdo (act) {
-				if (!i.is_file ())
+				if (!i.is_link ())
 					discard ;
-				erase_file (i) ;
+				erase_dire (i) ;
 			}
 			if ifdo (act) {
 				if (!i.is_dire ())
@@ -581,14 +602,19 @@ public:
 	}
 
 	void erase_dire (CREF<String<STR>> dire) const override {
-		unlink (dire) ;
+		if (!Path (dire).is_dire ())
+			return ;
+		const auto r1x = unlink (dire) ;
+		noop (r1x) ;
+		const auto r2x = rmdir (dire) ;
+		noop (r2x) ;
 	}
 
 	BOOL lock_dire (CREF<String<STR>> dire) const override {
 		const auto r1x = Path (dire).child (slice (".lockdirectory")) ;
 		const auto r2x = Process (RuntimeProc::process_uid ()) ;
 		if ifdo (TRUE) {
-			if (r1x.is_file ())
+			if (!r1x.is_file ())
 				discard ;
 			const auto r3x = FileProc::load_file (r1x) ;
 			const auto r4x = Process (r3x) ;
@@ -607,7 +633,7 @@ public:
 			me = file ;
 			FileProc::save_file (me ,snapshot_) ;
 		} ,[&] (VREF<String<STR>> me) {
-			FileProc::erase_dire (me) ;
+			FileProc::erase_file (me) ;
 		}) ;
 		auto rbx = List<UniqueRef<String<STR>>> () ;
 		fake.mThis->mLockDirectory.get (rbx) ;
@@ -616,7 +642,7 @@ public:
 	}
 } ;
 
-static const auto mFileProcExternal = External<FileProcHolder ,FileProcLayout>::declare (FileProcImplHolder ()) ;
+static const auto mFileProcExternal = External<FileProcHolder ,FileProcLayout> (FileProcImplHolder ()) ;
 
 struct StreamFileImplLayout {
 	String<STR> mFile ;
@@ -625,6 +651,8 @@ struct StreamFileImplLayout {
 	VAL64 mFileSize ;
 	VAL64 mRead ;
 	VAL64 mWrite ;
+	BOOL mShortRead ;
+	LENGTH mShortSize ;
 } ;
 
 class StreamFileImplHolder final implement Fat<StreamFileHolder ,StreamFileLayout> {
@@ -635,6 +663,12 @@ public:
 		fake.mThis->mFileSize = 0 ;
 		fake.mThis->mRead = 0 ;
 		fake.mThis->mWrite = 0 ;
+		fake.mThis->mShortRead = FALSE ;
+		fake.mThis->mShortSize = 0 ;
+	}
+
+	void set_short_read (CREF<BOOL> flag) override {
+		fake.mThis->mShortRead = flag ;
 	}
 
 	void open_r () override {
@@ -716,20 +750,26 @@ public:
 		return r1x ;
 	}
 
+	LENGTH short_size () const override {
+		return fake.mThis->mShortSize ;
+	}
+
 	void read (VREF<RefBuffer<BYTE>> item) override {
 		assert (fake.mThis->mReadPipe.exist ()) ;
 		assert (item.size () < VAL32_MAX) ;
 		const auto r1x = item.size () ;
 		auto rax = r1x ;
-		while (TRUE) {
-			if (rax == 0)
-				break ;
+		if ifdo (TRUE) {
 			auto rbx = csc_size_t (rax) ;
 			rbx = std::read (fake.mThis->mReadPipe ,(&item[r1x - rax]) ,rbx) ;
 			assume (rbx >= 0) ;
 			rax -= LENGTH (rbx) ;
+			if (rax == 0)
+				discard ;
+			assume (fake.mThis->mShortRead) ;
 		}
-		fake.mThis->mRead += r1x ;
+		fake.mThis->mShortSize = r1x - rax ;
+		fake.mThis->mRead += fake.mThis->mShortSize ;
 	}
 
 	void write (CREF<RefBuffer<BYTE>> item) override {
@@ -737,15 +777,17 @@ public:
 		assert (item.size () < VAL32_MAX) ;
 		const auto r1x = item.size () ;
 		auto rax = r1x ;
-		while (TRUE) {
-			if (rax == 0)
-				break ;
+		if ifdo (TRUE) {
 			auto rbx = csc_size_t (rax) ;
 			rbx = std::write (fake.mThis->mWritePipe ,(&item[r1x - rax]) ,rbx) ;
 			assume (rbx >= 0) ;
 			rax -= LENGTH (rbx) ;
+			if (rax == 0)
+				discard ;
+			assume (fake.mThis->mShortRead) ;
 		}
-		fake.mThis->mWrite += r1x ;
+		fake.mThis->mShortSize = r1x - rax ;
+		fake.mThis->mWrite += fake.mThis->mShortSize ;
 	}
 
 	void flush () override {
@@ -755,10 +797,10 @@ public:
 	}
 } ;
 
-static const auto mStreamFileExternal = External<StreamFileHolder ,StreamFileLayout>::declare (StreamFileImplHolder ()) ;
+static const auto mStreamFileExternal = External<StreamFileHolder ,StreamFileLayout> (StreamFileImplHolder ()) ;
 
 struct BufferFileHeader {
-	VAL64 mFileEndian ;
+	QUAD mFileEndian ;
 	VAL64 mFileSize ;
 	VAL64 mBlockSize ;
 	VAL64 mBlockStep ;
@@ -831,6 +873,7 @@ public:
 		} ,[&] (VREF<LENGTH> me) {
 			noop () ;
 		}) ;
+		fake.mThis->mMapping.depend (fake.mThis->mPipe) ;
 		fake.mThis->mFileMapFlag = csc_enum_t (PROT_READ) ;
 		read_header () ;
 	}
@@ -855,6 +898,7 @@ public:
 		} ,[&] (VREF<LENGTH> me) {
 			noop () ;
 		}) ;
+		fake.mThis->mMapping.depend (fake.mThis->mPipe) ;
 		fake.mThis->mFileMapFlag = csc_enum_t (PROT_READ | PROT_WRITE) ;
 		write_header () ;
 	}
@@ -878,6 +922,7 @@ public:
 		} ,[&] (VREF<LENGTH> me) {
 			noop () ;
 		}) ;
+		fake.mThis->mMapping.depend (fake.mThis->mPipe) ;
 		fake.mThis->mFileMapFlag = csc_enum_t (PROT_READ | PROT_WRITE) ;
 		read_header () ;
 	}
@@ -889,7 +934,7 @@ public:
 		rax >> slice ("CSC_BufferFile") ;
 		rax >> GAP ;
 		rax >> fake.mThis->mHeader->mFileEndian ;
-		assume (fake.mThis->mHeader->mFileEndian == file_endian ()) ;
+		assume (fake.mThis->mHeader->mFileEndian == QUAD_ENDIAN) ;
 		rax >> GAP ;
 		rax >> fake.mThis->mHeader->mFileSize ;
 		assume (fake.mThis->mHeader->mFileSize == fake.mThis->mFileSize) ;
@@ -918,7 +963,7 @@ public:
 			if (fake.mThis->mHeader != NULL)
 				discard ;
 			fake.mThis->mHeader = Box<BufferFileHeader>::make () ;
-			fake.mThis->mHeader->mFileEndian = file_endian () ;
+			fake.mThis->mHeader->mFileEndian = QUAD_ENDIAN ;
 			fake.mThis->mHeader->mFileSize = fake.mThis->mFileSize ;
 			fake.mThis->mHeader->mBlockSize = fake.mThis->mChunkStep / fake.mThis->mBlockStep ;
 			fake.mThis->mHeader->mBlockStep = fake.mThis->mBlockStep ;
@@ -954,18 +999,6 @@ public:
 		const auto r1x = fake.mThis->mCacheList[ix].mBlock->m1st ;
 		const auto r2x = HEADER_SIZE::expr ;
 		return Ref<RefBuffer<BYTE>>::make (RefBuffer<BYTE>::reference (r1x ,r2x)) ;
-	}
-
-	VAL64 file_endian () const {
-		const auto r1x = invoke ([&] () {
-			auto rax = Buffer<BYTE ,SIZE_OF<CHAR>> () ;
-			rax[0] = BYTE (0X00) ;
-			rax[1] = BYTE (0X01) ;
-			rax[2] = BYTE (0X02) ;
-			rax[3] = BYTE (0X03) ;
-			return bitwise[TYPE<CHAR>::expr] (rax) ;
-		}) ;
-		return VAL64 (r1x) ;
 	}
 
 	LENGTH file_size () const override {
@@ -1074,13 +1107,13 @@ public:
 	}
 } ;
 
-static const auto mBufferFileExternal = External<BufferFileHolder ,BufferFileLayout>::declare (BufferFileImplHolder ()) ;
+static const auto mBufferFileExternal = External<BufferFileHolder ,BufferFileLayout> (BufferFileImplHolder ()) ;
 
 struct UartFileImplLayout {
 	String<STR> mPortName ;
 	LENGTH mPortRate ;
 	UniqueRef<HFILE> mPipe ;
-	DEF<struct termios> mSerialStat ;
+	TERMIOS_INFO mSerialStat ;
 	RefBuffer<BYTE> mRingBuffer ;
 	INDEX mRingRead ;
 } ;
@@ -1105,7 +1138,7 @@ private:
 		fake.mThis->mRingRead = 0 ;
 	}
 
-	void open () {
+	void open () override {
 		assert (fake.mThis->mPortName.length () > 0) ;
 		assert (fake.mThis->mRingBuffer.size () > 0) ;
 		fake.mThis->mPipe = UniqueRef<HFILE> ([&] (VREF<HFILE> me) {
@@ -1143,12 +1176,13 @@ private:
 					discard ;
 				auto rax = fake.mThis->mRingBuffer.size () ;
 				while (TRUE) {
-					if (rax == 0)
-						break ;
 					auto rbx = csc_size_t (rax) ;
 					rbx = std::read (fake.mThis->mPipe ,fake.mThis->mRingBuffer ,rbx) ;
 					assume (rbx >= 0) ;
 					rax -= rbx ;
+					if (rax == 0)
+						break ;
+					RuntimeProc::thread_yield () ;
 				}
 				fake.mThis->mRingRead = 0 ;
 			}
@@ -1156,7 +1190,7 @@ private:
 	}
 } ;
 
-static const auto mUartFileExternal = External<UartFileHolder ,UartFileLayout>::declare (UartFileImplHolder ()) ;
+static const auto mUartFileExternal = External<UartFileHolder ,UartFileLayout> (UartFileImplHolder ()) ;
 
 struct ConsoleImplLayout {
 	Mutex mMutex ;
@@ -1346,5 +1380,5 @@ public:
 	}
 } ;
 
-static const auto mConsoleExternal = External<ConsoleHolder ,ConsoleLayout>::declare (ConsoleImplHolder ()) ;
+static const auto mConsoleExternal = External<ConsoleHolder ,ConsoleLayout> (ConsoleImplHolder ()) ;
 } ;

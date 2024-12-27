@@ -28,7 +28,7 @@
 #undef slice
 #undef assert
 #undef assume
-#undef output
+#undef watch
 #undef ifdo
 #undef discard
 #undef typeof
@@ -51,7 +51,7 @@
 #define slice __macro_slice
 #define assert __macro_assert
 #define assume __macro_assume
-#define output __macro_output
+#define watch __macro_watch
 #define ifdo __macro_ifdo
 #define discard break
 #define typeof __macro_typeof

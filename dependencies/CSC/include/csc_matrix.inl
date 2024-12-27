@@ -462,7 +462,7 @@ exports CFat<MatrixHolder> MatrixHolder::hold (CREF<MatrixLayout> that) {
 
 class MakeMatrixImplHolder final implement Fat<MakeMatrixHolder ,MatrixLayout> {
 public:
-	void DiagMatrix_initialize (CREF<FLT64> x ,CREF<FLT64> y ,CREF<FLT64> z ,CREF<FLT64> w) override {
+	void make_DiagMatrix (CREF<FLT64> x ,CREF<FLT64> y ,CREF<FLT64> z ,CREF<FLT64> w) override {
 		Matrix ret = Matrix::zero () ;
 		ret[0][0] = x ;
 		ret[1][1] = y ;
@@ -471,7 +471,7 @@ public:
 		fake = move (ret) ;
 	}
 
-	void ShearMatrix_initialize (CREF<Vector> x ,CREF<Vector> y ,CREF<Vector> z) override {
+	void make_ShearMatrix (CREF<Vector> x ,CREF<Vector> y ,CREF<Vector> z) override {
 		Matrix ret = Matrix::zero () ;
 		const auto r1x = x.normalize () ;
 		const auto r2x = y.normalize () ;
@@ -492,7 +492,7 @@ public:
 		fake = move (ret) ;
 	}
 
-	void RotationMatrix_initialize (CREF<Vector> normal ,CREF<FLT64> angle) override {
+	void make_RotationMatrix (CREF<Vector> normal ,CREF<FLT64> angle) override {
 		Matrix ret = Matrix::zero () ;
 		const auto r1x = normal.normalize () ;
 		const auto r2x = MathProc::cos (angle) ;
@@ -511,7 +511,7 @@ public:
 		fake = move (ret) ;
 	}
 
-	void TranslationMatrix_initialize (CREF<FLT64> x ,CREF<FLT64> y ,CREF<FLT64> z) override {
+	void make_TranslationMatrix (CREF<FLT64> x ,CREF<FLT64> y ,CREF<FLT64> z) override {
 		Matrix ret = Matrix::identity () ;
 		ret[0][3] = x ;
 		ret[1][3] = y ;
@@ -519,7 +519,7 @@ public:
 		fake = move (ret) ;
 	}
 
-	void PerspectiveMatrix_initialize (CREF<FLT64> fx ,CREF<FLT64> fy ,CREF<FLT64> wx ,CREF<FLT64> wy) override {
+	void make_PerspectiveMatrix (CREF<FLT64> fx ,CREF<FLT64> fy ,CREF<FLT64> wx ,CREF<FLT64> wy) override {
 		assert (fx > 0) ;
 		assert (fy > 0) ;
 		Matrix ret = Matrix::zero () ;
@@ -532,7 +532,7 @@ public:
 		fake = move (ret) ;
 	}
 
-	void ProjectionMatrix_initialize (CREF<Vector> normal ,CREF<Vector> center ,CREF<Vector> light) override {
+	void make_ProjectionMatrix (CREF<Vector> normal ,CREF<Vector> center ,CREF<Vector> light) override {
 		Matrix ret = Matrix::zero () ;
 		const auto r1x = normal.normalize () ;
 		const auto r2x = center * r1x ;
@@ -554,7 +554,7 @@ public:
 		fake = move (ret) ;
 	}
 
-	void ViewMatrix_initialize (CREF<Vector> x ,CREF<Vector> y) override {
+	void make_ViewMatrix (CREF<Vector> x ,CREF<Vector> y) override {
 		const auto r1x = x.normalize () ;
 		const auto r2x = y.normalize () ;
 		const auto r3x = (r1x ^ r2x).normalize () ;
@@ -563,8 +563,8 @@ public:
 		fake = Matrix (r1x ,r4x ,r3x ,r5x) ;
 	}
 
-	void ViewMatrix_initialize (CREF<Vector> x ,CREF<Vector> y ,CREF<Just<ViewMatrixOption>> option) override {
-		ViewMatrix_initialize (x ,y) ;
+	void make_ViewMatrix (CREF<Vector> x ,CREF<Vector> y ,CREF<Just<ViewMatrixOption>> option) override {
+		make_ViewMatrix (x ,y) ;
 		auto act = TRUE ;
 		if ifdo (act) {
 			if (option != ViewMatrixOption::XYZ)
@@ -631,7 +631,7 @@ public:
 		}
 	}
 
-	void CrossProductMatrix_initialize (CREF<Vector> xyz) override {
+	void make_CrossProductMatrix (CREF<Vector> xyz) override {
 		Matrix ret = Matrix::zero () ;
 		const auto r1x = xyz.homogenize () ;
 		ret[1][0] = r1x[2] ;
@@ -643,7 +643,7 @@ public:
 		fake = move (ret) ;
 	}
 
-	void SymmetryMatrix_initialize (CREF<Vector> x ,CREF<Vector> y) override {
+	void make_SymmetryMatrix (CREF<Vector> x ,CREF<Vector> y) override {
 		Matrix ret = Matrix::zero () ;
 		const auto r1x = x ;
 		const auto r2x = y ;
@@ -653,7 +653,7 @@ public:
 		fake = move (ret) ;
 	}
 
-	void AffineMatrix_initialize (CREF<Array<FLT64>> a) override {
+	void make_AffineMatrix (CREF<Array<FLT64>> a) override {
 		Matrix ret = Matrix::identity () ;
 		if ifdo (TRUE) {
 			if (a.length () < 3)
@@ -693,11 +693,11 @@ exports CREF<MatrixProcLayout> MatrixProcHolder::instance () {
 }
 
 exports VFat<MatrixProcHolder> MatrixProcHolder::hold (VREF<MatrixProcLayout> that) {
-	return VFat<MatrixProcHolder> (External<MatrixProcHolder ,MatrixProcLayout>::linkage () ,that) ;
+	return VFat<MatrixProcHolder> (External<MatrixProcHolder ,MatrixProcLayout>::declare () ,that) ;
 }
 
 exports CFat<MatrixProcHolder> MatrixProcHolder::hold (CREF<MatrixProcLayout> that) {
-	return CFat<MatrixProcHolder> (External<MatrixProcHolder ,MatrixProcLayout>::linkage () ,that) ;
+	return CFat<MatrixProcHolder> (External<MatrixProcHolder ,MatrixProcLayout>::declare () ,that) ;
 }
 
 class DuplexMatrixImplHolder final implement Fat<DuplexMatrixHolder ,DuplexMatrixLayout> {
@@ -876,7 +876,7 @@ public:
 	FLT64 angle () const {
 		const auto r1x = axis (fake).magnitude () ;
 		const auto r2x = fake.mQuaternion[3] ;
-		return MathProc::arctan (r1x ,r2x) * 2 ;
+		return MathProc::atan (r1x ,r2x) * 2 ;
 	}
 
 	VectorLayout vector () const override {
@@ -911,11 +911,11 @@ exports CREF<LinearProcLayout> LinearProcHolder::instance () {
 }
 
 exports VFat<LinearProcHolder> LinearProcHolder::hold (VREF<LinearProcLayout> that) {
-	return VFat<LinearProcHolder> (External<LinearProcHolder ,LinearProcLayout>::linkage () ,that) ;
+	return VFat<LinearProcHolder> (External<LinearProcHolder ,LinearProcLayout>::declare () ,that) ;
 }
 
 exports CFat<LinearProcHolder> LinearProcHolder::hold (CREF<LinearProcLayout> that) {
-	return CFat<LinearProcHolder> (External<LinearProcHolder ,LinearProcLayout>::linkage () ,that) ;
+	return CFat<LinearProcHolder> (External<LinearProcHolder ,LinearProcLayout>::declare () ,that) ;
 }
 
 class PointCloudImplHolder final implement Fat<PointCloudHolder ,PointCloudLayout> {

@@ -42,60 +42,15 @@
     <ClCompile Include="..\..\src\Rendering\Display.cpp">
       <Filter>module\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\Registration\DepthEstimation.cpp">
-      <Filter>module\Registration</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\Registration\GaussionSplatting.cpp">
       <Filter>module\Registration</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Esimation\DepthEstimation.cpp">
+      <Filter>module\Estimation</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\util.h" />
-    <ClInclude Include="..\..\dependencies\CSC\include\csc.hpp">
-      <Filter>csc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dependencies\CSC\include\csc_array.hpp">
-      <Filter>csc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dependencies\CSC\include\csc_basic.hpp">
-      <Filter>csc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dependencies\CSC\include\csc_begin.h">
-      <Filter>csc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dependencies\CSC\include\csc_core.hpp">
-      <Filter>csc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dependencies\CSC\include\csc_end.h">
-      <Filter>csc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dependencies\CSC\include\csc_image.hpp">
-      <Filter>csc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dependencies\CSC\include\csc_math.hpp">
-      <Filter>csc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dependencies\CSC\include\csc_matrix.eigen.fix.h">
-      <Filter>csc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dependencies\CSC\include\csc_matrix.hpp">
-      <Filter>csc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dependencies\CSC\include\csc_runtime.hpp">
-      <Filter>csc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dependencies\CSC\include\csc_stream.hpp">
-      <Filter>csc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dependencies\CSC\include\csc_string.hpp">
-      <Filter>csc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dependencies\CSC\include\csc_thread.hpp">
-      <Filter>csc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dependencies\CSC\include\csc_type.hpp">
-      <Filter>csc</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\Calibration\export.h">
       <Filter>module\Calibration</Filter>
     </ClInclude>
@@ -117,11 +72,11 @@
     <ClInclude Include="..\..\src\System\export.h">
       <Filter>module\System</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\Esimation\export.h">
+      <Filter>module\Estimation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="csc">
-      <UniqueIdentifier>{0fae85e1-73c9-4f79-9d0f-1bb3535037f1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="module">
       <UniqueIdentifier>{6ca3145c-be04-4042-912b-8b72435cd091}</UniqueIdentifier>
     </Filter>
@@ -130,9 +85,6 @@
     </Filter>
     <Filter Include="module\Common">
       <UniqueIdentifier>{a4c1fc1d-52c8-4ae2-84da-f029407d9788}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="module\Detection">
-      <UniqueIdentifier>{2f482b7c-e452-4ad2-9d2a-581d5f5b4322}</UniqueIdentifier>
     </Filter>
     <Filter Include="module\Meshing">
       <UniqueIdentifier>{7e210b6e-c793-49db-8e94-81a6a2ee6530}</UniqueIdentifier>
@@ -146,60 +98,11 @@
     <Filter Include="module\System">
       <UniqueIdentifier>{ec214562-f5e3-4691-b195-5a5dc7c5ac59}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\dependencies\CSC\include\cpp.hint">
-      <Filter>csc</Filter>
-    </None>
-    <None Include="..\..\dependencies\CSC\include\csc_array.inl">
-      <Filter>csc</Filter>
-    </None>
-    <None Include="..\..\dependencies\CSC\include\csc_basic.inl">
-      <Filter>csc</Filter>
-    </None>
-    <None Include="..\..\dependencies\CSC\include\csc_core.inl">
-      <Filter>csc</Filter>
-    </None>
-    <None Include="..\..\dependencies\CSC\include\csc_image.inl">
-      <Filter>csc</Filter>
-    </None>
-    <None Include="..\..\dependencies\CSC\include\csc_image.opencv.inl">
-      <Filter>csc</Filter>
-    </None>
-    <None Include="..\..\dependencies\CSC\include\csc_math.cache.inl">
-      <Filter>csc</Filter>
-    </None>
-    <None Include="..\..\dependencies\CSC\include\csc_math.inl">
-      <Filter>csc</Filter>
-    </None>
-    <None Include="..\..\dependencies\CSC\include\csc_matrix.eigen.inl">
-      <Filter>csc</Filter>
-    </None>
-    <None Include="..\..\dependencies\CSC\include\csc_matrix.inl">
-      <Filter>csc</Filter>
-    </None>
-    <None Include="..\..\dependencies\CSC\include\csc_runtime.inl">
-      <Filter>csc</Filter>
-    </None>
-    <None Include="..\..\dependencies\CSC\include\csc_runtime.linux.inl">
-      <Filter>csc</Filter>
-    </None>
-    <None Include="..\..\dependencies\CSC\include\csc_runtime.windows.inl">
-      <Filter>csc</Filter>
-    </None>
-    <None Include="..\..\dependencies\CSC\include\csc_stream.inl">
-      <Filter>csc</Filter>
-    </None>
-    <None Include="..\..\dependencies\CSC\include\csc_string.inl">
-      <Filter>csc</Filter>
-    </None>
-    <None Include="..\..\dependencies\CSC\include\csc_thread.inl">
-      <Filter>csc</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Natvis Include="..\..\dependencies\CSC\include\cpp.natvis">
-      <Filter>csc</Filter>
-    </Natvis>
+    <Filter Include="module\Estimation">
+      <UniqueIdentifier>{3c0722a6-5fe8-4080-b38a-d49edd22b112}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="module\Detection">
+      <UniqueIdentifier>{2f482b7c-e452-4ad2-9d2a-581d5f5b4322}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

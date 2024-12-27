@@ -16,7 +16,7 @@
 #undef slice
 #undef assert
 #undef assume
-#undef output
+#undef watch
 #undef ifdo
 #undef discard
 #undef typeof
@@ -34,7 +34,9 @@
 #endif
 
 #ifdef __CSC_COMPILER_MSVC__
-#pragma warning (push, 0)
+#pragma warning (push)
+#define NOISY_CODE_ANALYSIS_WARNINGS 4661 4819 6201 6255 6269 6294 26439 26450 26495 26813 26820
+#pragma warning (disable : NOISY_CODE_ANALYSIS_WARNINGS)
 #endif
 
 #ifdef __CSC_COMPILER_GNUC__

@@ -24,9 +24,9 @@ struct PathHolder implement Interface {
 	imports CFat<PathHolder> hold (CREF<PathLayout> that) ;
 
 	virtual void initialize (RREF<String<STR>> pathname) = 0 ;
+	virtual void initialize (CREF<Deque<String<STR>>> pathname) = 0 ;
 	virtual void initialize (CREF<PathLayout> that) = 0 ;
 	virtual String<STR> fetch () const = 0 ;
-	virtual PathLayout root () const = 0 ;
 	virtual PathLayout child (CREF<Slice> name) const = 0 ;
 	virtual PathLayout child (CREF<Format> name) const = 0 ;
 	virtual PathLayout child (CREF<String<STR>> name) const = 0 ;
@@ -36,7 +36,8 @@ struct PathHolder implement Interface {
 	virtual BOOL is_file () const = 0 ;
 	virtual BOOL is_dire () const = 0 ;
 	virtual BOOL is_link () const = 0 ;
-	virtual String<STR> absolute () const = 0 ;
+	virtual PathLayout symbolic () const = 0 ;
+	virtual PathLayout absolute () const = 0 ;
 	virtual Deque<String<STR>> decouple () const = 0 ;
 	virtual String<STR> path () const = 0 ;
 	virtual String<STR> name () const = 0 ;
@@ -59,6 +60,10 @@ public:
 		PathHolder::hold (thiz)->initialize (move (pathname)) ;
 	}
 
+	explicit Path (CREF<Deque<String<STR>>> pathname) {
+		PathHolder::hold (thiz)->initialize (pathname) ;
+	}
+
 	implicit Path (CREF<Path> that) {
 		PathHolder::hold (thiz)->initialize (that) ;
 	}
@@ -77,11 +82,6 @@ public:
 
 	forceinline operator String<STR> () const {
 		return fetch () ;
-	}
-
-	Path root () const {
-		PathLayout ret = PathHolder::hold (thiz)->root () ;
-		return move (keep[TYPE<Path>::expr] (ret)) ;
 	}
 
 	Path child (CREF<Slice> name) const {
@@ -133,8 +133,14 @@ public:
 		return PathHolder::hold (thiz)->is_link () ;
 	}
 
-	String<STR> absolute () const {
-		return PathHolder::hold (thiz)->absolute () ;
+	Path symbolic () const {
+		PathLayout ret = PathHolder::hold (thiz)->symbolic () ;
+		return move (keep[TYPE<Path>::expr] (ret)) ;
+	}
+
+	Path absolute () const {
+		PathLayout ret = PathHolder::hold (thiz)->absolute () ;
+		return move (keep[TYPE<Path>::expr] (ret)) ;
 	}
 
 	Deque<String<STR>> decouple () const {
@@ -176,6 +182,7 @@ struct FileProcHolder implement Interface {
 	virtual void link_file (CREF<String<STR>> dst ,CREF<String<STR>> src) const = 0 ;
 	virtual void erase_file (CREF<String<STR>> file) const = 0 ;
 	virtual void build_dire (CREF<String<STR>> dire) const = 0 ;
+	virtual void link_dire (CREF<String<STR>> dst ,CREF<String<STR>> src) const = 0 ;
 	virtual void clear_dire (CREF<String<STR>> dire) const = 0 ;
 	virtual void erase_dire (CREF<String<STR>> dire) const = 0 ;
 	virtual BOOL lock_dire (CREF<String<STR>> dire) const = 0 ;
@@ -222,6 +229,10 @@ public:
 		return FileProcHolder::hold (instance ())->build_dire (dire) ;
 	}
 
+	static void link_dire (CREF<String<STR>> dst ,CREF<String<STR>> src) {
+		return FileProcHolder::hold (instance ())->link_dire (dst ,src) ;
+	}
+
 	static void clear_dire (CREF<String<STR>> dire) {
 		return FileProcHolder::hold (instance ())->clear_dire (dire) ;
 	}
@@ -244,10 +255,12 @@ struct StreamFileHolder implement Interface {
 	imports CFat<StreamFileHolder> hold (CREF<StreamFileLayout> that) ;
 
 	virtual void initialize (CREF<String<STR>> file) = 0 ;
+	virtual void set_short_read (CREF<BOOL> flag) = 0 ;
 	virtual void open_r () = 0 ;
 	virtual void open_w (CREF<LENGTH> size_) = 0 ;
 	virtual void open_a () = 0 ;
 	virtual LENGTH file_size () const = 0 ;
+	virtual LENGTH short_size () const = 0 ;
 	virtual void read (VREF<RefBuffer<BYTE>> item) = 0 ;
 	virtual void write (CREF<RefBuffer<BYTE>> item) = 0 ;
 	virtual void flush () = 0 ;
@@ -266,6 +279,10 @@ public:
 		StreamFileHolder::hold (thiz)->initialize (file) ;
 	}
 
+	void set_short_read (CREF<BOOL> flag) {
+		return StreamFileHolder::hold (thiz)->set_short_read (flag) ;
+	}
+
 	void open_r () {
 		return StreamFileHolder::hold (thiz)->open_r () ;
 	}
@@ -280,6 +297,10 @@ public:
 
 	LENGTH file_size () const {
 		return StreamFileHolder::hold (thiz)->file_size () ;
+	}
+
+	LENGTH short_size () const {
+		return StreamFileHolder::hold (thiz)->short_size () ;
 	}
 
 	void read (VREF<RefBuffer<BYTE>> item) {
@@ -305,7 +326,6 @@ struct StreamFileByteWriterHolder implement Interface {
 
 	virtual void initialize (CREF<String<STR>> file) = 0 ;
 	virtual VREF<ByteWriter> self_m () leftvalue = 0 ;
-	virtual CREF<ByteWriter> self_m () const leftvalue = 0 ;
 	virtual void flush () = 0 ;
 } ;
 
@@ -328,14 +348,6 @@ public:
 		return self ;
 	}
 
-	CREF<ByteWriter> self_m () const leftvalue {
-		return StreamFileByteWriterHolder::hold (thiz)->self ;
-	}
-
-	forceinline operator CREF<ByteWriter> () const leftvalue {
-		return self ;
-	}
-
 	void flush () {
 		StreamFileByteWriterHolder::hold (thiz)->flush () ;
 	}
@@ -351,7 +363,6 @@ struct StreamFileTextWriterHolder implement Interface {
 
 	virtual void initialize (CREF<String<STR>> file) = 0 ;
 	virtual VREF<TextWriter> self_m () leftvalue = 0 ;
-	virtual CREF<TextWriter> self_m () const leftvalue = 0 ;
 	virtual void flush () = 0 ;
 } ;
 
@@ -371,14 +382,6 @@ public:
 	}
 
 	forceinline operator VREF<TextWriter> () leftvalue {
-		return self ;
-	}
-
-	CREF<TextWriter> self_m () const leftvalue {
-		return StreamFileTextWriterHolder::hold (thiz)->self ;
-	}
-
-	forceinline operator CREF<TextWriter> () const leftvalue {
 		return self ;
 	}
 

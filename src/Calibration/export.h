@@ -1,113 +1,164 @@
-#include "../util.h"
+﻿#include "../util.h"
 
 namespace CSC3DCV {
-struct CameraViewHolder implement Interface {	
-	imports DLLEXTERN AutoRef<CameraViewHolder> create () ;
+struct CameraViewLayout {
+	String<STR> mName ;
+	String<STR> mGroup ;
+	ImageWidth mWidth ;
+	DuplexMatrix mMatK ;
+	BOOL mConstMatK ;
+	Array<FLT64> mDist ;
+	BOOL mConstDist ;
+	DuplexMatrix mMatV ;
+	BOOL mConstMatV ;
+	FLT64 mBaseLine ;
+	FLT64 mRelative ;
+	INDEX mParam1 ;
+	INDEX mParam2 ;
+	INDEX mParam3 ;
+} ;
+
+struct CameraViewHolder implement Interface {
+	imports VFat<CameraViewHolder> hold (VREF<CameraViewLayout> that) ;
+	imports CFat<CameraViewHolder> hold (CREF<CameraViewLayout> that) ;
 
 	virtual void initialize () = 0 ;
 } ;
 
-struct CameraViewLayout implement ThisLayout<AutoRef<CameraViewHolder>> {} ;
-
 class CameraView implement CameraViewLayout {
-public:
-	using CameraViewLayout::mThis ;
-
 public:
 	implicit CameraView () = default ;
 
 	explicit CameraView (CREF<typeof (NULL)>) {
-		mThis = CameraViewHolder::create () ;
-		mThis->initialize () ;
+		CameraViewHolder::hold (thiz)->initialize () ;
 	}
 } ;
 
+struct CameraPoseLayout {
+	String<STR> mName ;
+	String<STR> mGroup ;
+	Color3B mColor ;
+	Set<INDEX> mUseView ;
+	INDEX mLFrame ;
+	INDEX mRFrame ;
+	DuplexMatrix mMatV ;
+	BOOL mUsingMatV ;
+	FLT64 mWeight ;
+	Matrix mMatH ;
+	BOOL mUsingMatH ;
+	NormalError mError ;
+	INDEX mParam4 ;
+} ;
+
 struct CameraPoseHolder implement Interface {
-	imports DLLEXTERN AutoRef<CameraPoseHolder> create () ;
+	imports VFat<CameraPoseHolder> hold (VREF<CameraPoseLayout> that) ;
+	imports CFat<CameraPoseHolder> hold (CREF<CameraPoseLayout> that) ;
 
 	virtual void initialize () = 0 ;
 } ;
 
-struct CameraPoseLayout implement ThisLayout<AutoRef<CameraPoseHolder>> {} ;
-
 class CameraPose implement CameraPoseLayout {
-public:
-	using CameraPoseLayout::mThis ;
-
 public:
 	implicit CameraPose () = default ;
 
 	explicit CameraPose (CREF<typeof (NULL)>) {
-		mThis = CameraPoseHolder::create () ;
-		mThis->initialize () ;
+		CameraPoseHolder::hold (thiz)->initialize () ;
 	}
 } ;
 
-struct CameraBlockHolder implement Interface {	
-	imports DLLEXTERN AutoRef<CameraBlockHolder> create () ;
+struct CameraFrameLayout {
+	INDEX mFPose ;
+	INDEX mFView ;
+	INDEX mFTime ;
+	String<STR> mImageFile ;
+	BOOL mUndistortion ;
+	Array<Point2F> mPoint ;
+	Array<Point2F> mUndistPoint ;
+	Array<FLT32> mDepth ;
+} ;
+
+struct CameraFrameHolder implement Interface {
+	imports VFat<CameraFrameHolder> hold (VREF<CameraFrameLayout> that) ;
+	imports CFat<CameraFrameHolder> hold (CREF<CameraFrameLayout> that) ;
 
 	virtual void initialize () = 0 ;
 } ;
 
-struct CameraBlockLayout implement ThisLayout<AutoRef<CameraBlockHolder>> {} ;
+class CameraFrame implement CameraFrameLayout {
+public:
+	implicit CameraFrame () = default ;
+
+	explicit CameraFrame (CREF<typeof (NULL)>) {
+		CameraFrameHolder::hold (thiz)->initialize () ;
+	}
+} ;
+
+struct CameraBlockLayout {
+	INDEX mFeature ;
+	List<INDEX> mMatch ;
+	Point3F mPoint ;
+	FLT32 mRadius ;
+	INDEX mParam5 ;
+} ;
+
+struct CameraBlockHolder implement Interface {
+	imports VFat<CameraBlockHolder> hold (VREF<CameraBlockLayout> that) ;
+	imports CFat<CameraBlockHolder> hold (CREF<CameraBlockLayout> that) ;
+
+	virtual void initialize () = 0 ;
+} ;
 
 class CameraBlock implement CameraBlockLayout {
-public:
-	using CameraBlockLayout::mThis ;
-
 public:
 	implicit CameraBlock () = default ;
 
 	explicit CameraBlock (CREF<typeof (NULL)>) {
-		mThis = CameraBlockHolder::create () ;
-		mThis->initialize () ;
+		CameraBlockHolder::hold (thiz)->initialize () ;
 	}
 } ;
 
+struct CameraOptimizerImplLayout ;
+
+struct CameraOptimizerLayout implement ThisLayout<AutoRef<CameraOptimizerImplLayout>> {} ;
+
 struct CameraOptimizerHolder implement Interface {
-	imports DLLEXTERN AutoRef<CameraOptimizerHolder> create () ;
+	imports VFat<CameraOptimizerHolder> hold (VREF<CameraOptimizerLayout> that) ;
+	imports CFat<CameraOptimizerHolder> hold (CREF<CameraOptimizerLayout> that) ;
 
 	virtual void initialize () = 0 ;
 } ;
 
-struct CameraOptimizerLayout implement ThisLayout<AutoRef<CameraOptimizerHolder>> {} ;
-
 class CameraOptimizer implement CameraOptimizerLayout {
-public:
-	using CameraOptimizerLayout::mThis ;
-
 public:
 	implicit CameraOptimizer () = default ;
 
 	explicit CameraOptimizer (CREF<typeof (NULL)>) {
-		mThis = CameraOptimizerHolder::create () ;
-		mThis->initialize () ;
+		CameraOptimizerHolder::hold (thiz)->initialize () ;
 	}
 } ;
 
-struct CalibrationHolder implement Interface {	
-	imports DLLEXTERN AutoRef<CalibrationHolder> create () ;
+struct CalibrationImplLayout ;
+
+struct CalibrationLayout implement ThisLayout<AutoRef<CalibrationImplLayout>> {} ;
+
+struct CalibrationHolder implement Interface {
+	imports VFat<CalibrationHolder> hold (VREF<CalibrationLayout> that) ;
+	imports CFat<CalibrationHolder> hold (CREF<CalibrationLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual void execute () = 0 ;
 } ;
 
-struct CalibrationLayout implement ThisLayout<AutoRef<CalibrationHolder>> {} ;
-
 class Calibration implement CalibrationLayout {
-public:
-	using CalibrationLayout::mThis ;
-
 public:
 	implicit Calibration () = default ;
 
 	explicit Calibration (CREF<typeof (NULL)>) {
-		mThis = CalibrationHolder::create () ;
-		mThis->initialize () ;
+		CalibrationHolder::hold (thiz)->initialize () ;
 	}
 
 	void execute () {
-		return mThis->execute () ;
+		return CalibrationHolder::hold (thiz)->execute () ;
 	}
 } ;
 } ;

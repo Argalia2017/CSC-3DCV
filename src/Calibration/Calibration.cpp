@@ -1,15 +1,17 @@
-#include "export.h"
+﻿#include "export.h"
 
 namespace CSC3DCV {
-class CalibrationImplHolder implement CalibrationHolder {
-protected:
-	CameraView mCameraView ;
-	CameraPose mCameraPose ;
-	CameraBlock mCameraBlock ;
+struct CalibrationImplLayout {
+	List<CameraView> mView ;
+	List<CameraPose> mPose ;
+	List<CameraFrame> mFrame ;
+	List<CameraBlock> mBlock ;
+} ;
 
+class CalibrationImplHolder final implement Fat<CalibrationHolder ,CalibrationLayout> {
 public:
 	void initialize () override {
-
+		
 	}
 
 	void execute () override {
@@ -17,7 +19,11 @@ public:
 	}
 } ;
 
-exports DLLEXTERN AutoRef<CalibrationHolder> CalibrationHolder::create () {
-	return AutoRef<CalibrationImplHolder>::make () ;
+exports VFat<CalibrationHolder> CalibrationHolder::hold (VREF<CalibrationLayout> that) {
+	return VFat<CalibrationHolder> (CalibrationImplHolder () ,that) ;
+}
+
+exports CFat<CalibrationHolder> CalibrationHolder::hold (CREF<CalibrationLayout> that) {
+	return CFat<CalibrationHolder> (CalibrationImplHolder () ,that) ;
 }
 } ;

@@ -611,11 +611,13 @@ public:
 
 struct PlyParserGuide {
 	INDEX mElementIndex ;
-	ArrayList<INDEX> mProperty ;
+	Deque<INDEX> mProperty ;
 	INDEX mPropertyIndex ;
 	INDEX mLineIndex ;
+	INDEX mPlyBegin ;
+	INDEX mPlyEnd ;
 	INDEX mPlyIndex ;
-	FLAG mPlyType ;
+	BOOL mPlyListMode ;
 } ;
 
 struct PlyParserImplLayout ;
@@ -671,6 +673,13 @@ public:
 
 	void guide_put (CREF<Slice> property) {
 		return PlyParserHolder::hold (thiz)->guide_put (property) ;
+	}
+
+	template <class ARG1>
+	ARG1 poll (TYPE<ARG1>) {
+		ARG1 ret ;
+		read (ret) ;
+		return move (ret) ;
 	}
 
 	void read (VREF<BOOL> item) {
