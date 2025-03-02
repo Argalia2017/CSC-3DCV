@@ -6,33 +6,44 @@
 #include "Rendering/export.h"
 #include "Registration/export.h"
 #include "Meshing/export.h"
-#include "System/export.h"
-
-#include <csc_end.h>
-#include <exception>
-#include <csc_begin.h>
 
 using namespace CSC3DCV ;
 
-int main (int argc ,DEF<char **> argv) {
-	Singleton<Console>::instance ().start () ;
-	Singleton<Console>::instance ().open (slice (".")) ;
+inline String<STR> format_time (CREF<Time> time) {
+	const auto r1x = time.milliseconds () ;
+	const auto r2x = r1x / 60000 ;
+	const auto r3x = r1x % 60000 / 1000 ;
+	const auto r4x = AlignedText (r1x % 1000 ,3) ;
+	return String<STR>::make (r2x ,slice ("m") ,r3x ,slice (".") ,r4x ,slice ("s")) ;
+}
+
+exports int main (int argc ,DEF<char **> argv) {
+	const auto r1x = Singleton<Console>::instance () ;
+	r1x.show () ;
 	try {
-		Singleton<Console>::instance ().debug (slice ("library_file = ") ,RuntimeProc::library_file ()) ;
+		r1x.trace () ;
+		r1x.info (slice ("library_file = ") ,RuntimeProc::library_file ()) ;
 		assume (argc >= 2) ;
-		const auto r1x = Path (Slice (FLAG (argv[1]) ,SLICE_MAX_SIZE::expr ,1)).absolute () ;
-		Singleton<Console>::instance ().info (slice ("working_path = ") ,r1x.fetch ()) ;
-		ConfigProc::instance ().set_data_dire (r1x) ;
-		watch (r1x) ;
-		watch (r1x) ;
-		watch (r1x) ;
+		const auto r2x = Path (Slice (FLAG (argv[1]) ,SLICE_MAX_SIZE::expr ,1)).absolute ().fetch () ;
+		r1x.info (slice ("working_path = ") ,r2x) ;
+		r1x.open (r2x) ;
+		r1x.trace () ;
+		ConfigProc::set_data_dire (r2x) ;
+		const auto r3x = CurrentTime () ;
+		RuntimeProc::thread_sleep (Time (1000)) ;
+		const auto r4x = CurrentTime () ;
+		const auto r5x = format_time (r4x - r3x) ;
+		r1x.trace () ;
+		r1x.info (slice ("all done")) ;
+		r1x.warn (slice ("time_cost = ") ,r5x) ;
+		r1x.trace () ;
 	} catch (CREF<Exception> e) {
-		Singleton<Console>::instance ().trace () ;
-		Singleton<Console>::instance ().error (slice ("ERROR")) ;
-		const auto r1x = Format (slice ("assume : $1 at $2 in $3, $4")) ;
-		Singleton<Console>::instance ().error (r1x (e.what () ,e.func () ,e.file () ,e.line ())) ;
-		Singleton<Console>::instance ().trace () ;
+		r1x.trace () ;
+		r1x.error (slice ("ERROR")) ;
+		const auto r6x = Format (slice ("assume : $1 at $2 in $3, $4")) ;
+		r1x.error (r6x (e.what () ,e.func () ,e.file () ,e.line ())) ;
+		r1x.trace () ;
 	}
-	GlobalRoot::instance ().shutdown () ;
+	GlobalProc::shutdown () ;
 	return 0 ;
 }

@@ -122,8 +122,17 @@
 #pragma warning (disable :5045) //@info: warning C5045: 'xxx': move assignment operator was implicitly defined as deleted
 #pragma warning (disable :5246) //@info: warning C5246: 'xxx': the initialization of a subobject should be wrapped in braces
 #pragma warning (disable :5039) //@info: warning C5039: 'xxx': pointer or reference to potentially throwing function passed to 'xxx' function under -EHc. Undefined behavior may occur if this function throws an exception.
-#pragma warning (disable :26495) //@info: Variable 'xxx' is uninitialized. Always initialize a member variable (type.6).
-#pragma warning (disable :26820) //@info: This is a potentially expensive copy operation. Consider using a reference unless a copy is required (p.9).
+#pragma warning (disable :26440) //@info: warning C26440: Function 'xxx' can be declared 'noexcept' (f.6).
+#pragma warning (disable :26447) //@info: warning C26447: The function is declared 'noexcept' but calls function 'xxx' which may throw exceptions (f.6).
+#pragma warning (disable :26475) //@info: warning C26475: Do not use function style casts (es.49). Prefer 'Type{value}' over 'Type(value)'..
+#pragma warning (disable :26485) //@info: warning C26485: Expression 'xxx': No array to pointer decay (bounds.3).
+#pragma warning (disable :26490) //@info: warning C26490: Don't use reinterpret_cast (type.1).
+#pragma warning (disable :26493) //@info: warning C26494: Don't use C-style casts (type.4).
+#pragma warning (disable :26495) //@info: warning C26495: Variable 'xxx' is uninitialized. Always initialize a member variable (type.6).
+#pragma warning (disable :26497) //@info: warning C26497: You can attempt to make 'xxx' constexpr unless it contains any undefined behavior (f.4).
+#pragma warning (disable :26496) //@info: warning C26496: The variable 'xxx' does not change after construction, mark it as const (con.4).
+#pragma warning (disable :26814) //@info: warning C26814: The const variable 'r5x' can be computed at compile-time. Consider using constexpr (con.5).
+#pragma warning (disable :26820) //@info: warning C26820: This is a potentially expensive copy operation. Consider using a reference unless a copy is required (p.9).
 #endif
 
 #ifdef __CSC_COMPILER_GNUC__
@@ -145,6 +154,7 @@
 #endif
 
 #include "csc_end.h"
+
 #ifdef __CSC_COMPILER_GNUC__
 #if __GLIBCXX__ <= 20230528L
 //@fatal: GCC is so bad
@@ -175,7 +185,7 @@ class initializer_list ;
 #endif
 
 #ifdef __CSC_COMPILER_CLANG__
-#define __macro_dllextern
+#define __macro_dllextern __declspec (dllexport)
 #endif
 #endif
 
@@ -221,26 +231,26 @@ class initializer_list ;
 #endif
 #endif
 
-#ifndef __macro_exp
-#define __macro_exp(a) a
+#ifndef __macro_ex
+#define __macro_ex(a) a
 #endif
 
-#ifndef __macro_str
-#define __macro_str_impl(...) #__VA_ARGS__
-#define __macro_str(...) __macro_exp (__macro_str_impl (__VA_ARGS__))
+#ifndef __macro_sz
+#define __macro_sz_impl(...) #__VA_ARGS__
+#define __macro_sz(...) __macro_ex (__macro_sz_impl (__VA_ARGS__))
 #endif
 
-#ifndef __macro_cat
-#define __macro_cat_impl(a ,b) a##b
-#define __macro_cat(...) __macro_exp (__macro_cat_impl (__VA_ARGS__))
+#ifndef __macro_cc
+#define __macro_cc_impl(a ,b) a##b
+#define __macro_cc(...) __macro_ex (__macro_cc_impl (__VA_ARGS__))
 #endif
 
 #ifndef __macro_require
-#define __macro_require(...) static_assert (CSC::DEF<__VA_ARGS__>::expr ,"require : " __macro_str (__VA_ARGS__))
+#define __macro_require(...) static_assert (CSC::DEF<__VA_ARGS__>::expr ,"require : " __macro_sz (__VA_ARGS__))
 #endif
 
 #ifndef __macro_anonymous
-#define __macro_anonymous __macro_cat (__anonymous_ ,__LINE__)
+#define __macro_anonymous __macro_cc (__anonymous_ ,__LINE__)
 #endif
 
 #ifndef __macro_slice
@@ -249,7 +259,7 @@ class initializer_list ;
 #endif
 
 #ifdef __CSC_CONFIG_STRW__
-#define __macro_slice(...) CSC::Slice (__macro_cat (L ,__VA_ARGS__))
+#define __macro_slice(...) CSC::Slice (__macro_cc (L ,__VA_ARGS__))
 #endif
 #endif
 
@@ -273,7 +283,7 @@ class initializer_list ;
 #endif
 
 #ifdef __CSC_VER_UNITTEST__
-#define __macro_assert(...) do { if (__VA_ARGS__) break ; if (inline_unittest ()) { __macro_break () ; } else  { inline_abort () ; } } while (false)
+#define __macro_assert(...) do { if (__VA_ARGS__) break ; if (inline_unittest ()) { __macro_break () ; } else { inline_abort () ; } } while (false)
 #endif
 
 #ifdef __CSC_VER_RELEASE__
@@ -297,15 +307,15 @@ class initializer_list ;
 
 #ifndef __macro_assume
 #ifdef __CSC_VER_DEBUG__
-#define __macro_assume(...) do { if (__VA_ARGS__) break ; throw CSC::Exception (slice (__macro_str (__VA_ARGS__)) ,CSC::Slice (__macro_function) ,slice (__FILE__) ,slice (__macro_str (__LINE__))) ; } while (false)
+#define __macro_assume(...) do { if (__VA_ARGS__) break ; throw CSC::Exception (slice (__macro_sz (__VA_ARGS__)) ,CSC::Slice (__macro_function) ,slice (__FILE__) ,slice (__macro_sz (__LINE__))) ; } while (false)
 #endif
 
 #ifdef __CSC_VER_UNITTEST__
-#define __macro_assume(...) do { if (__VA_ARGS__) break ; throw CSC::Exception (slice (__macro_str (__VA_ARGS__)) ,CSC::Slice (__macro_function) ,slice (__FILE__) ,slice (__macro_str (__LINE__))) ; } while (false)
+#define __macro_assume(...) do { if (__VA_ARGS__) break ; throw CSC::Exception (slice (__macro_sz (__VA_ARGS__)) ,CSC::Slice (__macro_function) ,slice (__FILE__) ,slice (__macro_sz (__LINE__))) ; } while (false)
 #endif
 
 #ifdef __CSC_VER_RELEASE__
-#define __macro_assume(...) do { if (__VA_ARGS__) break ; throw CSC::Exception (slice (__macro_str (__VA_ARGS__)) ,CSC::Slice (__FUNCTION__)) ; } while (false)
+#define __macro_assume(...) do { if (__VA_ARGS__) break ; throw CSC::Exception (slice (__macro_sz (__VA_ARGS__)) ,CSC::Slice (__FUNCTION__)) ; } while (false)
 #endif
 #endif
 
@@ -338,18 +348,18 @@ class initializer_list ;
 #ifndef __macro_for_bind
 #define __macro_for_bind_0(F ,...)
 #define __macro_for_bind_1(F ,a) F (a)
-#define __macro_for_bind_2(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_1 (F ,__VA_ARGS__))
-#define __macro_for_bind_3(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_2 (F ,__VA_ARGS__))
-#define __macro_for_bind_4(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_3 (F ,__VA_ARGS__))
-#define __macro_for_bind_5(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_4 (F ,__VA_ARGS__))
-#define __macro_for_bind_6(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_5 (F ,__VA_ARGS__))
-#define __macro_for_bind_7(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_6 (F ,__VA_ARGS__))
-#define __macro_for_bind_8(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_7 (F ,__VA_ARGS__))
-#define __macro_for_bind_9(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_8 (F ,__VA_ARGS__))
-#define __macro_for_bind_X(F ,a ,...) F (a) ,__macro_exp (__macro_for_bind_9 (F ,__VA_ARGS__))
+#define __macro_for_bind_2(F ,a ,...) F (a) ,__macro_ex (__macro_for_bind_1 (F ,__VA_ARGS__))
+#define __macro_for_bind_3(F ,a ,...) F (a) ,__macro_ex (__macro_for_bind_2 (F ,__VA_ARGS__))
+#define __macro_for_bind_4(F ,a ,...) F (a) ,__macro_ex (__macro_for_bind_3 (F ,__VA_ARGS__))
+#define __macro_for_bind_5(F ,a ,...) F (a) ,__macro_ex (__macro_for_bind_4 (F ,__VA_ARGS__))
+#define __macro_for_bind_6(F ,a ,...) F (a) ,__macro_ex (__macro_for_bind_5 (F ,__VA_ARGS__))
+#define __macro_for_bind_7(F ,a ,...) F (a) ,__macro_ex (__macro_for_bind_6 (F ,__VA_ARGS__))
+#define __macro_for_bind_8(F ,a ,...) F (a) ,__macro_ex (__macro_for_bind_7 (F ,__VA_ARGS__))
+#define __macro_for_bind_9(F ,a ,...) F (a) ,__macro_ex (__macro_for_bind_8 (F ,__VA_ARGS__))
+#define __macro_for_bind_X(F ,a ,...) F (a) ,__macro_ex (__macro_for_bind_9 (F ,__VA_ARGS__))
 #define __macro_for_bind_choose(F ,a0 ,a1 ,a2 ,a3 ,a4 ,a5 ,a6 ,a7 ,a8 ,a9 ,ax ,...) ax
-#define __macro_for_bind_impl(F ,...) __macro_exp (__macro_for_bind_choose(F ,__VA_ARGS__ ,__macro_for_bind_X ,__macro_for_bind_9 ,__macro_for_bind_8 ,__macro_for_bind_7 ,__macro_for_bind_6 ,__macro_for_bind_5 ,__macro_for_bind_4 ,__macro_for_bind_3 ,__macro_for_bind_2 ,__macro_for_bind_1 ,__macro_for_bind_0) (F ,__VA_ARGS__))
-#define __macro_for_bind(F ,...) __macro_exp (__macro_for_bind_impl (F ,__VA_ARGS__))
+#define __macro_for_bind_impl(F ,...) __macro_ex (__macro_for_bind_choose(F ,__VA_ARGS__ ,__macro_for_bind_X ,__macro_for_bind_9 ,__macro_for_bind_8 ,__macro_for_bind_7 ,__macro_for_bind_6 ,__macro_for_bind_5 ,__macro_for_bind_4 ,__macro_for_bind_3 ,__macro_for_bind_2 ,__macro_for_bind_1 ,__macro_for_bind_0) (F ,__VA_ARGS__))
+#define __macro_for_bind(F ,...) __macro_ex (__macro_for_bind_impl (F ,__VA_ARGS__))
 #endif
 
 namespace CSC {
@@ -583,6 +593,36 @@ using MACRO_IS_TRIVIAL_DESTRUCTIBLE = ENUM<(__is_trivially_destructible (A))> ;
 
 template <class A ,class B>
 using MACRO_IS_EXTEND = ENUM<(__is_base_of (A ,B))> ;
+
+#ifndef __macro_memcpy
+#ifdef __CSC_COMPILER_MSVC__
+#define __macro_memcpy invoke
+#define __macro_memset invoke
+#define __macro_memcmp invoke
+#endif
+
+#ifdef __CSC_COMPILER_GNUC__
+#define __macro_memcpy(a ,b ,c) (void) __builtin_memcpy ((&a) ,(&b) ,c)
+#define __macro_memset(a ,b) (void) __builtin_memset ((&a) ,0 ,b)
+#define __macro_memcmp(a ,b ,c) CSC::FLAG (__builtin_memcmp ((&a) ,(&b) ,c))
+#endif
+
+#ifdef __CSC_COMPILER_CLANG__
+#define __macro_memcpy(a ,b ,c) (void) __builtin_memcpy ((&a) ,(&b) ,c)
+#define __macro_memset(a ,b) (void) __builtin_memset ((&a) ,0 ,b)
+#define __macro_memcmp(a ,b ,c) CSC::FLAG (__builtin_memcmp ((&a) ,(&b) ,c))
+#endif
+#endif
+
+#ifndef __macro_type_rtti
+#ifdef __CSC_CXX_RTTI__
+#define __macro_type_rtti ""
+#endif
+
+#ifndef __CSC_CXX_RTTI__
+#define __macro_type_rtti __macro_function
+#endif
+#endif
 } ;
 
 forceinline CSC::csc_pointer_t operator new (CSC::csc_size_t ,CSC::csc_placement_new_t where_) noexcept {

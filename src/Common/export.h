@@ -3,7 +3,7 @@
 namespace CSC3DCV {
 struct ConfigProcImplLayout ;
 
-struct ConfigProcLayout implement ThisLayout<SharedRef<ConfigProcImplLayout>> {} ;
+struct ConfigProcLayout implement OfThis<SharedRef<ConfigProcImplLayout>> {} ;
 
 struct ConfigProcHolder implement Interface {
 	imports CREF<ConfigProcLayout> instance () ;

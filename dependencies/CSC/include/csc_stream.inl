@@ -20,17 +20,15 @@ struct StreamProcImplLayout {
 	Slice mEscapeCtrlSlice ;
 } ;
 
-class StreamProcImplHolder final implement Fat<StreamProcHolder ,StreamProcLayout> {
+class StreamProcImplHolder final implement Fat<StreamProcHolder ,StreamProcImplLayout> {
 public:
 	void initialize () override {
-		auto rax = StreamProcImplLayout () ;
-		rax.mBlankSlice = slice ("\b\t\n\v\f\r ") ;
-		rax.mPunctSlice = slice ("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") ;
-		rax.mAlphaSlice = slice ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz") ;
-		rax.mDigitSlice = slice ("0123456789") ;
-		rax.mEscapeWordSlice = slice ("\\/tvbrnf\'\"?u") ;
-		rax.mEscapeCtrlSlice = slice ("\\/\t\v\b\r\n\f\'\"?\a") ;
-		fake.mThis = Ref<StreamProcImplLayout>::make (move (rax)) ;
+		fake.mBlankSlice = slice ("\b\t\n\v\f\r ") ;
+		fake.mPunctSlice = slice ("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") ;
+		fake.mAlphaSlice = slice ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz") ;
+		fake.mDigitSlice = slice ("0123456789") ;
+		fake.mEscapeWordSlice = slice ("\\/tvbrnf\'\"?u") ;
+		fake.mEscapeCtrlSlice = slice ("\\/\t\v\b\r\n\f\'\"?\a") ;
 	}
 
 	BOOL big_endian () const override {
@@ -40,7 +38,7 @@ public:
 	}
 
 	BOOL is_blank (CREF<STRU32> str) const override {
-		const auto r1x = fake.mThis->mBlankSlice ;
+		const auto r1x = fake.mBlankSlice ;
 		for (auto &&i : iter (0 ,r1x.size ())) {
 			if (r1x[i] == str)
 				return TRUE ;
@@ -71,7 +69,7 @@ public:
 	}
 
 	BOOL is_punct (CREF<STRU32> str) const override {
-		const auto r1x = fake.mThis->mPunctSlice ;
+		const auto r1x = fake.mPunctSlice ;
 		for (auto &&i : iter (0 ,r1x.size ())) {
 			if (r1x[i] == str)
 				return TRUE ;
@@ -159,7 +157,7 @@ public:
 	}
 
 	BOOL is_ctrl (CREF<STRU32> str) const override {
-		const auto r1x = fake.mThis->mEscapeCtrlSlice ;
+		const auto r1x = fake.mEscapeCtrlSlice ;
 		for (auto &&i : iter (0 ,r1x.size ())) {
 			if (r1x[i] == str)
 				return TRUE ;
@@ -168,8 +166,8 @@ public:
 	}
 
 	STRU32 word_from_ctrl (CREF<STRU32> str) const override {
-		const auto r1x = fake.mThis->mEscapeWordSlice ;
-		const auto r2x = fake.mThis->mEscapeCtrlSlice ;
+		const auto r1x = fake.mEscapeWordSlice ;
+		const auto r2x = fake.mEscapeCtrlSlice ;
 		for (auto &&i : iter (0 ,r2x.size ())) {
 			if (r2x[i] == str)
 				return r1x[i] ;
@@ -179,8 +177,8 @@ public:
 	}
 
 	STRU32 ctrl_from_word (CREF<STRU32> str) const override {
-		const auto r1x = fake.mThis->mEscapeWordSlice ;
-		const auto r2x = fake.mThis->mEscapeCtrlSlice ;
+		const auto r1x = fake.mEscapeWordSlice ;
+		const auto r2x = fake.mEscapeCtrlSlice ;
 		for (auto &&i : iter (0 ,r1x.size ())) {
 			if (r1x[i] == str)
 				return r2x[i] ;
@@ -193,16 +191,17 @@ public:
 exports CREF<StreamProcLayout> StreamProcHolder::instance () {
 	return memorize ([&] () {
 		StreamProcLayout ret ;
+		ret.mThis = UniqueRef<StreamProcImplLayout>::make () ;
 		StreamProcHolder::hold (ret)->initialize () ;
 		return move (ret) ;
 	}) ;
 }
 
-exports VFat<StreamProcHolder> StreamProcHolder::hold (VREF<StreamProcLayout> that) {
+exports VFat<StreamProcHolder> StreamProcHolder::hold (VREF<StreamProcImplLayout> that) {
 	return VFat<StreamProcHolder> (StreamProcImplHolder () ,that) ;
 }
 
-exports CFat<StreamProcHolder> StreamProcHolder::hold (CREF<StreamProcLayout> that) {
+exports CFat<StreamProcHolder> StreamProcHolder::hold (CREF<StreamProcImplLayout> that) {
 	return CFat<StreamProcHolder> (StreamProcImplHolder () ,that) ;
 }
 
@@ -216,8 +215,8 @@ public:
 		reset () ;
 	}
 
-	void use_overflow (CREF<FunctionLayout> overflow) override {
-		fake.mOverflow = move (keep[TYPE<Function<VREF<ByteReaderLayout>>>::expr] (overflow)) ;
+	void use_overflow (CREF<Function<VREF<ByteReaderLayout>>> overflow) override {
+		fake.mOverflow = overflow ;
 	}
 
 	LENGTH size () const override {
@@ -422,8 +421,8 @@ public:
 		reset () ;
 	}
 
-	void use_overflow (CREF<FunctionLayout> overflow) override {
-		fake.mOverflow = move (keep[TYPE<Function<VREF<TextReaderLayout>>>::expr] (overflow)) ;
+	void use_overflow (CREF<Function<VREF<TextReaderLayout>>> overflow) override {
+		fake.mOverflow = overflow ;
 	}
 
 	LENGTH size () const override {
@@ -871,12 +870,13 @@ public:
 		assert (stream != NULL) ;
 		assert (stream->step () == 1) ;
 		fake.mStream = move (stream) ;
+		assert (fake.mStream.exclusive ()) ;
 		fake.mDiffEndian = FALSE ;
 		reset () ;
 	}
 
-	void use_overflow (CREF<FunctionLayout> overflow) override {
-		fake.mOverflow = move (keep[TYPE<Function<VREF<ByteWriterLayout>>>::expr] (overflow)) ;
+	void use_overflow (CREF<Function<VREF<ByteWriterLayout>>> overflow) override {
+		fake.mOverflow = overflow ;
 	}
 
 	LENGTH size () const override {
@@ -943,7 +943,7 @@ public:
 		if ifdo (act) {
 			if (fake.mWrite >= fake.mRead)
 				discard ;
-			auto &&rax = keep[TYPE<RefBuffer<BYTE>>::expr] (fake.mStream.pin ().self) ;
+			auto &&rax = keep[TYPE<RefBuffer<BYTE>>::expr] (Pointer::from (fake.mStream.self)) ;
 			rax[fake.mWrite] = item ;
 			fake.mWrite++ ;
 		}
@@ -1065,12 +1065,13 @@ public:
 		assert (stream != NULL) ;
 		assert (stream->step () <= 4) ;
 		fake.mStream = move (stream) ;
+		assert (fake.mStream.exclusive ()) ;
 		fake.mDiffEndian = FALSE ;
 		reset () ;
 	}
 
-	void use_overflow (CREF<FunctionLayout> overflow) override {
-		fake.mOverflow = move (keep[TYPE<Function<VREF<TextWriterLayout>>>::expr] (overflow)) ;
+	void use_overflow (CREF<Function<VREF<TextWriterLayout>>> overflow) override {
+		fake.mOverflow = overflow ;
 	}
 
 	LENGTH size () const override {
@@ -1433,7 +1434,7 @@ public:
 				discard ;
 			if (fake.mWrite >= fake.mRead)
 				discard ;
-			auto &&rax = keep[TYPE<RefBuffer<STRU8>>::expr] (fake.mStream.pin ().self) ;
+			auto &&rax = keep[TYPE<RefBuffer<STRU8>>::expr] (Pointer::from (fake.mStream.self)) ;
 			rax[fake.mWrite] = STRU8 (item) ;
 			fake.mWrite++ ;
 		}
@@ -1442,7 +1443,7 @@ public:
 				discard ;
 			if (fake.mWrite >= fake.mRead)
 				discard ;
-			auto &&rax = keep[TYPE<RefBuffer<STRU16>>::expr] (fake.mStream.pin ().self) ;
+			auto &&rax = keep[TYPE<RefBuffer<STRU16>>::expr] (Pointer::from (fake.mStream.self)) ;
 			rax[fake.mWrite] = STRU16 (item) ;
 			fake.mWrite++ ;
 		}
@@ -1451,7 +1452,7 @@ public:
 				discard ;
 			if (fake.mWrite >= fake.mRead)
 				discard ;
-			auto &&rax = keep[TYPE<RefBuffer<STRU32>>::expr] (fake.mStream.pin ().self) ;
+			auto &&rax = keep[TYPE<RefBuffer<STRU32>>::expr] (Pointer::from (fake.mStream.self)) ;
 			rax[fake.mWrite] = STRU32 (item) ;
 			fake.mWrite++ ;
 		}
@@ -1543,7 +1544,7 @@ public:
 		fake.mFormat = format ;
 	}
 
-	void friend_write (VREF<WriterFriend> writer) const override {
+	void friend_write (VREF<WriterBinder> writer) const override {
 		auto rax = FLAG (0) ;
 		auto rbx = FatLayout () ;
 		for (auto &&i : iter (0 ,fake.mFormat.size ())) {
@@ -1570,7 +1571,7 @@ public:
 					if (!inline_between (r1x ,0 ,fake.mWrite.self))
 						discard ;
 					fake.mParams[r1x].get (rbx) ;
-					const auto r2x = keep[TYPE<CFat<FormatFriend>>::expr] (rbx) ;
+					const auto r2x = keep[TYPE<CFat<FormatBinder>>::expr] (rbx) ;
 					r2x->friend_write (writer) ;
 				}
 				rax = FLAG (0) ;
@@ -1582,7 +1583,7 @@ public:
 					discard ;
 				for (auto &&j : iter (0 ,fake.mWrite.self)) {
 					fake.mParams[j].get (rbx) ;
-					const auto r3x = keep[TYPE<CFat<FormatFriend>>::expr] (rbx) ;
+					const auto r3x = keep[TYPE<CFat<FormatBinder>>::expr] (rbx) ;
 					r3x->friend_write (writer) ;
 				}
 				rax = FLAG (3) ;
@@ -1595,7 +1596,7 @@ public:
 					if (!inline_between (r4x ,0 ,fake.mWrite.self))
 						discard ;
 					fake.mParams[r4x].get (rbx) ;
-					const auto r5x = keep[TYPE<CFat<FormatFriend>>::expr] (rbx) ;
+					const auto r5x = keep[TYPE<CFat<FormatBinder>>::expr] (rbx) ;
 					r5x->friend_write (writer) ;
 				}
 				rax = FLAG (3) ;
@@ -1633,13 +1634,15 @@ exports CFat<FormatHolder> FormatHolder::hold (CREF<FormatLayout> that) {
 	return CFat<FormatHolder> (FormatImplHolder () ,that) ;
 }
 
-class StreamTextProcImplHolder final implement Fat<StreamTextProcHolder ,StreamTextProcLayout> {
+struct StreamTextProcImplLayout {} ;
+
+class StreamTextProcImplHolder final implement Fat<StreamTextProcHolder ,StreamTextProcImplLayout> {
 public:
 	void initialize () override {
 		noop () ;
 	}
 
-	void read_keyword (VREF<ReaderFriend> reader ,VREF<String<STRU8>> item) const override {
+	void read_keyword (VREF<ReaderBinder> reader ,VREF<String<STRU8>> item) const override {
 		auto rax = STRU32 () ;
 		auto rbx = ZERO ;
 		const auto r1x = reader.backup () ;
@@ -1662,7 +1665,7 @@ public:
 		reader.read (item) ;
 	}
 
-	void read_scalar (VREF<ReaderFriend> reader ,VREF<String<STRU8>> item) const override {
+	void read_scalar (VREF<ReaderBinder> reader ,VREF<String<STRU8>> item) const override {
 		auto rax = STRU32 () ;
 		auto rbx = ZERO ;
 		const auto r1x = reader.backup () ;
@@ -1717,7 +1720,7 @@ public:
 		reader.read (item) ;
 	}
 
-	void read_escape (VREF<ReaderFriend> reader ,VREF<String<STRU8>> item) const override {
+	void read_escape (VREF<ReaderBinder> reader ,VREF<String<STRU8>> item) const override {
 		auto rax = STRU32 () ;
 		auto rbx = ZERO ;
 		const auto r1x = reader.backup () ;
@@ -1756,7 +1759,7 @@ public:
 		reader.read (rax) ;
 	}
 
-	void write_escape (VREF<WriterFriend> writer ,CREF<String<STRU8>> item) const override {
+	void write_escape (VREF<WriterBinder> writer ,CREF<String<STRU8>> item) const override {
 		writer.write (STRU32 ('\"')) ;
 		for (auto &&i : item) {
 			auto act = TRUE ;
@@ -1774,7 +1777,7 @@ public:
 		writer.write (STRU32 ('\"')) ;
 	}
 
-	void read_blank (VREF<ReaderFriend> reader ,VREF<String<STRU8>> item) const override {
+	void read_blank (VREF<ReaderBinder> reader ,VREF<String<STRU8>> item) const override {
 		auto rax = STRU32 () ;
 		auto rbx = ZERO ;
 		const auto r1x = reader.backup () ;
@@ -1794,7 +1797,7 @@ public:
 		reader.read (item) ;
 	}
 
-	void read_endline (VREF<ReaderFriend> reader ,VREF<String<STRU8>> item) const override {
+	void read_endline (VREF<ReaderBinder> reader ,VREF<String<STRU8>> item) const override {
 		auto rax = STRU32 () ;
 		auto rbx = ZERO ;
 		const auto r1x = reader.backup () ;
@@ -1814,7 +1817,7 @@ public:
 		reader.read (item) ;
 	}
 
-	void write_aligned (VREF<WriterFriend> writer ,CREF<VAL64> number ,CREF<LENGTH> align) const override {
+	void write_aligned (VREF<WriterBinder> writer ,CREF<VAL64> number ,CREF<LENGTH> align) const override {
 		auto rax = WriteValueBuffer () ;
 		assert (inline_between (align ,0 ,rax.mBuffer.size ())) ;
 		rax.mWrite = rax.mBuffer.size () ;
@@ -1834,16 +1837,17 @@ public:
 exports CREF<StreamTextProcLayout> StreamTextProcHolder::instance () {
 	return memorize ([&] () {
 		StreamTextProcLayout ret ;
+		ret.mThis = UniqueRef<StreamTextProcImplLayout>::make () ;
 		StreamTextProcHolder::hold (ret)->initialize () ;
 		return move (ret) ;
 	}) ;
 }
 
-exports VFat<StreamTextProcHolder> StreamTextProcHolder::hold (VREF<StreamTextProcLayout> that) {
+exports VFat<StreamTextProcHolder> StreamTextProcHolder::hold (VREF<StreamTextProcImplLayout> that) {
 	return VFat<StreamTextProcHolder> (StreamTextProcImplHolder () ,that) ;
 }
 
-exports CFat<StreamTextProcHolder> StreamTextProcHolder::hold (CREF<StreamTextProcLayout> that) {
+exports CFat<StreamTextProcHolder> StreamTextProcHolder::hold (CREF<StreamTextProcImplLayout> that) {
 	return CFat<StreamTextProcHolder> (StreamTextProcImplHolder () ,that) ;
 }
 
@@ -1857,73 +1861,78 @@ struct CommaImplLayout {
 	LENGTH mLastTight ;
 } ;
 
-class CommaImplHolder final implement Fat<CommaHolder ,CommaLayout> {
+class CommaImplHolder final implement Fat<CommaHolder ,CommaImplLayout> {
 public:
 	void initialize (CREF<Slice> indent ,CREF<Slice> comma ,CREF<Slice> endline) override {
-		fake.mThis = SharedRef<CommaImplLayout>::make () ;
-		fake.mThis->mIndent = indent ;
-		fake.mThis->mComma = comma ;
-		fake.mThis->mEndline = endline ;
-		fake.mThis->mDepth = 0 ;
-		fake.mThis->mTight = 255 ;
-		fake.mThis->mLastTight = 0 ;
+		fake.mIndent = indent ;
+		fake.mComma = comma ;
+		fake.mEndline = endline ;
+		fake.mDepth = 0 ;
+		fake.mTight = 255 ;
+		fake.mLastTight = 0 ;
 	}
 
-	void friend_write (VREF<WriterFriend> writer) const override {
+	void friend_write (VREF<WriterBinder> writer) override {
 		if ifdo (TRUE) {
-			if (fake.mThis->mDepth >= fake.mThis->mTight + fake.mThis->mLastTight)
+			if (fake.mDepth >= fake.mTight + fake.mLastTight)
 				discard ;
-			writer.write (fake.mThis->mEndline) ;
+			writer.write (fake.mEndline) ;
 		}
 		if ifdo (TRUE) {
-			if (fake.mThis->mFirst.empty ())
+			if (fake.mFirst.empty ())
 				discard ;
-			INDEX ix = fake.mThis->mFirst.tail () ;
+			INDEX ix = fake.mFirst.tail () ;
 			if ifdo (TRUE) {
-				if (fake.mThis->mFirst[ix])
+				if (fake.mFirst[ix])
 					discard ;
-				writer.write (fake.mThis->mComma) ;
+				writer.write (fake.mComma) ;
 			}
-			fake.mThis->mFirst[ix] = FALSE ;
+			fake.mFirst[ix] = FALSE ;
 		}
 		if ifdo (TRUE) {
-			if (fake.mThis->mDepth >= fake.mThis->mTight + fake.mThis->mLastTight)
+			if (fake.mDepth >= fake.mTight + fake.mLastTight)
 				discard ;
-			for (auto &&i : iter (0 ,fake.mThis->mDepth)) {
+			for (auto &&i : iter (0 ,fake.mDepth)) {
 				noop (i) ;
-				writer.write (fake.mThis->mIndent) ;
+				writer.write (fake.mIndent) ;
 			}
 		}
-		fake.mThis->mLastTight = 0 ;
+		fake.mLastTight = 0 ;
 	}
 
-	void increase () const override {
-		fake.mThis->mDepth++ ;
+	void increase () override {
+		fake.mDepth++ ;
 		if ifdo (TRUE) {
-			if (fake.mThis->mFirst.empty ())
+			if (fake.mFirst.empty ())
 				discard ;
-			fake.mThis->mFirst[fake.mThis->mFirst.tail ()] = TRUE ;
+			fake.mFirst[fake.mFirst.tail ()] = TRUE ;
 		}
-		fake.mThis->mFirst.add (TRUE) ;
+		fake.mFirst.add (TRUE) ;
 	}
 
-	void decrease () const override {
-		fake.mThis->mFirst.pop () ;
-		fake.mThis->mDepth-- ;
-		fake.mThis->mLastTight = fake.mThis->mTight - 256 ;
-		fake.mThis->mTight = 255 ;
+	void decrease () override {
+		fake.mFirst.pop () ;
+		fake.mDepth-- ;
+		fake.mLastTight = fake.mTight - 256 ;
+		fake.mTight = 255 ;
 	}
 
-	void tight () const override {
-		fake.mThis->mTight = inline_min (fake.mThis->mTight ,fake.mThis->mDepth) ;
+	void tight () override {
+		fake.mTight = inline_min (fake.mTight ,fake.mDepth) ;
 	}
 } ;
 
-exports VFat<CommaHolder> CommaHolder::hold (VREF<CommaLayout> that) {
+exports CommaLayout CommaHolder::create () {
+	CommaLayout ret ;
+	ret.mThis = SharedRef<CommaImplLayout>::make () ;
+	return move (ret) ;
+}
+
+exports VFat<CommaHolder> CommaHolder::hold (VREF<CommaImplLayout> that) {
 	return VFat<CommaHolder> (CommaImplHolder () ,that) ;
 }
 
-exports CFat<CommaHolder> CommaHolder::hold (CREF<CommaLayout> that) {
+exports CFat<CommaHolder> CommaHolder::hold (CREF<CommaImplLayout> that) {
 	return CFat<CommaHolder> (CommaImplHolder () ,that) ;
 }
 
@@ -1933,39 +1942,44 @@ struct RegexImplLayout {
 	Ref<String<STR>> mText ;
 } ;
 
-class RegexImplHolder final implement Fat<RegexHolder ,RegexLayout> {
+class RegexImplHolder final implement Fat<RegexHolder ,RegexImplLayout> {
 public:
 	void initialize (CREF<String<STR>> format) override {
-		fake.mThis = AutoRef<RegexImplLayout>::make () ;
-		fake.mThis->mRegex = std::basic_regex<STR> (format) ;
+		fake.mRegex = std::basic_regex<STR> (format) ;
 	}
 
 	INDEX search (RREF<Ref<String<STR>>> text ,CREF<INDEX> offset) override {
-		fake.mThis->mText = move (text) ;
-		const auto r1x = (&fake.mThis->mText.self[offset]) ;
-		const auto r2x = std::regex_search (r1x ,fake.mThis->mMatch ,fake.mThis->mRegex) ;
+		fake.mText = move (text) ;
+		const auto r1x = (&fake.mText.self[offset]) ;
+		const auto r2x = std::regex_search (r1x ,fake.mMatch ,fake.mRegex) ;
 		if (!r2x)
 			return NONE ;
-		const auto r3x = FLAG (fake.mThis->mMatch[0].first) ;
+		const auto r3x = FLAG (fake.mMatch[0].first) ;
 		const auto r4x = (r3x - FLAG (r1x)) / SIZE_OF<STR>::expr ;
 		return offset + r4x ;
 	}
 
 	Slice match (CREF<INDEX> index) const override {
-		assert (!fake.mThis->mMatch.empty ()) ;
-		assert (inline_between (index ,0 ,fake.mThis->mMatch.size ())) ;
-		const auto r1x = FLAG (fake.mThis->mMatch[index].first) ;
-		const auto r2x = FLAG (fake.mThis->mMatch[index].second) ;
+		assert (!fake.mMatch.empty ()) ;
+		assert (inline_between (index ,0 ,fake.mMatch.size ())) ;
+		const auto r1x = FLAG (fake.mMatch[index].first) ;
+		const auto r2x = FLAG (fake.mMatch[index].second) ;
 		const auto r3x = (r2x - r1x) / SIZE_OF<STR>::expr ;
 		return Slice (r1x ,r3x ,SIZE_OF<STR>::expr) ;
 	}
 } ;
 
-exports VFat<RegexHolder> RegexHolder::hold (VREF<RegexLayout> that) {
+exports RegexLayout RegexHolder::create () {
+	RegexLayout ret ;
+	ret.mThis = AutoRef<RegexImplLayout>::make () ;
+	return move (ret) ;
+}
+
+exports VFat<RegexHolder> RegexHolder::hold (VREF<RegexImplLayout> that) {
 	return VFat<RegexHolder> (RegexImplHolder () ,that) ;
 }
 
-exports CFat<RegexHolder> RegexHolder::hold (CREF<RegexLayout> that) {
+exports CFat<RegexHolder> RegexHolder::hold (CREF<RegexImplLayout> that) {
 	return CFat<RegexHolder> (RegexImplHolder () ,that) ;
 }
 } ;

@@ -15,58 +15,73 @@
 #include "csc_runtime.hpp"
 
 namespace CSC {
-struct CoroutineFriend implement Interface {
+struct CoroutineBinder implement Interface {
 	virtual void before () = 0 ;
-	virtual BOOL tick () = 0 ;
+	virtual BOOL tick (CREF<FLT64> deltatime) = 0 ;
+	virtual BOOL idle () = 0 ;
 	virtual void after () = 0 ;
+	virtual void execute () = 0 ;
 } ;
 
 template <class A>
-class CoroutineFriendBinder final implement Fat<CoroutineFriend ,A> {
+class FriendCoroutineBinder final implement Fat<CoroutineBinder ,A> {
 public:
-	static VFat<CoroutineFriend> hold (VREF<A> that) {
-		return VFat<CoroutineFriend> (CoroutineFriendBinder () ,that) ;
+	static VFat<CoroutineBinder> hold (VREF<A> that) {
+		return VFat<CoroutineBinder> (FriendCoroutineBinder () ,that) ;
 	}
 
 	void before () override {
 		return thiz.fake.before () ;
 	}
 
-	BOOL tick () override {
-		return thiz.fake.tick () ;
+	BOOL tick (CREF<FLT64> deltatime) override {
+		return thiz.fake.tick (deltatime) ;
+	}
+
+	BOOL idle () override {
+		return thiz.fake.idle () ;
 	}
 
 	void after () override {
 		return thiz.fake.after () ;
 	}
+
+	void execute () override {
+		thiz.fake.before () ;
+		while (TRUE) {
+			while (thiz.fake.tick (0)) ;
+			if (!thiz.fake.idle ())
+				break ;
+		}
+		thiz.fake.after () ;
+	}
 } ;
 
 struct WorkThreadImplLayout ;
-
-struct WorkThreadLayout implement ThisLayout<SharedRef<WorkThreadImplLayout>> {} ;
+struct WorkThreadLayout implement OfThis<SharedRef<WorkThreadImplLayout>> {} ;
 
 struct WorkThreadHolder implement Interface {
-	imports VFat<WorkThreadHolder> hold (VREF<WorkThreadLayout> that) ;
-	imports CFat<WorkThreadHolder> hold (CREF<WorkThreadLayout> that) ;
+	imports WorkThreadLayout create () ;
+	imports VFat<WorkThreadHolder> hold (VREF<WorkThreadImplLayout> that) ;
+	imports CFat<WorkThreadHolder> hold (CREF<WorkThreadImplLayout> that) ;
 
 	virtual void initialize () = 0 ;
-	virtual void set_thread_size (CREF<LENGTH> size_) const = 0 ;
-	virtual void set_queue_size (CREF<LENGTH> size_) const = 0 ;
-	virtual void start (CREF<Function<CREF<INDEX>>> func) const = 0 ;
-	virtual void post (CREF<INDEX> begin_ ,CREF<INDEX> end_) const = 0 ;
-	virtual void join () const = 0 ;
-	virtual BOOL join (CREF<Time> interval) const = 0 ;
-	virtual void stop () const = 0 ;
+	virtual void set_thread_size (CREF<LENGTH> size_) = 0 ;
+	virtual void set_queue_size (CREF<LENGTH> size_) = 0 ;
+	virtual void start (CREF<Function<CREF<INDEX>>> func) = 0 ;
+	virtual void friend_execute (CREF<INDEX> slot) = 0 ;
+	virtual void post (CREF<INDEX> begin_ ,CREF<INDEX> end_) = 0 ;
+	virtual void join () = 0 ;
+	virtual BOOL join (CREF<Time> interval) = 0 ;
+	virtual void stop () = 0 ;
 } ;
 
 class WorkThread implement WorkThreadLayout {
-protected:
-	using WorkThreadLayout::mThis ;
-
 public:
 	implicit WorkThread () = default ;
 
 	implicit WorkThread (CREF<typeof (NULL)>) {
+		mThis = WorkThreadHolder::create () ;
 		WorkThreadHolder::hold (thiz)->initialize () ;
 	}
 
@@ -107,32 +122,31 @@ struct CalcSolution {
 } ;
 
 struct CalcThreadImplLayout ;
-
-struct CalcThreadLayout implement ThisLayout<SharedRef<CalcThreadImplLayout>> {} ;
+struct CalcThreadLayout implement OfThis<SharedRef<CalcThreadImplLayout>> {} ;
 
 struct CalcThreadHolder implement Interface {
-	imports VFat<CalcThreadHolder> hold (VREF<CalcThreadLayout> that) ;
-	imports CFat<CalcThreadHolder> hold (CREF<CalcThreadLayout> that) ;
+	imports CalcThreadLayout create () ;
+	imports VFat<CalcThreadHolder> hold (VREF<CalcThreadImplLayout> that) ;
+	imports CFat<CalcThreadHolder> hold (CREF<CalcThreadImplLayout> that) ;
 
 	virtual void initialize () = 0 ;
-	virtual void set_thread_size (CREF<LENGTH> size_) const = 0 ;
-	virtual void set_base_input (CREF<BitSet> base) const = 0 ;
-	virtual void start (CREF<Function<CREF<CalcSolution> ,VREF<CalcSolution>>> func) const = 0 ;
+	virtual void set_thread_size (CREF<LENGTH> size_) = 0 ;
+	virtual void set_start_input (CREF<BitSet> input ,CREF<FLT64> factor) = 0 ;
+	virtual void start (CREF<Function<CREF<CalcSolution> ,VREF<CalcSolution>>> func) = 0 ;
+	virtual void friend_execute (CREF<INDEX> slot) = 0 ;
 	virtual BOOL ready () const = 0 ;
-	virtual CalcSolution poll () const = 0 ;
-	virtual void suspend () const = 0 ;
-	virtual void resume () const = 0 ;
-	virtual void stop () const = 0 ;
+	virtual CalcSolution poll () = 0 ;
+	virtual void suspend () = 0 ;
+	virtual void resume () = 0 ;
+	virtual void stop () = 0 ;
 } ;
 
 class CalcThread implement CalcThreadLayout {
-protected:
-	using CalcThreadLayout::mThis ;
-
 public:
 	implicit CalcThread () = default ;
 
 	implicit CalcThread (CREF<typeof (NULL)>) {
+		mThis = CalcThreadHolder::create () ;
 		CalcThreadHolder::hold (thiz)->initialize () ;
 	}
 
@@ -140,8 +154,8 @@ public:
 		return CalcThreadHolder::hold (thiz)->set_thread_size (size_) ;
 	}
 
-	void set_base_input (CREF<BitSet> base) const {
-		return CalcThreadHolder::hold (thiz)->set_base_input (base) ;
+	void set_start_input (CREF<BitSet> input ,CREF<FLT64> factor) const {
+		return CalcThreadHolder::hold (thiz)->set_start_input (input ,factor) ;
 	}
 
 	void start (CREF<Function<CREF<CalcSolution> ,VREF<CalcSolution>>> func) const {
@@ -170,35 +184,34 @@ public:
 } ;
 
 struct PromiseImplLayout ;
-
-struct PromiseLayout implement ThisLayout<SharedRef<PromiseImplLayout>> {} ;
+struct PromiseLayout implement OfThis<SharedRef<PromiseImplLayout>> {} ;
 
 struct PromiseHolder implement Interface {
-	imports VFat<PromiseHolder> hold (VREF<PromiseLayout> that) ;
-	imports CFat<PromiseHolder> hold (CREF<PromiseLayout> that) ;
+	imports PromiseLayout create () ;
+	imports VFat<PromiseHolder> hold (VREF<PromiseImplLayout> that) ;
+	imports CFat<PromiseHolder> hold (CREF<PromiseImplLayout> that) ;
 
 	virtual void initialize () = 0 ;
-	virtual void set_retry (CREF<BOOL> flag) const = 0 ;
-	virtual void start () const = 0 ;
-	virtual void start (CREF<Function<>> func) const = 0 ;
-	virtual void post (RREF<AutoRef<Pointer>> item) const = 0 ;
-	virtual void rethrow (CREF<Exception> e) const = 0 ;
+	virtual void set_retry (CREF<BOOL> flag) = 0 ;
+	virtual void start () = 0 ;
+	virtual void start (CREF<Function<>> func) = 0 ;
+	virtual void friend_execute (CREF<INDEX> slot) = 0 ;
+	virtual void post (RREF<AutoRef<Pointer>> item) = 0 ;
+	virtual void rethrow (CREF<Exception> e) = 0 ;
 	virtual BOOL ready () const = 0 ;
 	virtual BOOL running () const = 0 ;
-	virtual AutoRef<Pointer> poll () const = 0 ;
-	virtual void future () const = 0 ;
-	virtual void stop () const = 0 ;
+	virtual AutoRef<Pointer> poll () = 0 ;
+	virtual void future () = 0 ;
+	virtual void stop () = 0 ;
 } ;
 
 template <class A>
 class Promise implement PromiseLayout {
-protected:
-	using PromiseLayout::mThis ;
-
 public:
 	implicit Promise () = default ;
 
 	implicit Promise (CREF<typeof (NULL)>) {
+		mThis = PromiseHolder::create () ;
 		PromiseHolder::hold (thiz)->initialize () ;
 	}
 

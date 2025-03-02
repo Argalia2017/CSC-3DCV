@@ -23,17 +23,15 @@ struct ImageProcImplLayout {
 	UniqueRef<BOOL> mContext ;
 } ;
 
-class ImageProcImplHolder final implement Fat<ImageProcHolder ,ImageProcLayout> {
+class ImageProcImplHolder final implement Fat<ImageProcHolder ,ImageProcImplLayout> {
 public:
 	void initialize () override {
-		auto rax = ImageProcImplLayout () ;
-		rax.mContext = UniqueRef<BOOL> ([&] (VREF<BOOL> me) {
+		fake.mContext = UniqueRef<BOOL> ([&] (VREF<BOOL> me) {
 			FreeImage_Initialise () ;
 			me = TRUE ;
 		} ,[&] (VREF<BOOL> me) {
 			FreeImage_DeInitialise () ;
 		}) ;
-		fake.mThis = Ref<ImageProcImplLayout>::make (move (rax)) ;
 	}
 
 	ImageLayout make_image (RREF<BoxLayout> image) const override {

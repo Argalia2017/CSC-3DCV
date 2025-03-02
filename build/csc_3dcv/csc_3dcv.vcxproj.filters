@@ -69,9 +69,6 @@
     <ClInclude Include="..\..\src\Registration\export.h">
       <Filter>module\Registration</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\System\export.h">
-      <Filter>module\System</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\Esimation\export.h">
       <Filter>module\Estimation</Filter>
     </ClInclude>
@@ -95,14 +92,14 @@
     <Filter Include="module\Rendering">
       <UniqueIdentifier>{2c7fd247-5b21-4f4c-a157-75897b0950ce}</UniqueIdentifier>
     </Filter>
-    <Filter Include="module\System">
-      <UniqueIdentifier>{ec214562-f5e3-4691-b195-5a5dc7c5ac59}</UniqueIdentifier>
-    </Filter>
     <Filter Include="module\Estimation">
       <UniqueIdentifier>{3c0722a6-5fe8-4080-b38a-d49edd22b112}</UniqueIdentifier>
     </Filter>
     <Filter Include="module\Detection">
       <UniqueIdentifier>{2f482b7c-e452-4ad2-9d2a-581d5f5b4322}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\dependencies\CSC\include\cpp.natvis" />
   </ItemGroup>
 </Project>

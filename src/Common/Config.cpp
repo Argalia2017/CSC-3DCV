@@ -8,12 +8,13 @@ struct ConfigProcImplLayout {
 class ConfigProcImplHolder final implement Fat<ConfigProcHolder ,ConfigProcLayout> {
 public:
 	void initialize () override {
+		Singleton<Console>::instance ().debug (slice ("library_file = ") ,RuntimeProc::library_file ()) ;
 		fake.mThis = SharedRef<ConfigProcImplLayout>::make () ;
 	}
 
 	void set_data_dire (CREF<String<STR>> dire) const override {
 		fake.mThis->mDataPath = Path (dire) ;
-		const auto r1x = FileProc::lock_dire (slice (".")) ;
+		const auto r1x = FileProc::lock_dire (fake.mThis->mDataPath) ;
 		assume (r1x) ;
 	}
 } ;

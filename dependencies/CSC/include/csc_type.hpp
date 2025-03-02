@@ -1153,7 +1153,7 @@ trait HAS_COMPR_HELP<A ,REQUIRE<KILL<ENUM_TRUE ,typeof (nullof (A).compr (nullof
 template <class A>
 using HAS_COMPR = typename HAS_COMPR_HELP<A ,ALWAYS>::RET ;
 
-struct VisitorFriend implement Interface {
+struct VisitorBinder implement Interface {
 	virtual void reset () = 0 ;
 	virtual void enter () = 0 ;
 	virtual void leave () = 0 ;
@@ -1173,7 +1173,7 @@ trait HAS_VISIT_HELP<A ,OTHERWISE> {
 } ;
 
 template <class A>
-trait HAS_VISIT_HELP<A ,REQUIRE<KILL<ENUM_TRUE ,typeof (nullof (A).visit (nullof (VisitorFriend)))>>> {
+trait HAS_VISIT_HELP<A ,REQUIRE<KILL<ENUM_TRUE ,typeof (nullof (A).visit (nullof (VisitorBinder)))>>> {
 	using RET = ENUM_TRUE ;
 } ;
 

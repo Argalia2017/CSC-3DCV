@@ -74,7 +74,7 @@ public:
 		return ZERO ;
 	}
 
-	void visit (VREF<VisitorFriend> visitor) const override {
+	void visit (VREF<VisitorBinder> visitor) const override {
 		visitor.enter () ;
 		for (auto &&i : iter (0 ,4)) {
 			inline_visit (visitor ,fake.mVector[i]) ;
@@ -262,7 +262,7 @@ public:
 		return ZERO ;
 	}
 
-	void visit (VREF<VisitorFriend> visitor) const override {
+	void visit (VREF<VisitorBinder> visitor) const override {
 		visitor.enter () ;
 		for (auto &&i : iter (0 ,16)) {
 			inline_visit (visitor ,fake.mMatrix[i]) ;
@@ -492,6 +492,20 @@ public:
 		fake = move (ret) ;
 	}
 
+	void make_RotationMatrix (CREF<FLAG> axis ,CREF<FLT64> angle) override {
+		Matrix ret = Matrix::identity () ;
+		const auto r1x = MathProc::cos (angle) ;
+		const auto r2x = MathProc::sin (angle) ;
+		INDEX ix = axis ;
+		INDEX iy = (ix + 1) % 3 ;
+		INDEX iz = (iy + 1) % 3 ;
+		ret[iy][iy] = r1x ;
+		ret[iz][iy] = +r2x ;
+		ret[iy][iz] = -r2x ;
+		ret[iz][iz] = r1x ;
+		fake = move (ret) ;
+	}
+
 	void make_RotationMatrix (CREF<Vector> normal ,CREF<FLT64> angle) override {
 		Matrix ret = Matrix::zero () ;
 		const auto r1x = normal.normalize () ;
@@ -687,16 +701,17 @@ template class External<MatrixProcHolder ,MatrixProcLayout> ;
 exports CREF<MatrixProcLayout> MatrixProcHolder::instance () {
 	return memorize ([&] () {
 		MatrixProcLayout ret ;
+		ret.mThis = External<MatrixProcHolder ,MatrixProcLayout>::create () ;
 		MatrixProcHolder::hold (ret)->initialize () ;
 		return move (ret) ;
 	}) ;
 }
 
-exports VFat<MatrixProcHolder> MatrixProcHolder::hold (VREF<MatrixProcLayout> that) {
+exports VFat<MatrixProcHolder> MatrixProcHolder::hold (VREF<MatrixProcImplLayout> that) {
 	return VFat<MatrixProcHolder> (External<MatrixProcHolder ,MatrixProcLayout>::declare () ,that) ;
 }
 
-exports CFat<MatrixProcHolder> MatrixProcHolder::hold (CREF<MatrixProcLayout> that) {
+exports CFat<MatrixProcHolder> MatrixProcHolder::hold (CREF<MatrixProcImplLayout> that) {
 	return CFat<MatrixProcHolder> (External<MatrixProcHolder ,MatrixProcLayout>::declare () ,that) ;
 }
 
@@ -744,71 +759,118 @@ public:
 		normalized () ;
 	}
 
-	void initialize (CREF<VectorLayout> that) override {
-		const auto r1x = move (keep[TYPE<Vector>::expr] (that)) ;
-		const auto r2x = r1x.magnitude () ;
-		const auto r3x = r1x.normalize () ;
-		const auto r4x = MathProc::sin (r2x / 2) ;
-		const auto r5x = MathProc::cos (r2x / 2) ;
-		fake.mQuaternion[0] = r3x[0] * r4x ;
-		fake.mQuaternion[1] = r3x[1] * r4x ;
-		fake.mQuaternion[2] = r3x[2] * r4x ;
-		fake.mQuaternion[3] = r5x ;
+	void initialize (CREF<Vector> that) override {
+		const auto r1x = that.magnitude () ;
+		const auto r2x = that.normalize () ;
+		const auto r3x = MathProc::sin (r1x / 2) ;
+		const auto r4x = MathProc::cos (r1x / 2) ;
+		fake.mQuaternion[0] = r2x[0] * r3x ;
+		fake.mQuaternion[1] = r2x[1] * r3x ;
+		fake.mQuaternion[2] = r2x[2] * r3x ;
+		fake.mQuaternion[3] = r4x ;
 		normalized () ;
 	}
 
-	void initialize (CREF<MatrixLayout> that) override {
-		const auto r1x = move (keep[TYPE<Matrix>::expr] (that)) ;
-		const auto r2x = r1x.homogenize () ;
+	void initialize (CREF<Matrix> that) override {
+		const auto r1x = that.homogenize () ;
 		auto act = TRUE ;
 		if ifdo (act) {
-			const auto r3x = 1 + r2x.trace () ;
-			if (r3x < 1)
+			const auto r2x = 1 + r1x.trace () ;
+			if (r2x < 1)
 				discard ;
-			const auto r4x = MathProc::sqrt (r3x) ;
-			const auto r5x = MathProc::inverse (r4x) ;
-			fake.mQuaternion[0] = (r2x[2][1] - r2x[1][2]) * r5x ;
-			fake.mQuaternion[1] = (r2x[0][2] - r2x[2][0]) * r5x ;
-			fake.mQuaternion[2] = (r2x[1][0] - r2x[0][1]) * r5x ;
-			fake.mQuaternion[3] = r4x ;
+			const auto r3x = MathProc::sqrt (r2x) ;
+			const auto r4x = MathProc::inverse (r3x) ;
+			fake.mQuaternion[0] = (r1x[2][1] - r1x[1][2]) * r4x ;
+			fake.mQuaternion[1] = (r1x[0][2] - r1x[2][0]) * r4x ;
+			fake.mQuaternion[2] = (r1x[1][0] - r1x[0][1]) * r4x ;
+			fake.mQuaternion[3] = r3x ;
 		}
 		if ifdo (act) {
-			const auto r6x = 1 + r2x[0][0] - r2x[1][1] - r2x[2][2] ;
-			if (r6x < 1)
+			const auto r5x = 1 + r1x[0][0] - r1x[1][1] - r1x[2][2] ;
+			if (r5x < 1)
 				discard ;
-			const auto r7x = MathProc::sqrt (r6x) ;
-			const auto r8x = MathProc::inverse (r7x) ;
-			fake.mQuaternion[0] = r7x ;
-			fake.mQuaternion[1] = (r2x[1][0] + r2x[0][1]) * r8x ;
-			fake.mQuaternion[2] = (r2x[0][2] + r2x[2][0]) * r8x ;
-			fake.mQuaternion[3] = (r2x[2][1] - r2x[1][2]) * r8x ;
+			const auto r6x = MathProc::sqrt (r5x) ;
+			const auto r7x = MathProc::inverse (r6x) ;
+			fake.mQuaternion[0] = r6x ;
+			fake.mQuaternion[1] = (r1x[1][0] + r1x[0][1]) * r7x ;
+			fake.mQuaternion[2] = (r1x[0][2] + r1x[2][0]) * r7x ;
+			fake.mQuaternion[3] = (r1x[2][1] - r1x[1][2]) * r7x ;
 		}
 		if ifdo (act) {
-			const auto r9x = 1 - r2x[0][0] + r2x[1][1] - r2x[2][2] ;
-			if (r9x < 1)
+			const auto r8x = 1 - r1x[0][0] + r1x[1][1] - r1x[2][2] ;
+			if (r8x < 1)
 				discard ;
-			const auto r10x = MathProc::sqrt (r9x) ;
-			const auto r11x = MathProc::inverse (r10x) ;
-			fake.mQuaternion[0] = (r2x[1][0] + r2x[0][1]) * r11x ;
-			fake.mQuaternion[1] = r10x ;
-			fake.mQuaternion[2] = (r2x[2][1] + r2x[1][2]) * r11x ;
-			fake.mQuaternion[3] = (r2x[0][2] - r2x[2][0]) * r11x ;
+			const auto r9x = MathProc::sqrt (r8x) ;
+			const auto r10x = MathProc::inverse (r9x) ;
+			fake.mQuaternion[0] = (r1x[1][0] + r1x[0][1]) * r10x ;
+			fake.mQuaternion[1] = r9x ;
+			fake.mQuaternion[2] = (r1x[2][1] + r1x[1][2]) * r10x ;
+			fake.mQuaternion[3] = (r1x[0][2] - r1x[2][0]) * r10x ;
 		}
 		if ifdo (act) {
-			const auto r12x = 1 - r2x[0][0] - r2x[1][1] + r2x[2][2] ;
-			if (r12x < 1)
+			const auto r11x = 1 - r1x[0][0] - r1x[1][1] + r1x[2][2] ;
+			if (r11x < 1)
 				discard ;
-			const auto r13x = MathProc::sqrt (r12x) ;
-			const auto r14x = MathProc::inverse (r13x) ;
-			fake.mQuaternion[0] = (r2x[0][2] + r2x[2][0]) * r14x ;
-			fake.mQuaternion[1] = (r2x[2][1] + r2x[1][2]) * r14x ;
-			fake.mQuaternion[2] = r13x ;
-			fake.mQuaternion[3] = (r2x[1][0] - r2x[0][1]) * r14x ;
+			const auto r12x = MathProc::sqrt (r11x) ;
+			const auto r13x = MathProc::inverse (r12x) ;
+			fake.mQuaternion[0] = (r1x[0][2] + r1x[2][0]) * r13x ;
+			fake.mQuaternion[1] = (r1x[2][1] + r1x[1][2]) * r13x ;
+			fake.mQuaternion[2] = r12x ;
+			fake.mQuaternion[3] = (r1x[1][0] - r1x[0][1]) * r13x ;
 		}
 		if ifdo (act) {
 			assert (FALSE) ;
 		}
 		normalized () ;
+	}
+
+	void initialize (CREF<EulerAngle> that) override {
+		const auto r1x = RotationMatrix (0 ,that.mPitch) ;
+		const auto r2x = RotationMatrix (1 ,that.mYaw) ;
+		const auto r3x = RotationMatrix (2 ,that.mRoll) ;
+		auto act = TRUE ;
+		if ifdo (act) {
+			if (that.mType != ViewMatrixOption::XYZ)
+				discard ;
+			//@info: We are using intrinsic rotation
+			//@info: First, rotation RXi = RX
+			//@info: Second, rotation RYi = RXi * RY * RXi.inverse
+			//@info: Third, rotation RZi = (RYi * RXi) * RZ * (RYi * RXi).inverse
+			//@info: Finally, rotation RZi * RYi * RXi = RX * RY * RZ
+			//@info: So, in the XYZ rotation order, RX is the first rotation, but RZ is applied last
+			const auto r4x = r1x * r2x * r3x ;
+			initialize (r4x) ;
+		}
+		if ifdo (act) {
+			if (that.mType != ViewMatrixOption::XZY)
+				discard ;
+			const auto r5x = r1x * r3x * r2x ;
+			initialize (r5x) ;
+		}
+		if ifdo (act) {
+			if (that.mType != ViewMatrixOption::YXZ)
+				discard ;
+			const auto r6x = r2x * r1x * r3x ;
+			initialize (r6x) ;
+		}
+		if ifdo (act) {
+			if (that.mType != ViewMatrixOption::YZX)
+				discard ;
+			const auto r7x = r2x * r3x * r1x ;
+			initialize (r7x) ;
+		}
+		if ifdo (act) {
+			if (that.mType != ViewMatrixOption::ZXY)
+				discard ;
+			const auto r8x = r3x * r1x * r2x ;
+			initialize (r8x) ;
+		}
+		if ifdo (act) {
+			if (that.mType != ViewMatrixOption::ZYX)
+				discard ;
+			const auto r9x = r3x * r2x * r1x ;
+			initialize (r9x) ;
+		}
 	}
 
 	void normalized () {
@@ -846,7 +908,7 @@ public:
 		return ZERO ;
 	}
 
-	void visit (VREF<VisitorFriend> visitor) const override {
+	void visit (VREF<VisitorBinder> visitor) const override {
 		visitor.enter () ;
 		for (auto &&i : iter (0 ,4)) {
 			inline_visit (visitor ,fake.mQuaternion[i]) ;
@@ -879,16 +941,193 @@ public:
 		return MathProc::atan (r1x ,r2x) * 2 ;
 	}
 
-	VectorLayout vector () const override {
+	Vector vector () const override {
 		const auto r1x = axis (fake).normalize () ;
 		const auto r2x = angle () ;
 		return r1x * r2x ;
 	}
 
-	MatrixLayout matrix () const override {
+	Matrix matrix () const override {
 		const auto r1x = axis (fake).normalize () ;
 		const auto r2x = angle () ;
 		return RotationMatrix (r1x ,r2x) ;
+	}
+
+	EulerAngle euler (CREF<Just<ViewMatrixOption>> type) const override {
+		EulerAngle ret ;
+		const auto r1x = matrix () ;
+		const auto r2x = DiagMatrix (+1 ,-1 ,-1) ;
+		const auto r3x = DiagMatrix (-1 ,+1 ,-1) ;
+		const auto r4x = DiagMatrix (-1 ,-1 ,+1) ;
+		const auto r5x = Buffer3<Matrix> ({r2x ,r3x ,r4x}) ;
+		auto rax = Buffer3<Matrix> () ;
+		auto act = TRUE ;
+		if ifdo (act) {
+			if (type != ViewMatrixOption::XYZ)
+				discard ;
+			rax = euler_decompose (r1x ,0 ,1 ,2) ;
+			if ifdo (TRUE) {
+				if (rax[0][1][1] >= 0)
+					discard ;
+				rax[0] = rax[0] * r5x[0] ;
+				rax[1] = r5x[0] * rax[1] ;
+			}
+			if ifdo (TRUE) {
+				if (rax[1][1][1] >= 0)
+					discard ;
+				rax[1] = rax[1] * r5x[2] ;
+				rax[2] = r5x[2] * rax[2] ;
+			}
+		}
+		if ifdo (act) {
+			if (type != ViewMatrixOption::XZY)
+				discard ;
+			rax = euler_decompose (r1x ,0 ,2 ,1) ;
+			if ifdo (TRUE) {
+				if (rax[0][1][1] >= 0)
+					discard ;
+				rax[0] = rax[0] * r5x[0] ;
+				rax[2] = r5x[0] * rax[2] ;
+			}
+			if ifdo (TRUE) {
+				if (rax[2][2][2] >= 0)
+					discard ;
+				rax[2] = rax[2] * r5x[1] ;
+				rax[1] = r5x[1] * rax[1] ;
+			}
+		}
+		if ifdo (act) {
+			if (type != ViewMatrixOption::YXZ)
+				discard ;
+			rax = euler_decompose (r1x ,1 ,0 ,2) ;
+			if ifdo (TRUE) {
+				if (rax[0][1][1] >= 0)
+					discard ;
+				rax[1] = rax[1] * r5x[1] ;
+				rax[0] = r5x[1] * rax[0] ;
+				rax[0] = rax[0] * r5x[2] ;
+				rax[2] = r5x[2] * rax[2] ;
+			}
+		}
+		if ifdo (act) {
+			if (type != ViewMatrixOption::YZX)
+				discard ;
+			rax = euler_decompose (r1x ,1 ,2 ,0) ;
+			if ifdo (TRUE) {
+				if (rax[0][1][1] >= 0)
+					discard ;
+				rax[2] = rax[2] * r5x[0] ;
+				rax[0] = r5x[0] * rax[0] ;
+			}
+			if ifdo (TRUE) {
+				if (rax[2][2][2] >= 0)
+					discard ;
+				rax[1] = rax[1] * r5x[1] ;
+				rax[2] = r5x[1] * rax[2] ;
+			}
+		}
+		if ifdo (act) {
+			if (type != ViewMatrixOption::ZXY)
+				discard ;
+			rax = euler_decompose (r1x ,2 ,0 ,1) ;
+			if ifdo (TRUE) {
+				if (rax[0][1][1] >= 0)
+					discard ;
+				rax[2] = rax[2] * r5x[2] ;
+				rax[0] = r5x[2] * rax[0] ;
+				rax[0] = rax[0] * r5x[1] ;
+				rax[1] = r5x[1] * rax[1] ;
+			}
+		}
+		if ifdo (act) {
+			if (type != ViewMatrixOption::ZYX)
+				discard ;
+			rax = euler_decompose (r1x ,2 ,1 ,0) ;
+			if ifdo (TRUE) {
+				if (rax[0][1][1] >= 0)
+					discard ;
+				rax[1] = rax[1] * r5x[0] ;
+				rax[0] = r5x[0] * rax[0] ;
+			}
+			if ifdo (TRUE) {
+				if (rax[1][1][1] >= 0)
+					discard ;
+				rax[2] = rax[2] * r5x[2] ;
+				rax[1] = r5x[2] * rax[1] ;
+			}
+		}
+		assert (MathProc::abs (rax[0][0][0] - 1) < FLT32_EPS) ;
+		assert (MathProc::abs (rax[1][1][1] - 1) < FLT32_EPS) ;
+		assert (MathProc::abs (rax[2][2][2] - 1) < FLT32_EPS) ;
+		ret.mType = type ;
+		ret.mPitch = MathProc::atan (rax[0][2][1] ,rax[0][1][1]) ;
+		ret.mYaw = MathProc::atan (rax[1][0][2] ,rax[1][2][2]) ;
+		ret.mRoll = MathProc::atan (rax[2][1][0] ,rax[2][0][0]) ;
+		return move (ret) ;
+	}
+
+	Buffer3<Matrix> euler_decompose (CREF<Matrix> rot ,CREF<INDEX> x ,CREF<INDEX> y ,CREF<INDEX> z) const {
+		Buffer3<Matrix> ret ;
+		const auto r1x = Buffer3<Vector> ({
+			Vector::axis_x () ,
+			Vector::axis_y () ,
+			Vector::axis_z ()}) ;
+		const auto r2x = rot * r1x[z] ;
+		const auto r3x = rotate_angle (r2x ,r1x[x] ,r1x[y]) ;
+		const auto r4x = -r3x.fetch () ;
+		ret[x] = RotationMatrix (x ,r4x) ;
+		const auto r5x = ret[x].transpose () * rot ;
+		const auto r6x = MathProc::atan (r5x[x][z] ,r5x[z][z]) * rotate_sign (y ,z) ;
+		ret[y] = RotationMatrix (y ,r6x) ;
+		const auto r7x = ret[y].transpose () * r5x ;
+		const auto r8x = MathProc::atan (r7x[y][x] ,r7x[x][x]) * rotate_sign (z ,x) ;
+		ret[z] = RotationMatrix (z ,r8x) ;
+		const auto r9x = ret[z].transpose () * r7x - Matrix::identity () ;
+		for (auto &&j : iter (0 ,4 ,0 ,4)) {
+			assert (MathProc::abs (r9x[j]) < FLT32_EPS) ;
+		}
+		return move (ret) ;
+	}
+
+	FLT64 rotate_sign (CREF<INDEX> y ,CREF<INDEX> z) const {
+		if (y == 0)
+			if (z == 2)
+				return -1 ;
+		if (y == 1)
+			if (z == 0)
+				return -1 ;
+		if (y == 2)
+			if (z == 1)
+				return -1 ;
+		return +1 ;
+	}
+
+	Optional<FLT64> rotate_angle (CREF<Vector> dir ,CREF<Vector> rot_axis ,CREF<Vector> normal) const {
+		const auto r1x = CrossProductMatrix (rot_axis) ;
+		const auto r2x = r1x * r1x ;
+		const auto r3x = normal * (Matrix::identity () + r2x) * dir ;
+		const auto r4x = normal * r1x * dir ;
+		const auto r5x = -(normal * r2x * dir) ;
+		const auto r6x = MathProc::inverse (MathProc::hypot (r4x ,r5x)) ;
+		const auto r7x = r3x * r6x ;
+		if (MathProc::abs (r7x) >= 1)
+			return Optional<FLT64>::error (1) ;
+		const auto r8x = r4x * r6x ;
+		const auto r9x = r5x * r6x ;
+		const auto r10x = MathProc::atan (r8x ,r9x) ;
+		const auto r11x = MathProc::acos (-r7x) ;
+		const auto r12x = r10x - r11x ;
+		return ortho_angle (r12x) ;
+	}
+
+	FLT64 ortho_angle (CREF<FLT64> x) const {
+		const auto r1x = MathProc::floor (x ,MATH_PI * 2) ;
+		const auto r2x = x - r1x - MATH_PI ;
+		if (r2x <= -MATH_PI / 2)
+			return r2x + MATH_PI ;
+		if (r2x >= +MATH_PI / 2)
+			return r2x - MATH_PI ;
+		return r2x ;
 	}
 } ;
 
@@ -905,17 +1144,34 @@ template class External<LinearProcHolder ,LinearProcLayout> ;
 exports CREF<LinearProcLayout> LinearProcHolder::instance () {
 	return memorize ([&] () {
 		LinearProcLayout ret ;
+		ret.mThis = External<LinearProcHolder ,LinearProcLayout>::create () ;
 		LinearProcHolder::hold (ret)->initialize () ;
 		return move (ret) ;
 	}) ;
 }
 
-exports VFat<LinearProcHolder> LinearProcHolder::hold (VREF<LinearProcLayout> that) {
+exports VFat<LinearProcHolder> LinearProcHolder::hold (VREF<LinearProcImplLayout> that) {
 	return VFat<LinearProcHolder> (External<LinearProcHolder ,LinearProcLayout>::declare () ,that) ;
 }
 
-exports CFat<LinearProcHolder> LinearProcHolder::hold (CREF<LinearProcLayout> that) {
+exports CFat<LinearProcHolder> LinearProcHolder::hold (CREF<LinearProcImplLayout> that) {
 	return CFat<LinearProcHolder> (External<LinearProcHolder ,LinearProcLayout>::declare () ,that) ;
+}
+
+template class External<PointCloudKDTreeHolder ,PointCloudKDTreeLayout> ;
+
+exports PointCloudKDTreeLayout PointCloudKDTreeHolder::create () {
+	PointCloudKDTreeLayout ret ;
+	ret.mThis = External<PointCloudKDTreeHolder ,PointCloudKDTreeLayout>::create () ;
+	return move (ret) ;
+}
+
+exports VFat<PointCloudKDTreeHolder> PointCloudKDTreeHolder::hold (VREF<PointCloudKDTreeImplLayout> that) {
+	return VFat<PointCloudKDTreeHolder> (External<PointCloudKDTreeHolder ,PointCloudKDTreeLayout>::declare () ,that) ;
+}
+
+exports CFat<PointCloudKDTreeHolder> PointCloudKDTreeHolder::hold (CREF<PointCloudKDTreeImplLayout> that) {
+	return CFat<PointCloudKDTreeHolder> (External<PointCloudKDTreeHolder ,PointCloudKDTreeLayout>::declare () ,that) ;
 }
 
 class PointCloudImplHolder final implement Fat<PointCloudHolder ,PointCloudLayout> {
@@ -1043,21 +1299,29 @@ public:
 	PointCloudLayout smul (CREF<Matrix> mat) const override {
 		PointCloudLayout ret ;
 		ret.mRank = fake.mRank ;
-		ret.mPointCloud = fake.mPointCloud.share () ;
+		ret.mPointCloud = fake.mPointCloud ;
 		ret.mWorld *= mat ;
 		return move (ret) ;
 	}
 
 	Array<INDEX> search (CREF<Vector> center ,CREF<LENGTH> neighbor) const override {
-		Array<INDEX> ret ;
-		unimplemented () ;
-		return move (ret) ;
+		auto &&rax = keep[TYPE<PointCloudKDTreeLayout>::expr] (fake.mKDTree.self) ;
+		if ifdo (TRUE) {
+			if (rax.mThis.exist ())
+				discard ;
+			PointCloudKDTreeHolder::hold (rax)->initialize (fake.mPointCloud.self) ;
+		}
+		return PointCloudKDTreeHolder::hold (rax)->search (center ,neighbor) ;
 	}
 
 	Array<INDEX> search (CREF<Vector> center ,CREF<LENGTH> neighbor ,CREF<FLT64> radius) const override {
-		Array<INDEX> ret ;
-		unimplemented () ;
-		return move (ret) ;
+		auto &&rax = keep[TYPE<PointCloudKDTreeLayout>::expr] (fake.mKDTree.self) ;
+		if ifdo (TRUE) {
+			if (rax.mThis.exist ())
+				discard ;
+			PointCloudKDTreeHolder::hold (rax)->initialize (fake.mPointCloud.self) ;
+		}
+		return PointCloudKDTreeHolder::hold (rax)->search (center ,neighbor ,radius) ;
 	}
 } ;
 

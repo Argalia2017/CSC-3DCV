@@ -19,7 +19,9 @@
 #include "csc_begin.h"
 
 namespace CSC {
-class ImageProcImplHolder final implement Fat<ImageProcHolder ,ImageProcLayout> {
+struct ImageProcImplLayout {} ;
+
+class ImageProcImplHolder final implement Fat<ImageProcHolder ,ImageProcImplLayout> {
 public:
 	void initialize () override {
 		noop () ;

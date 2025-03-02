@@ -4,6 +4,7 @@ namespace CSC3DCV {
 struct CameraViewLayout {
 	String<STR> mName ;
 	String<STR> mGroup ;
+	Set<INDEX> mUsePose ;
 	ImageWidth mWidth ;
 	DuplexMatrix mMatK ;
 	BOOL mConstMatK ;
@@ -72,9 +73,9 @@ struct CameraFrameLayout {
 	INDEX mFTime ;
 	String<STR> mImageFile ;
 	BOOL mUndistortion ;
-	Array<Point2F> mPoint ;
+	Array<Point2F> mOriginPoint ;
 	Array<Point2F> mUndistPoint ;
-	Array<FLT32> mDepth ;
+	Image<FLT32> mDepth ;
 } ;
 
 struct CameraFrameHolder implement Interface {
@@ -94,10 +95,10 @@ public:
 } ;
 
 struct CameraBlockLayout {
-	INDEX mFeature ;
-	List<INDEX> mMatch ;
-	Point3F mPoint ;
-	FLT32 mRadius ;
+	INDEX mFPose ;
+	Set<INDEX> mUseFrame ;
+	Array<Point3F> mPoint ;
+	Array<FLT32> mRadius ;
 	INDEX mParam5 ;
 } ;
 
@@ -119,7 +120,7 @@ public:
 
 struct CameraOptimizerImplLayout ;
 
-struct CameraOptimizerLayout implement ThisLayout<AutoRef<CameraOptimizerImplLayout>> {} ;
+struct CameraOptimizerLayout implement OfThis<AutoRef<CameraOptimizerImplLayout>> {} ;
 
 struct CameraOptimizerHolder implement Interface {
 	imports VFat<CameraOptimizerHolder> hold (VREF<CameraOptimizerLayout> that) ;
@@ -139,7 +140,7 @@ public:
 
 struct CalibrationImplLayout ;
 
-struct CalibrationLayout implement ThisLayout<AutoRef<CalibrationImplLayout>> {} ;
+struct CalibrationLayout implement OfThis<AutoRef<CalibrationImplLayout>> {} ;
 
 struct CalibrationHolder implement Interface {
 	imports VFat<CalibrationHolder> hold (VREF<CalibrationLayout> that) ;

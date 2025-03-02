@@ -14,13 +14,12 @@
 
 namespace CSC {
 struct StringProcImplLayout ;
-
-struct StringProcLayout implement ThisLayout<Ref<StringProcImplLayout>> {} ;
+struct StringProcLayout implement OfThis<UniqueRef<StringProcImplLayout>> {} ;
 
 struct StringProcHolder implement Interface {
 	imports CREF<StringProcLayout> instance () ;
-	imports VFat<StringProcHolder> hold (VREF<StringProcLayout> that) ;
-	imports CFat<StringProcHolder> hold (CREF<StringProcLayout> that) ;
+	imports VFat<StringProcHolder> hold (VREF<StringProcImplLayout> that) ;
+	imports CFat<StringProcHolder> hold (CREF<StringProcImplLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual String<STRA> stra_from_strw (CREF<String<STRW>> a) const = 0 ;
@@ -48,15 +47,18 @@ struct StringProcHolder implement Interface {
 	virtual String<STR> strs_from_stru (CREF<String<STRU8>> a) const = 0 ;
 	virtual String<STR> strs_from_stru (CREF<String<STRU16>> a) const = 0 ;
 	virtual String<STR> strs_from_stru (CREF<String<STRU32>> a) const = 0 ;
-	virtual String<STRU8> stru8_from_strw (CREF<String<STRW>> a) const = 0 ;
-	virtual String<STRU16> stru16_from_strw (CREF<String<STRW>> a) const = 0 ;
-	virtual String<STRU32> stru32_from_strw (CREF<String<STRW>> a) const = 0 ;
+	virtual String<STRU8> stru8_from_struw (CREF<String<STRUW>> a) const = 0 ;
+	virtual String<STRU16> stru16_from_struw (CREF<String<STRUW>> a) const = 0 ;
+	virtual String<STRU32> stru32_from_struw (CREF<String<STRUW>> a) const = 0 ;
+	virtual String<STRU8> stru8_from_strs (CREF<String<STRA>> a) const = 0 ;
+	virtual String<STRU8> stru8_from_strs (CREF<String<STRW>> a) const = 0 ;
+	virtual String<STRU16> stru16_from_strs (CREF<String<STRA>> a) const = 0 ;
+	virtual String<STRU16> stru16_from_strs (CREF<String<STRW>> a) const = 0 ;
+	virtual String<STRU32> stru32_from_strs (CREF<String<STRA>> a) const = 0 ;
+	virtual String<STRU32> stru32_from_strs (CREF<String<STRW>> a) const = 0 ;
 } ;
 
 class StringProc implement StringProcLayout {
-protected:
-	using StringProcLayout::mThis ;
-
 public:
 	static CREF<StringProc> instance () {
 		return keep[TYPE<StringProc>::expr] (StringProcHolder::instance ()) ;
@@ -162,16 +164,40 @@ public:
 		return StringProcHolder::hold (instance ())->strs_from_stru (a) ;
 	}
 
-	static String<STRU8> stru8_from_strw (CREF<String<STRW>> a) {
-		return StringProcHolder::hold (instance ())->stru8_from_strw (a) ;
+	static String<STRU8> stru8_from_struw (CREF<String<STRUW>> a) {
+		return StringProcHolder::hold (instance ())->stru8_from_struw (a) ;
 	}
 
-	static String<STRU16> stru16_from_strw (CREF<String<STRW>> a) {
-		return StringProcHolder::hold (instance ())->stru16_from_strw (a) ;
+	static String<STRU16> stru16_from_struw (CREF<String<STRUW>> a) {
+		return StringProcHolder::hold (instance ())->stru16_from_struw (a) ;
 	}
 
-	static String<STRU32> stru32_from_strw (CREF<String<STRW>> a) {
-		return StringProcHolder::hold (instance ())->stru32_from_strw (a) ;
+	static String<STRU32> stru32_from_struw (CREF<String<STRUW>> a) {
+		return StringProcHolder::hold (instance ())->stru32_from_struw (a) ;
+	}
+
+	static String<STRU8> stru8_from_strs (CREF<String<STRA>> a) {
+		return StringProcHolder::hold (instance ())->stru8_from_strs (a) ;
+	}
+
+	static String<STRU8> stru8_from_strs (CREF<String<STRW>> a) {
+		return StringProcHolder::hold (instance ())->stru8_from_strs (a) ;
+	}
+
+	static String<STRU16> stru16_from_strs (CREF<String<STRA>> a) {
+		return StringProcHolder::hold (instance ())->stru16_from_strs (a) ;
+	}
+
+	static String<STRU16> stru16_from_strs (CREF<String<STRW>> a) {
+		return StringProcHolder::hold (instance ())->stru16_from_strs (a) ;
+	}
+
+	static String<STRU32> stru32_from_strs (CREF<String<STRA>> a) {
+		return StringProcHolder::hold (instance ())->stru32_from_strs (a) ;
+	}
+
+	static String<STRU32> stru32_from_strs (CREF<String<STRW>> a) {
+		return StringProcHolder::hold (instance ())->stru32_from_strs (a) ;
 	}
 } ;
 
@@ -187,7 +213,6 @@ struct XmlParserHolder implement Interface {
 	imports CFat<XmlParserHolder> hold (CREF<XmlParserLayout> that) ;
 
 	virtual void initialize (CREF<RefBuffer<BYTE>> stream) = 0 ;
-	virtual void initialize (CREF<XmlParserLayout> that) = 0 ;
 	virtual BOOL exist () const = 0 ;
 	virtual XmlParserLayout root () const = 0 ;
 	virtual XmlParserLayout parent () const = 0 ;
@@ -233,18 +258,6 @@ public:
 	explicit XmlParser (CREF<RefBuffer<BYTE>> stream) {
 		XmlParserHolder::hold (thiz)->initialize (stream) ;
 	}
-
-	implicit XmlParser (CREF<XmlParser> that) {
-		XmlParserHolder::hold (thiz)->initialize (that) ;
-	}
-
-	forceinline VREF<XmlParser> operator= (CREF<XmlParser> that) {
-		return assign (thiz ,that) ;
-	}
-
-	implicit XmlParser (RREF<XmlParser> that) = default ;
-
-	forceinline VREF<XmlParser> operator= (RREF<XmlParser> that) = default ;
 
 	BOOL exist () const {
 		return XmlParserHolder::hold (thiz)->exist () ;
@@ -404,7 +417,6 @@ struct JsonParserHolder implement Interface {
 	imports CFat<JsonParserHolder> hold (CREF<JsonParserLayout> that) ;
 
 	virtual void initialize (CREF<RefBuffer<BYTE>> stream) = 0 ;
-	virtual void initialize (CREF<JsonParserLayout> that) = 0 ;
 	virtual BOOL exist () const = 0 ;
 	virtual JsonParserLayout root () const = 0 ;
 	virtual JsonParserLayout parent () const = 0 ;
@@ -450,18 +462,6 @@ public:
 	explicit JsonParser (CREF<RefBuffer<BYTE>> stream) {
 		JsonParserHolder::hold (thiz)->initialize (stream) ;
 	}
-
-	implicit JsonParser (CREF<JsonParser> that) {
-		JsonParserHolder::hold (thiz)->initialize (that) ;
-	}
-
-	forceinline VREF<JsonParser> operator= (CREF<JsonParser> that) {
-		return assign (thiz ,that) ;
-	}
-
-	implicit JsonParser (RREF<JsonParser> that) = default ;
-
-	forceinline VREF<JsonParser> operator= (RREF<JsonParser> that) = default ;
 
 	BOOL exist () const {
 		return JsonParserHolder::hold (thiz)->exist () ;
@@ -609,18 +609,18 @@ public:
 	}
 } ;
 
+struct PlyParserImplLayout ;
+
 struct PlyParserGuide {
-	INDEX mElementIndex ;
+	INDEX mElement ;
 	Deque<INDEX> mProperty ;
-	INDEX mPropertyIndex ;
-	INDEX mLineIndex ;
+	INDEX mCol ;
+	INDEX mRow ;
 	INDEX mPlyBegin ;
 	INDEX mPlyEnd ;
 	INDEX mPlyIndex ;
 	BOOL mPlyListMode ;
 } ;
-
-struct PlyParserImplLayout ;
 
 struct PlyParserLayout {
 	Ref<PlyParserImplLayout> mThis ;

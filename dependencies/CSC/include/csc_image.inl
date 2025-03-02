@@ -6,6 +6,10 @@
 
 #include "csc_image.hpp"
 
+#include "csc_end.h"
+#include <complex>
+#include "csc_begin.h"
+
 namespace CSC {
 class ImageImplHolder final implement Fat<ImageHolder ,ImageLayout> {
 public:
@@ -201,16 +205,17 @@ template class External<ImageProcHolder ,ImageProcLayout> ;
 exports CREF<ImageProcLayout> ImageProcHolder::instance () {
 	return memorize ([&] () {
 		ImageProcLayout ret ;
+		ret.mThis = External<ImageProcHolder ,ImageProcLayout>::create () ;
 		ImageProcHolder::hold (ret)->initialize () ;
 		return move (ret) ;
 	}) ;
 }
 
-exports VFat<ImageProcHolder> ImageProcHolder::hold (VREF<ImageProcLayout> that) {
+exports VFat<ImageProcHolder> ImageProcHolder::hold (VREF<ImageProcImplLayout> that) {
 	return VFat<ImageProcHolder> (External<ImageProcHolder ,ImageProcLayout>::declare () ,that) ;
 }
 
-exports CFat<ImageProcHolder> ImageProcHolder::hold (CREF<ImageProcLayout> that) {
+exports CFat<ImageProcHolder> ImageProcHolder::hold (CREF<ImageProcImplLayout> that) {
 	return CFat<ImageProcHolder> (External<ImageProcHolder ,ImageProcLayout>::declare () ,that) ;
 }
 
@@ -223,7 +228,7 @@ struct ReflectTensorCopy implement Interface {
 } ;
 
 template <class A ,class B>
-class ReflectTensorCopyBinder implement ReflectTensorCopy {
+class ReflectTensorCopyBinderWrap1 implement ReflectTensorCopy {
 public:
 	void xcopy (VREF<Pointer> dst ,CREF<Pointer> src) const override {
 		auto &&rax = keep[TYPE<A>::expr] (dst) ;
@@ -231,6 +236,53 @@ public:
 		rax = A (rbx) ;
 	}
 } ;
+
+template <class A ,class B>
+class ReflectTensorCopyBinderWrap2 implement ReflectTensorCopy {
+public:
+	void xcopy (VREF<Pointer> dst ,CREF<Pointer> src) const override {
+		using R1X = typename A::value_type ;
+		auto &&rax = keep[TYPE<A>::expr] (dst) ;
+		auto &&rbx = keep[TYPE<B>::expr] (src) ;
+		rax = R1X (rbx) ;
+	}
+} ;
+
+template <class A ,class B>
+class ReflectTensorCopyBinderWrap3 implement ReflectTensorCopy {
+public:
+	void xcopy (VREF<Pointer> dst ,CREF<Pointer> src) const override {
+		auto &&rax = keep[TYPE<A>::expr] (dst) ;
+		auto &&rbx = keep[TYPE<B>::expr] (src) ;
+		rax = A (rbx.real ()) ;
+	}
+} ;
+
+template <class...>
+trait REFLECT_TENSORCOPY_HELP ;
+
+template <class A ,class B>
+trait REFLECT_TENSORCOPY_HELP<A ,B ,REQUIRE<ENUM_ALL<IS_FLOAT<A> ,IS_FLOAT<B>>>> {
+	using RET = ReflectTensorCopyBinderWrap1<A ,B> ;
+} ;
+
+template <class A ,class B>
+trait REFLECT_TENSORCOPY_HELP<A ,B ,REQUIRE<ENUM_ALL<ENUM_NOT<IS_FLOAT<A>> ,IS_FLOAT<B>>>> {
+	using RET = ReflectTensorCopyBinderWrap2<A ,B> ;
+} ;
+
+template <class A ,class B>
+trait REFLECT_TENSORCOPY_HELP<A ,B ,REQUIRE<ENUM_ALL<IS_FLOAT<A> ,ENUM_NOT<IS_FLOAT<B>>>>> {
+	using RET = ReflectTensorCopyBinderWrap3<A ,B> ;
+} ;
+
+template <class A ,class B>
+trait REFLECT_TENSORCOPY_HELP<A ,B ,REQUIRE<ENUM_ALL<ENUM_NOT<IS_FLOAT<A>> ,ENUM_NOT<IS_FLOAT<B>>>>> {
+	using RET = ReflectTensorCopyBinderWrap1<A ,B> ;
+} ;
+
+template <class A ,class B>
+using REFLECT_TENSORCOPY = typename REFLECT_TENSORCOPY_HELP<A ,B ,ALWAYS>::RET ;
 
 class TensorImplHolder final implement Fat<TensorHolder ,TensorLayout> {
 public:
@@ -247,14 +299,14 @@ public:
 	}
 
 	LENGTH size_of_tensor_type (CREF<Just<TensorDataType>> type_) const {
-		if (type_ == TensorDataType::Val32)
-			return 4 ;
-		if (type_ == TensorDataType::Val64)
-			return 8 ;
 		if (type_ == TensorDataType::Flt32)
 			return 4 ;
 		if (type_ == TensorDataType::Flt64)
 			return 8 ;
+		if (type_ == TensorDataType::Complex32)
+			return 8 ;
+		if (type_ == TensorDataType::Complex64)
+			return 16 ;
 		return 0 ;
 	}
 
@@ -313,54 +365,56 @@ public:
 	}
 
 	Unknown choose_tensor_copy (CREF<Just<TensorDataType>> dst ,CREF<Just<TensorDataType>> src) const {
-		if (dst == TensorDataType::Val32)
-			if (src == TensorDataType::Val32)
-				return SimpleUnknownBinder<ReflectTensorCopyBinder<VAL32 ,VAL32>> () ;
-		if (dst == TensorDataType::Val32)
-			if (src == TensorDataType::Val64)
-				return SimpleUnknownBinder<ReflectTensorCopyBinder<VAL32 ,VAL64>> () ;
-		if (dst == TensorDataType::Val32)
-			if (src == TensorDataType::Flt32)
-				return SimpleUnknownBinder<ReflectTensorCopyBinder<VAL32 ,FLT32>> () ;
-		if (dst == TensorDataType::Val32)
-			if (src == TensorDataType::Flt64)
-				return SimpleUnknownBinder<ReflectTensorCopyBinder<VAL32 ,FLT64>> () ;
-		if (dst == TensorDataType::Val64)
-			if (src == TensorDataType::Val32)
-				return SimpleUnknownBinder<ReflectTensorCopyBinder<VAL64 ,VAL32>> () ;
-		if (dst == TensorDataType::Val64)
-			if (src == TensorDataType::Val64)
-				return SimpleUnknownBinder<ReflectTensorCopyBinder<VAL64 ,VAL64>> () ;
-		if (dst == TensorDataType::Val64)
-			if (src == TensorDataType::Flt32)
-				return SimpleUnknownBinder<ReflectTensorCopyBinder<VAL64 ,FLT32>> () ;
-		if (dst == TensorDataType::Val64)
-			if (src == TensorDataType::Flt64)
-				return SimpleUnknownBinder<ReflectTensorCopyBinder<VAL64 ,FLT64>> () ;
-		if (dst == TensorDataType::Flt32)
-			if (src == TensorDataType::Val32)
-				return SimpleUnknownBinder<ReflectTensorCopyBinder<FLT32 ,VAL32>> () ;
-		if (dst == TensorDataType::Flt32)
-			if (src == TensorDataType::Val64)
-				return SimpleUnknownBinder<ReflectTensorCopyBinder<FLT32 ,VAL64>> () ;
+		using COMPLEX32 = std::complex<FLT32> ;
+		using COMPLEX64 = std::complex<FLT64> ;
 		if (dst == TensorDataType::Flt32)
 			if (src == TensorDataType::Flt32)
-				return SimpleUnknownBinder<ReflectTensorCopyBinder<FLT32 ,FLT32>> () ;
+				return SimpleUnknownBinder<REFLECT_TENSORCOPY<FLT32 ,FLT32>> () ;
 		if (dst == TensorDataType::Flt32)
 			if (src == TensorDataType::Flt64)
-				return SimpleUnknownBinder<ReflectTensorCopyBinder<FLT32 ,FLT64>> () ;
-		if (dst == TensorDataType::Flt64)
-			if (src == TensorDataType::Val32)
-				return SimpleUnknownBinder<ReflectTensorCopyBinder<FLT64 ,VAL32>> () ;
-		if (dst == TensorDataType::Flt64)
-			if (src == TensorDataType::Val64)
-				return SimpleUnknownBinder<ReflectTensorCopyBinder<FLT64 ,VAL64>> () ;
+				return SimpleUnknownBinder<REFLECT_TENSORCOPY<FLT32 ,FLT64>> () ;
+		if (dst == TensorDataType::Flt32)
+			if (src == TensorDataType::Complex32)
+				return SimpleUnknownBinder<REFLECT_TENSORCOPY<FLT32 ,COMPLEX32>> () ;
+		if (dst == TensorDataType::Flt32)
+			if (src == TensorDataType::Complex64)
+				return SimpleUnknownBinder<REFLECT_TENSORCOPY<FLT32 ,COMPLEX64>> () ;
 		if (dst == TensorDataType::Flt64)
 			if (src == TensorDataType::Flt32)
-				return SimpleUnknownBinder<ReflectTensorCopyBinder<FLT64 ,FLT32>> () ;
+				return SimpleUnknownBinder<REFLECT_TENSORCOPY<FLT64 ,FLT32>> () ;
 		if (dst == TensorDataType::Flt64)
 			if (src == TensorDataType::Flt64)
-				return SimpleUnknownBinder<ReflectTensorCopyBinder<FLT64 ,FLT64>> () ;
+				return SimpleUnknownBinder<REFLECT_TENSORCOPY<FLT64 ,FLT64>> () ;
+		if (dst == TensorDataType::Flt64)
+			if (src == TensorDataType::Complex32)
+				return SimpleUnknownBinder<REFLECT_TENSORCOPY<FLT64 ,COMPLEX32>> () ;
+		if (dst == TensorDataType::Flt64)
+			if (src == TensorDataType::Complex64)
+				return SimpleUnknownBinder<REFLECT_TENSORCOPY<FLT64 ,COMPLEX64>> () ;
+		if (dst == TensorDataType::Complex32)
+			if (src == TensorDataType::Flt32)
+				return SimpleUnknownBinder<REFLECT_TENSORCOPY<COMPLEX32 ,FLT32>> () ;
+		if (dst == TensorDataType::Complex32)
+			if (src == TensorDataType::Flt64)
+				return SimpleUnknownBinder<REFLECT_TENSORCOPY<COMPLEX32 ,FLT64>> () ;
+		if (dst == TensorDataType::Complex32)
+			if (src == TensorDataType::Complex32)
+				return SimpleUnknownBinder<REFLECT_TENSORCOPY<COMPLEX32 ,COMPLEX32>> () ;
+		if (dst == TensorDataType::Complex32)
+			if (src == TensorDataType::Complex64)
+				return SimpleUnknownBinder<REFLECT_TENSORCOPY<COMPLEX32 ,COMPLEX64>> () ;
+		if (dst == TensorDataType::Complex64)
+			if (src == TensorDataType::Flt32)
+				return SimpleUnknownBinder<REFLECT_TENSORCOPY<COMPLEX64 ,FLT32>> () ;
+		if (dst == TensorDataType::Complex64)
+			if (src == TensorDataType::Flt64)
+				return SimpleUnknownBinder<REFLECT_TENSORCOPY<COMPLEX64 ,FLT64>> () ;
+		if (dst == TensorDataType::Complex64)
+			if (src == TensorDataType::Complex32)
+				return SimpleUnknownBinder<REFLECT_TENSORCOPY<COMPLEX64 ,COMPLEX32>> () ;
+		if (dst == TensorDataType::Complex64)
+			if (src == TensorDataType::Complex64)
+				return SimpleUnknownBinder<REFLECT_TENSORCOPY<COMPLEX64 ,COMPLEX64>> () ;
 		assume (FALSE) ;
 		return Unknown (ZERO) ;
 	}

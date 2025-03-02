@@ -15,6 +15,7 @@
 #endif
 
 #include "csc_end.h"
+#ifdef __CSC_SYSTEM_LINUX__
 #include <unistd.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -22,9 +23,8 @@
 
 #include <sys/mman.h>
 #include <sys/syscall.h>
-#include "csc_begin.h"
+#endif
 
-#include "csc_end.h"
 #include <cstdlib>
 #include <thread>
 #include "csc_begin.h"
@@ -32,11 +32,13 @@
 inline namespace {
 using HMODULE = CSC::csc_pointer_t ;
 using HANDLE = CSC::csc_pointer_t ;
-using HFILE = int ;
+using HFILEPIPE = int ;
 } ;
 
 namespace CSC {
-class RuntimeProcImplHolder final implement Fat<RuntimeProcHolder ,RuntimeProcLayout> {
+struct RuntimeProcImplLayout {} ;
+
+class RuntimeProcImplHolder final implement Fat<RuntimeProcHolder ,RuntimeProcImplLayout> {
 public:
 	void initialize () override {
 		noop () ;
@@ -94,17 +96,16 @@ struct ProcessImplLayout {
 	QUAD mProcessTime ;
 } ;
 
-class ProcessImplHolder final implement Fat<ProcessHolder ,ProcessLayout> {
+class ProcessImplHolder final implement Fat<ProcessHolder ,ProcessImplLayout> {
 private:
-	using PROCESS_SNAPSHOT_SIZE = ENUM<128> ;
+	using PROCESS_SNAPSHOT_STEP = ENUM<128> ;
 
 public:
 	void initialize (CREF<FLAG> uid) override {
-		fake.mThis = AutoRef<ProcessImplLayout>::make () ;
-		fake.mThis->mUid = uid ;
+		fake.mUid = uid ;
 		const auto r1x = load_proc_file (uid) ;
-		fake.mThis->mProcessCode = process_code (r1x ,uid) ;
-		fake.mThis->mProcessTime = process_time (r1x ,uid) ;
+		fake.mProcessCode = process_code (r1x ,uid) ;
+		fake.mProcessTime = process_time (r1x ,uid) ;
 	}
 
 	String<STRU8> load_proc_file (CREF<FLAG> uid) const {
@@ -115,9 +116,8 @@ public:
 			auto rax = StreamFile (r1x) ;
 			rax.open_r () ;
 			auto rbx = ret.borrow () ;
-			auto &&rcx = keep[TYPE<RefBuffer<BYTE>>::expr] (rbx.pin ().self) ;
 			rax.set_short_read (TRUE) ;
-			rax.read (rcx) ;
+			rax.read (rbx.self) ;
 		} catch (CREF<Exception> e) {
 			noop (e) ;
 			ret.clear () ;
@@ -163,19 +163,18 @@ public:
 	}
 
 	void initialize (CREF<RefBuffer<BYTE>> snapshot_) override {
-		fake.mThis = AutoRef<ProcessImplLayout>::make () ;
-		fake.mThis->mUid = 0 ;
+		fake.mUid = 0 ;
 		try {
-			assume (snapshot_.size () == PROCESS_SNAPSHOT_SIZE::expr) ;
+			assume (snapshot_.size () == PROCESS_SNAPSHOT_STEP::expr) ;
 			auto rax = ByteReader (Ref<RefBuffer<BYTE>>::reference (snapshot_)) ;
 			rax >> slice ("CSC_Process") ;
 			rax >> GAP ;
 			const auto r1x = rax.poll (TYPE<VAL64>::expr) ;
-			fake.mThis->mUid = FLAG (r1x) ;
+			fake.mUid = FLAG (r1x) ;
 			rax >> GAP ;
-			rax >> fake.mThis->mProcessCode ;
+			rax >> fake.mProcessCode ;
 			rax >> GAP ;
-			rax >> fake.mThis->mProcessTime ;
+			rax >> fake.mProcessTime ;
 			rax >> GAP ;
 			rax >> EOS ;
 		} catch (CREF<Exception> e) {
@@ -183,34 +182,34 @@ public:
 		}
 	}
 
-	BOOL equal (CREF<ProcessLayout> that) const override {
-		const auto r1x = inline_equal (fake.mThis->mUid ,that.mThis->mUid) ;
+	BOOL equal (CREF<ProcessImplLayout> that) const override {
+		const auto r1x = inline_equal (fake.mUid ,that.mUid) ;
 		if (!r1x)
 			return r1x ;
-		const auto r2x = inline_equal (fake.mThis->mProcessCode ,that.mThis->mProcessCode) ;
+		const auto r2x = inline_equal (fake.mProcessCode ,that.mProcessCode) ;
 		if (!r2x)
 			return r2x ;
-		const auto r3x = inline_equal (fake.mThis->mProcessTime ,that.mThis->mProcessTime) ;
+		const auto r3x = inline_equal (fake.mProcessTime ,that.mProcessTime) ;
 		if (!r3x)
 			return r3x ;
 		return TRUE ;
 	}
 
 	FLAG process_uid () const override {
-		return fake.mThis->mUid ;
+		return fake.mUid ;
 	}
 
 	RefBuffer<BYTE> snapshot () const override {
-		RefBuffer<BYTE> ret = RefBuffer<BYTE> (PROCESS_SNAPSHOT_SIZE::expr) ;
+		RefBuffer<BYTE> ret = RefBuffer<BYTE> (PROCESS_SNAPSHOT_STEP::expr) ;
 		auto rax = ByteWriter (Ref<RefBuffer<BYTE>>::reference (ret)) ;
 		if ifdo (TRUE) {
 			rax << slice ("CSC_Process") ;
 			rax << GAP ;
-			rax << VAL64 (fake.mThis->mUid) ;
+			rax << VAL64 (fake.mUid) ;
 			rax << GAP ;
-			rax << fake.mThis->mProcessCode ;
+			rax << fake.mProcessCode ;
 			rax << GAP ;
-			rax << fake.mThis->mProcessTime ;
+			rax << fake.mProcessTime ;
 			rax << GAP ;
 			rax << EOS ;
 		}
@@ -226,22 +225,21 @@ struct LibraryImplLayout {
 	FLAG mLastError ;
 } ;
 
-class LibraryImplHolder final implement Fat<LibraryHolder ,LibraryLayout> {
+class LibraryImplHolder final implement Fat<LibraryHolder ,LibraryImplLayout> {
 public:
 	void initialize (CREF<String<STR>> file) override {
-		fake.mThis = AutoRef<LibraryImplLayout>::make () ;
-		fake.mThis->mFile = move (file) ;
-		assert (fake.mThis->mFile.length () > 0) ;
-		fake.mThis->mLibrary = UniqueRef<HMODULE> ([&] (VREF<HMODULE> me) {
+		fake.mFile = move (file) ;
+		assert (fake.mFile.length () > 0) ;
+		fake.mLibrary = UniqueRef<HMODULE> ([&] (VREF<HMODULE> me) {
 			const auto r1x = csc_enum_t (RTLD_NOW | RTLD_LOCAL | RTLD_DEEPBIND | RTLD_NODELETE) ;
 			const auto r2x = csc_enum_t (r1x | RTLD_NOLOAD) ;
-			me = dlopen (fake.mThis->mFile ,r2x) ;
+			me = dlopen (fake.mFile ,r2x) ;
 			if (me != NULL)
 				return ;
-			me = dlopen (fake.mThis->mFile ,r1x) ;
+			me = dlopen (fake.mFile ,r1x) ;
 			if (me != NULL)
 				return ;
-			fake.mThis->mLastError = FLAG (errno) ;
+			fake.mLastError = FLAG (errno) ;
 			assume (FALSE) ;
 		} ,[&] (VREF<HMODULE> me) {
 			noop () ;
@@ -249,16 +247,16 @@ public:
 	}
 
 	String<STR> library_file () const override {
-		return fake.mThis->mFile ;
+		return fake.mFile ;
 	}
 
 	FLAG load (CREF<String<STR>> name) override {
 		assert (name.length () > 0) ;
-		FLAG ret = FLAG (dlsym (fake.mThis->mLibrary ,name)) ;
+		FLAG ret = FLAG (dlsym (fake.mLibrary ,name)) ;
 		if ifdo (TRUE) {
 			if (ret != ZERO)
 				discard ;
-			fake.mThis->mLastError = FLAG (errno) ;
+			fake.mLastError = FLAG (errno) ;
 			assume (FALSE) ;
 		}
 		return move (ret) ;
@@ -276,21 +274,10 @@ public:
 
 static const auto mLibraryExternal = External<LibraryHolder ,LibraryLayout> (LibraryImplHolder ()) ;
 
-struct SingletonLayout {
+struct SingletonRoot {
 	Mutex mMutex ;
 	Pin<Set<Clazz>> mClazzSet ;
 } ;
-
-class SingletonRoot implement Pin<SingletonLayout> {
-public:
-	imports CREF<SingletonRoot> instance () ;
-} ;
-
-exports CREF<SingletonRoot> SingletonRoot::instance () {
-	return memorize ([&] () {
-		return SingletonRoot () ;
-	}) ;
-}
 
 struct SingletonPipe {
 	QUAD mReserve1 ;
@@ -303,28 +290,33 @@ struct SingletonPipe {
 struct SingletonProcImplLayout {
 	FLAG mUid ;
 	String<STR> mName ;
-	UniqueRef<Tuple<HFILE ,String<STR>>> mPipe ;
+	UniqueRef<HANDLE> mMapping ;
 	SingletonPipe mLocal ;
-	Ref<SingletonLayout> mRoot ;
+	Ref<SingletonRoot> mThis ;
 
 public:
 	implicit SingletonProcImplLayout () = default ;
 
 	implicit ~SingletonProcImplLayout () noexcept {
-		if (mRoot == NULL)
+		if (mThis == NULL)
 			return ;
-		mRoot.pin ().~Pin () ;
+		mThis->~SingletonRoot () ;
 	}
 } ;
 
-class SingletonProcImplHolder final implement Fat<SingletonProcHolder ,SingletonProcLayout> {
+class SingletonProcImplHolder final implement Fat<SingletonProcHolder ,SingletonProcImplLayout> {
 public:
 	void initialize () override {
-		fake.mThis = AutoRef<SingletonProcImplLayout>::make () ;
-		fake.mThis->mUid = RuntimeProc::process_uid () ;
-		fake.mThis->mName = String<STR>::make (slice ("/CSC_Singleton_") ,fake.mThis->mUid) ;
-		inline_memset (fake.mThis->mLocal) ;
+		fake.mUid = RuntimeProc::process_uid () ;
+		fake.mName = String<STR>::make (slice ("/CSC_Singleton_") ,fake.mUid) ;
+		inline_memset (fake.mLocal) ;
 		link_pipe () ;
+	}
+
+	static VREF<SingletonRoot> root_ptr (CREF<SingletonProcImplLayout> that) {
+		return memorize ([&] () {
+			return Pin<SingletonRoot> () ;
+		}).self ;
 	}
 
 	void link_pipe () {
@@ -348,46 +340,41 @@ public:
 			}
 		}
 		if ifdo (TRUE) {
-			const auto r1x = FLAG (fake.mThis->mLocal.mAddress1) ;
+			const auto r1x = FLAG (fake.mLocal.mAddress1) ;
 			assume (r1x != ZERO) ;
-			auto &&rax = keep[TYPE<SingletonLayout>::expr] (Pointer::make (r1x)) ;
-			fake.mThis->mRoot = Ref<SingletonLayout>::reference (rax) ;
+			auto &&rax = keep[TYPE<SingletonRoot>::expr] (Pointer::make (r1x)) ;
+			fake.mThis = Ref<SingletonRoot>::reference (rax) ;
 		}
 	}
 
 	void init_pipe () {
-		if (fake.mThis->mPipe.exist ())
+		if (fake.mMapping.exist ())
 			return ;
-		fake.mThis->mPipe = UniqueRef<Tuple<HFILE ,String<STR>>> ([&] (VREF<Tuple<HFILE ,String<STR>>> me) {
+		fake.mMapping = UniqueRef<HANDLE> ([&] (VREF<HANDLE> me) {
 			const auto r1x = csc_enum_t (O_CREAT | O_RDWR | O_EXCL) ;
 			const auto r2x = csc_enum_t (S_IRWXU | S_IRWXG | S_IRWXO) ;
-			me.m1st = shm_open (fake.mThis->mName ,r1x ,r2x) ;
-			assume (me.m1st != NONE) ;
-			me.m2nd = fake.mThis->mName ;
-		} ,[&] (VREF<Tuple<HFILE ,String<STR>>> me) {
-			shm_unlink (me.m2nd) ;
+			const auto r3x = shm_open (fake.mName ,r1x ,r2x) ;
+			assume (r3x != NONE) ;
+			const auto r4x = ftruncate (r3x ,SIZE_OF<SingletonPipe>::expr) ;
+			assume (r4x == 0) ;
+			me = HANDLE (fake.mName.self) ;
+		} ,[&] (VREF<HANDLE> me) {
+			shm_unlink (DEF<const char *> (me)) ;
 		}) ;
-		const auto r3x = UniqueRef<LENGTH> ([&] (VREF<LENGTH> me) {
-			me = ftruncate (fake.mThis->mPipe->m1st ,SIZE_OF<SingletonPipe>::expr) ;
-			assume (me == 0) ;
-		} ,[&] (VREF<LENGTH> me) {
-			noop () ;
-		}) ;
-		const auto r4x = address (SingletonRoot::instance ().self) ;
-		auto &&rax = keep[TYPE<SingletonLayout>::expr] (Pointer::make (r4x)) ;
+		auto &&rax = keep[TYPE<SingletonRoot>::expr] (root_ptr (fake)) ;
 		rax.mMutex = NULL ;
-		fake.mThis->mLocal.mReserve1 = QUAD (fake.mThis->mUid) ;
-		fake.mThis->mLocal.mAddress1 = QUAD (r4x) ;
-		fake.mThis->mLocal.mReserve2 = abi_reserve () ;
-		fake.mThis->mLocal.mAddress2 = QUAD (r4x) ;
-		fake.mThis->mLocal.mReserve3 = ctx_reserve () ;
+		fake.mLocal.mReserve1 = QUAD (fake.mUid) ;
+		fake.mLocal.mAddress1 = QUAD (address (rax)) ;
+		fake.mLocal.mReserve2 = abi_reserve () ;
+		fake.mLocal.mAddress2 = QUAD (address (rax)) ;
+		fake.mLocal.mReserve3 = ctx_reserve () ;
 	}
 
 	void load_pipe () {
-		const auto r1x = UniqueRef<HFILE> ([&] (VREF<HFILE> me) {
-			me = shm_open (fake.mThis->mName ,O_RDONLY ,0) ;
+		const auto r1x = UniqueRef<HFILEPIPE> ([&] (VREF<HFILEPIPE> me) {
+			me = shm_open (fake.mName ,O_RDONLY ,0) ;
 			assume (me != NONE) ;
-		} ,[&] (VREF<HFILE> me) {
+		} ,[&] (VREF<HFILEPIPE> me) {
 			noop () ;
 		}) ;
 		const auto r2x = UniqueRef<HANDLE> ([&] (VREF<HANDLE> me) {
@@ -400,19 +387,19 @@ public:
 		const auto r3x = FLAG (r2x.self) ;
 		auto rax = SingletonPipe () ;
 		inline_memcpy (Pointer::from (rax) ,Pointer::make (r3x) ,SIZE_OF<SingletonPipe>::expr) ;
-		assume (rax.mReserve1 == QUAD (fake.mThis->mUid)) ;
+		assume (rax.mReserve1 == QUAD (fake.mUid)) ;
 		assume (rax.mAddress1 != QUAD (0X00)) ;
 		assume (rax.mAddress1 == rax.mAddress2) ;
 		assume (rax.mReserve2 == abi_reserve ()) ;
 		assume (rax.mReserve3 == ctx_reserve ()) ;
-		fake.mThis->mLocal = rax ;
+		fake.mLocal = rax ;
 	}
 
 	void save_pipe () {
-		const auto r1x = UniqueRef<HFILE> ([&] (VREF<HFILE> me) {
-			me = shm_open (fake.mThis->mName ,O_RDWR ,0) ;
+		const auto r1x = UniqueRef<HFILEPIPE> ([&] (VREF<HFILEPIPE> me) {
+			me = shm_open (fake.mName ,O_RDWR ,0) ;
 			assume (me != NONE) ;
-		} ,[&] (VREF<HFILE> me) {
+		} ,[&] (VREF<HFILEPIPE> me) {
 			noop () ;
 		}) ;
 		const auto r2x = UniqueRef<HANDLE> ([&] (VREF<HANDLE> me) {
@@ -423,8 +410,8 @@ public:
 			munmap (me ,SIZE_OF<SingletonPipe>::expr) ;
 		}) ;
 		const auto r3x = FLAG (r2x.self) ;
-		auto rax = fake.mThis->mLocal ;
-		assume (rax.mReserve1 == QUAD (fake.mThis->mUid)) ;
+		auto rax = fake.mLocal ;
+		assume (rax.mReserve1 == QUAD (fake.mUid)) ;
 		assume (rax.mAddress1 != QUAD (0X00)) ;
 		assume (rax.mAddress1 == rax.mAddress2) ;
 		assume (rax.mReserve2 == abi_reserve ()) ;
@@ -484,24 +471,24 @@ public:
 	}
 
 	FLAG load (CREF<Clazz> clazz) const override {
-		Scope<Mutex> anonymous (fake.mThis->mRoot->mMutex) ;
+		Scope<Mutex> anonymous (fake.mThis->mMutex) ;
 		auto rax = Set<Clazz> () ;
-		fake.mThis->mRoot->mClazzSet.get (rax) ;
+		fake.mThis->mClazzSet.get (rax) ;
 		FLAG ret = rax.map (clazz) ;
-		fake.mThis->mRoot->mClazzSet.set (rax) ;
+		fake.mThis->mClazzSet.set (rax) ;
 		replace (ret ,NONE ,ZERO) ;
 		return move (ret) ;
 	}
 
-	void save (CREF<Clazz> clazz ,CREF<FLAG> pointer) const override {
-		assert (pointer != ZERO) ;
-		assert (pointer != NONE) ;
-		Scope<Mutex> anonymous (fake.mThis->mRoot->mMutex) ;
-		assume (fake.mThis->mPipe.exist ()) ;
+	void save (CREF<Clazz> clazz ,CREF<FLAG> layout) const override {
+		assert (layout != ZERO) ;
+		assert (layout != NONE) ;
+		Scope<Mutex> anonymous (fake.mThis->mMutex) ;
+		assume (fake.mThis.exist ()) ;
 		auto rax = Set<Clazz> () ;
-		fake.mThis->mRoot->mClazzSet.get (rax) ;
-		rax.add (clazz ,pointer) ;
-		fake.mThis->mRoot->mClazzSet.set (rax) ;
+		fake.mThis->mClazzSet.get (rax) ;
+		rax.add (clazz ,layout) ;
+		fake.mThis->mClazzSet.set (rax) ;
 	}
 } ;
 

@@ -18,12 +18,13 @@ static constexpr auto MATH_R = MATH_PI / FLT64 (180) ;
 static constexpr auto MATH_LN2 = FLT64 (0.693147180559945309417) ;
 static constexpr auto MATH_LN10 = FLT64 (2.30258509299404568402) ;
 
-struct MathProcLayout implement ThisLayout<RefLayout> {} ;
+struct MathProcImplLayout ;
+struct MathProcLayout implement OfThis<UniqueRef<MathProcImplLayout>> {} ;
 
 struct MathProcHolder implement Interface {
 	imports CREF<MathProcLayout> instance () ;
-	imports VFat<MathProcHolder> hold (VREF<MathProcLayout> that) ;
-	imports CFat<MathProcHolder> hold (CREF<MathProcLayout> that) ;
+	imports VFat<MathProcHolder> hold (VREF<MathProcImplLayout> that) ;
+	imports CFat<MathProcHolder> hold (CREF<MathProcImplLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual BOOL is_inf (CREF<FLT32> a) const = 0 ;
@@ -105,9 +106,6 @@ struct MathProcHolder implement Interface {
 } ;
 
 class MathProc implement MathProcLayout {
-protected:
-	using MathProcLayout::mThis ;
-
 public:
 	static CREF<MathProc> instance () {
 		return keep[TYPE<MathProc>::expr] (MathProcHolder::instance ()) ;
@@ -292,20 +290,10 @@ struct NormalErrorHolder implement Interface {
 } ;
 
 class NormalError implement NormalErrorLayout {
-protected:
-	using NormalErrorLayout::mCount ;
-	using NormalErrorLayout::mMaxError ;
-	using NormalErrorLayout::mAvgError ;
-	using NormalErrorLayout::mStdError ;
-
 public:
 	implicit NormalError () = default ;
 
-	CREF<NormalErrorLayout> layout () const leftvalue {
-		return thiz ;
-	}
-
-	void concat (CREF<FLT64> error) {
+	void concat (CREF<FLT64> error) { 
 		return NormalErrorHolder::hold (thiz)->concat (error) ;
 	}
 
@@ -323,12 +311,13 @@ struct Notation {
 	VAL64 mExponent ;
 } ;
 
-struct FEXP2CacheLayout implement ThisLayout<RefLayout> {} ;
+struct FEXP2CacheImplLayout ;
+struct FEXP2CacheLayout implement OfThis<UniqueRef<FEXP2CacheImplLayout>> {} ;
 
 struct FEXP2CacheHolder implement Interface {
 	imports CREF<FEXP2CacheLayout> instance () ;
-	imports VFat<FEXP2CacheHolder> hold (VREF<FEXP2CacheLayout> that) ;
-	imports CFat<FEXP2CacheHolder> hold (CREF<FEXP2CacheLayout> that) ;
+	imports VFat<FEXP2CacheHolder> hold (VREF<FEXP2CacheImplLayout> that) ;
+	imports CFat<FEXP2CacheHolder> hold (CREF<FEXP2CacheImplLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual void get (CREF<VAL64> index ,VREF<Notation> item) const = 0 ;
@@ -347,12 +336,13 @@ public:
 	}
 } ;
 
-struct FEXP10CacheLayout implement ThisLayout<RefLayout> {} ;
+struct FEXP10CacheImplLayout ;
+struct FEXP10CacheLayout implement OfThis<UniqueRef<FEXP10CacheImplLayout>> {} ;
 
 struct FEXP10CacheHolder implement Interface {
 	imports CREF<FEXP10CacheLayout> instance () ;
-	imports VFat<FEXP10CacheHolder> hold (VREF<FEXP10CacheLayout> that) ;
-	imports CFat<FEXP10CacheHolder> hold (CREF<FEXP10CacheLayout> that) ;
+	imports VFat<FEXP10CacheHolder> hold (VREF<FEXP10CacheImplLayout> that) ;
+	imports CFat<FEXP10CacheHolder> hold (CREF<FEXP10CacheImplLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual void get (CREF<VAL64> index ,VREF<Notation> item) const = 0 ;
@@ -371,12 +361,13 @@ public:
 	}
 } ;
 
-struct FloatProcLayout implement ThisLayout<RefLayout> {} ;
+struct FloatProcImplLayout ;
+struct FloatProcLayout implement OfThis<UniqueRef<FloatProcImplLayout>> {} ;
 
 struct FloatProcHolder implement Interface {
 	imports CREF<FloatProcLayout> instance () ;
-	imports VFat<FloatProcHolder> hold (VREF<FloatProcLayout> that) ;
-	imports CFat<FloatProcHolder> hold (CREF<FloatProcLayout> that) ;
+	imports VFat<FloatProcHolder> hold (VREF<FloatProcImplLayout> that) ;
+	imports CFat<FloatProcHolder> hold (CREF<FloatProcImplLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual LENGTH value_precision () const = 0 ;
@@ -388,9 +379,6 @@ struct FloatProcHolder implement Interface {
 } ;
 
 class FloatProc implement FloatProcLayout {
-protected:
-	using FloatProcLayout::mThis ;
-
 public:
 	static CREF<FloatProc> instance () {
 		return keep[TYPE<FloatProc>::expr] (FloatProcHolder::instance ()) ;
@@ -421,12 +409,13 @@ public:
 	}
 } ;
 
-struct ByteProcLayout implement ThisLayout<RefLayout> {} ;
+struct ByteProcImplLayout ;
+struct ByteProcLayout implement OfThis<UniqueRef<ByteProcImplLayout>> {} ;
 
 struct ByteProcHolder implement Interface {
 	imports CREF<ByteProcLayout> instance () ;
-	imports VFat<ByteProcHolder> hold (VREF<ByteProcLayout> that) ;
-	imports CFat<ByteProcHolder> hold (CREF<ByteProcLayout> that) ;
+	imports VFat<ByteProcHolder> hold (VREF<ByteProcImplLayout> that) ;
+	imports CFat<ByteProcHolder> hold (CREF<ByteProcImplLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual BYTE split_low (CREF<WORD> a) const = 0 ;
@@ -442,14 +431,14 @@ struct ByteProcHolder implement Interface {
 	virtual WORD reverse (CREF<WORD> a) const = 0 ;
 	virtual CHAR reverse (CREF<CHAR> a) const = 0 ;
 	virtual QUAD reverse (CREF<QUAD> a) const = 0 ;
-	virtual BOOL any_bit (CREF<BYTE> curr ,CREF<BYTE> mask) const = 0 ;
-	virtual BOOL any_bit (CREF<WORD> curr ,CREF<WORD> mask) const = 0 ;
-	virtual BOOL any_bit (CREF<CHAR> curr ,CREF<CHAR> mask) const = 0 ;
-	virtual BOOL any_bit (CREF<QUAD> curr ,CREF<QUAD> mask) const = 0 ;
-	virtual BOOL all_bit (CREF<BYTE> curr ,CREF<BYTE> mask) const = 0 ;
-	virtual BOOL all_bit (CREF<WORD> curr ,CREF<WORD> mask) const = 0 ;
-	virtual BOOL all_bit (CREF<CHAR> curr ,CREF<CHAR> mask) const = 0 ;
-	virtual BOOL all_bit (CREF<QUAD> curr ,CREF<QUAD> mask) const = 0 ;
+	virtual BOOL any_bit (CREF<BYTE> a ,CREF<BYTE> mask) const = 0 ;
+	virtual BOOL any_bit (CREF<WORD> a ,CREF<WORD> mask) const = 0 ;
+	virtual BOOL any_bit (CREF<CHAR> a ,CREF<CHAR> mask) const = 0 ;
+	virtual BOOL any_bit (CREF<QUAD> a ,CREF<QUAD> mask) const = 0 ;
+	virtual BOOL all_bit (CREF<BYTE> a ,CREF<BYTE> mask) const = 0 ;
+	virtual BOOL all_bit (CREF<WORD> a ,CREF<WORD> mask) const = 0 ;
+	virtual BOOL all_bit (CREF<CHAR> a ,CREF<CHAR> mask) const = 0 ;
+	virtual BOOL all_bit (CREF<QUAD> a ,CREF<QUAD> mask) const = 0 ;
 	virtual BYTE binary (CREF<BYTE> a) const = 0 ;
 	virtual WORD binary (CREF<WORD> a) const = 0 ;
 	virtual CHAR binary (CREF<CHAR> a) const = 0 ;
@@ -460,9 +449,6 @@ struct ByteProcHolder implement Interface {
 } ;
 
 class ByteProc implement ByteProcLayout {
-protected:
-	using ByteProcLayout::mThis ;
-
 public:
 	static CREF<ByteProc> instance () {
 		return keep[TYPE<ByteProc>::expr] (ByteProcHolder::instance ()) ;
@@ -510,13 +496,13 @@ public:
 	}
 
 	template <class ARG1 ,class ARG2 ,class = REQUIRE<IS_BYTE<ARG1>>>
-	static BOOL any_bit (CREF<ARG1> curr ,CREF<ARG2> mask) {
-		return ByteProcHolder::hold (instance ())->any_bit (curr ,ARG1 (mask)) ;
+	static BOOL any_bit (CREF<ARG1> a ,CREF<ARG2> mask) {
+		return ByteProcHolder::hold (instance ())->any_bit (a ,ARG1 (mask)) ;
 	}
 
 	template <class ARG1 ,class ARG2 ,class = REQUIRE<IS_BYTE<ARG1>>>
-	static BOOL all_bit (CREF<ARG1> curr ,CREF<ARG2> mask) {
-		return ByteProcHolder::hold (instance ())->all_bit (curr ,ARG1 (mask)) ;
+	static BOOL all_bit (CREF<ARG1> a ,CREF<ARG2> mask) {
+		return ByteProcHolder::hold (instance ())->all_bit (a ,ARG1 (mask)) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<IS_BYTE<ARG1>>>
@@ -558,7 +544,7 @@ struct IntegerHolder implement Interface {
 	virtual void store (CREF<VAL64> item) = 0 ;
 	virtual BOOL equal (CREF<IntegerLayout> that) const = 0 ;
 	virtual FLAG compr (CREF<IntegerLayout> that) const = 0 ;
-	virtual void visit (VREF<VisitorFriend> visitor) const = 0 ;
+	virtual void visit (VREF<VisitorBinder> visitor) const = 0 ;
 	virtual IntegerLayout sadd (CREF<IntegerLayout> that) const = 0 ;
 	virtual IntegerLayout ssub (CREF<IntegerLayout> that) const = 0 ;
 	virtual IntegerLayout smul (CREF<IntegerLayout> that) const = 0 ;
@@ -584,6 +570,12 @@ public:
 		IntegerHolder::hold (thiz)->store (item) ;
 	}
 
+	static CREF<Integer> zero () {
+		return memorize ([&] () {
+			return Integer (0) ;
+		}) ;
+	}
+
 	implicit Integer (CREF<Integer> that) {
 		IntegerHolder::hold (thiz)->initialize (that) ;
 	}
@@ -596,10 +588,8 @@ public:
 
 	forceinline VREF<Integer> operator= (RREF<Integer> that) = default ;
 
-	static CREF<Integer> zero () {
-		return memorize ([&] () {
-			return Integer (0) ;
-		}) ;
+	Integer clone () const {
+		return move (thiz) ;
 	}
 
 	LENGTH size () const {
@@ -650,7 +640,7 @@ public:
 		return compr (that) >= ZERO ;
 	}
 
-	void visit (VREF<VisitorFriend> visitor) const {
+	void visit (VREF<VisitorBinder> visitor) const {
 		return IntegerHolder::hold (thiz)->visit (visitor) ;
 	}
 
@@ -768,22 +758,33 @@ public:
 	}
 } ;
 
-struct JetLayout {
+struct JetNode ;
+using JetEvalFunction = Function<VREF<JetNode> ,CREF<WrapperLayout>> ;
+
+struct JetNode {
 	FLT64 mFX ;
 	FLT64 mEX ;
 	RefBuffer<FLT64> mDX ;
+	INDEX mSlot ;
+	JetEvalFunction mEval ;
+	Ref<JetNode> mFake ;
+	Ref<JetNode> mThat ;
+} ;
+
+struct JetLayout {
+	Ref<JetNode> mThis ;
 } ;
 
 struct JetHolder implement Interface {
 	imports VFat<JetHolder> hold (VREF<JetLayout> that) ;
 	imports CFat<JetHolder> hold (CREF<JetLayout> that) ;
 
-	virtual void initialize (CREF<LENGTH> size_) = 0 ;
+	virtual void initialize (CREF<LENGTH> size_ ,CREF<FLT64> item) = 0 ;
 	virtual void initialize (CREF<LENGTH> size_ ,CREF<FLT64> item ,CREF<INDEX> slot) = 0 ;
-	virtual void initialize (CREF<JetLayout> that) = 0 ;
 	virtual FLT64 fx () const = 0 ;
 	virtual FLT64 ex () const = 0 ;
 	virtual FLT64 dx (CREF<INDEX> slot) const = 0 ;
+	virtual void once (CREF<WrapperLayout> params) const = 0 ;
 	virtual JetLayout sadd (CREF<JetLayout> that) const = 0 ;
 	virtual JetLayout ssub (CREF<JetLayout> that) const = 0 ;
 	virtual JetLayout smul (CREF<JetLayout> that) const = 0 ;
@@ -808,31 +809,18 @@ struct JetHolder implement Interface {
 template <class A>
 class Jet implement JetLayout {
 protected:
-	using JetLayout::mFX ;
-	using JetLayout::mDX ;
+	using JetLayout::mThis ;
 
 public:
 	implicit Jet () = default ;
 
 	implicit Jet (CREF<FLT64> item) {
-		JetHolder::hold (thiz)->initialize (A::expr ,item ,NONE) ;
+		JetHolder::hold (thiz)->initialize (A::expr ,item) ;
 	}
 
-	implicit Jet (CREF<FLT64> item ,CREF<INDEX> slot) {
+	explicit Jet (CREF<FLT64> item ,CREF<INDEX> slot) {
 		JetHolder::hold (thiz)->initialize (A::expr ,item ,slot) ;
 	}
-
-	implicit Jet (CREF<Jet> that) {
-		JetHolder::hold (thiz)->initialize (that) ;
-	}
-
-	forceinline VREF<Jet> operator= (CREF<Jet> that) {
-		return assign (thiz ,that) ;
-	}
-
-	implicit Jet (RREF<Jet> that) = default ;
-
-	forceinline VREF<Jet> operator= (RREF<Jet> that) = default ;
 
 	FLT64 fx () const {
 		return JetHolder::hold (thiz)->fx () ;
@@ -844,6 +832,17 @@ public:
 
 	FLT64 dx (CREF<INDEX> slot) const {
 		return JetHolder::hold (thiz)->dx (slot) ;
+	}
+
+	template <class...ARG1 ,class = REQUIRE<ENUM_ALL<IS_SAME<FLT64 ,ARG1>...>>>
+	void once (CREF<ARG1>...params) const {
+		require (ENUM_EQUAL<RANK_OF<TYPE<ARG1...>> ,A>) ;
+		return JetHolder::hold (thiz)->once (MakeWrapper (params...)) ;
+	}
+
+	template <class...ARG1 ,class = REQUIRE<ENUM_ALL<IS_SAME<FLT64 ,ARG1>...>>>
+	forceinline void operator() (CREF<ARG1>...params) const {
+		return once (params...) ;
 	}
 
 	Jet sadd (CREF<Jet> that) const {
@@ -978,22 +977,23 @@ public:
 	}
 } ;
 
-struct HashProcLayout implement ThisLayout<RefLayout> {} ;
+struct HashProcImplLayout ;
+struct HashProcLayout implement OfThis<UniqueRef<HashProcImplLayout>> {} ;
 
 struct HashProcHolder implement Interface {
 	imports CREF<HashProcLayout> instance () ;
-	imports VFat<HashProcHolder> hold (VREF<HashProcLayout> that) ;
-	imports CFat<HashProcHolder> hold (CREF<HashProcLayout> that) ;
+	imports VFat<HashProcHolder> hold (VREF<HashProcImplLayout> that) ;
+	imports CFat<HashProcHolder> hold (CREF<HashProcImplLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual CHAR fnvhash32 (CREF<Pointer> src ,CREF<LENGTH> size_) const = 0 ;
-	virtual CHAR fnvhash32 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<CHAR> curr) const = 0 ;
+	virtual CHAR fnvhash32 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<CHAR> val) const = 0 ;
 	virtual QUAD fnvhash64 (CREF<Pointer> src ,CREF<LENGTH> size_) const = 0 ;
-	virtual QUAD fnvhash64 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<QUAD> curr) const = 0 ;
+	virtual QUAD fnvhash64 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<QUAD> val) const = 0 ;
 	virtual BYTE crchash8 (CREF<Pointer> src ,CREF<LENGTH> size_) const = 0 ;
-	virtual BYTE crchash8 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<BYTE> curr) const = 0 ;
+	virtual BYTE crchash8 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<BYTE> val) const = 0 ;
 	virtual WORD crchash16 (CREF<Pointer> src ,CREF<LENGTH> size_) const = 0 ;
-	virtual WORD crchash16 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<WORD> curr) const = 0 ;
+	virtual WORD crchash16 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<WORD> val) const = 0 ;
 } ;
 
 class HashProc implement HashProcLayout {
@@ -1006,32 +1006,32 @@ public:
 		return HashProcHolder::hold (instance ())->fnvhash32 (src ,size_) ;
 	}
 
-	static CHAR fnvhash32 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<CHAR> curr) {
-		return HashProcHolder::hold (instance ())->fnvhash32 (src ,size_ ,curr) ;
+	static CHAR fnvhash32 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<CHAR> val) {
+		return HashProcHolder::hold (instance ())->fnvhash32 (src ,size_ ,val) ;
 	}
 
 	static QUAD fnvhash64 (CREF<Pointer> src ,CREF<LENGTH> size_) {
 		return HashProcHolder::hold (instance ())->fnvhash64 (src ,size_) ;
 	}
 
-	static QUAD fnvhash64 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<QUAD> curr) {
-		return HashProcHolder::hold (instance ())->fnvhash64 (src ,size_ ,curr) ;
+	static QUAD fnvhash64 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<QUAD> val) {
+		return HashProcHolder::hold (instance ())->fnvhash64 (src ,size_ ,val) ;
 	}
 
 	static BYTE crchash8 (CREF<Pointer> src ,CREF<LENGTH> size_) {
 		return HashProcHolder::hold (instance ())->crchash8 (src ,size_) ;
 	}
 
-	static BYTE crchash8 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<BYTE> curr) {
-		return HashProcHolder::hold (instance ())->crchash8 (src ,size_ ,curr) ;
+	static BYTE crchash8 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<BYTE> val) {
+		return HashProcHolder::hold (instance ())->crchash8 (src ,size_ ,val) ;
 	}
 
 	static WORD crchash16 (CREF<Pointer> src ,CREF<LENGTH> size_) {
 		return HashProcHolder::hold (instance ())->crchash16 (src ,size_) ;
 	}
 
-	static WORD crchash16 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<WORD> curr) {
-		return HashProcHolder::hold (instance ())->crchash16 (src ,size_ ,curr) ;
+	static WORD crchash16 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<WORD> val) {
+		return HashProcHolder::hold (instance ())->crchash16 (src ,size_ ,val) ;
 	}
 } ;
 } ;

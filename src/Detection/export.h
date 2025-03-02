@@ -3,7 +3,7 @@
 namespace CSC3DCV {
 struct FeatureImplLayout ;
 
-struct FeatureLayout implement ThisLayout<AutoRef<FeatureImplLayout>> {} ;
+struct FeatureLayout implement OfThis<AutoRef<FeatureImplLayout>> {} ;
 
 struct FeatureHolder implement Interface {
 	imports VFat<FeatureHolder> hold (VREF<FeatureLayout> that) ;

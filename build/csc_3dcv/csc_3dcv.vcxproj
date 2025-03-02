@@ -100,8 +100,10 @@
     <ClInclude Include="..\..\src\Meshing\export.h" />
     <ClInclude Include="..\..\src\Registration\export.h" />
     <ClInclude Include="..\..\src\Rendering\export.h" />
-    <ClInclude Include="..\..\src\System\export.h" />
     <ClInclude Include="..\..\src\util.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\dependencies\CSC\include\cpp.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

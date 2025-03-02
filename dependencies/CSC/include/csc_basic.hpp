@@ -46,151 +46,6 @@ public:
 	}
 } ;
 
-struct KeyNodeLayout {
-	FLAG mHandle ;
-
-public:
-	implicit KeyNodeLayout () noexcept {
-		mHandle = ZERO ;
-	}
-
-	implicit ~KeyNodeLayout () noexcept ;
-
-	implicit KeyNodeLayout (CREF<KeyNodeLayout> that) = delete ;
-
-	forceinline VREF<KeyNodeLayout> operator= (CREF<KeyNodeLayout> that) = delete ;
-
-	implicit KeyNodeLayout (RREF<KeyNodeLayout> that) noexcept :KeyNodeLayout () {
-		swap (thiz ,that) ;
-	}
-
-	forceinline VREF<KeyNodeLayout> operator= (RREF<KeyNodeLayout> that) noexcept {
-		return assign (thiz ,that) ;
-	}
-} ;
-
-struct KeyNodeHolder implement Interface {
-	imports VFat<KeyNodeHolder> hold (VREF<KeyNodeLayout> that) ;
-	imports CFat<KeyNodeHolder> hold (CREF<KeyNodeLayout> that) ;
-
-	virtual void initialize () = 0 ;
-	virtual void initialize (CREF<Unknown> holder ,CREF<FLAG> pointer) = 0 ;
-	virtual void destroy () = 0 ;
-	virtual FLAG key_uid () const = 0 ;
-	virtual FLAG spwan () const = 0 ;
-	virtual FLAG spwan (CREF<Unknown> holder ,CREF<FLAG> uid) const = 0 ;
-} ;
-
-inline KeyNodeLayout::~KeyNodeLayout () noexcept {
-	KeyNodeHolder::hold (thiz)->destroy () ;
-}
-
-template <class A>
-struct KeyUid {
-	FLAG mUid ;
-} ;
-
-class KeyRoot implement KeyNodeLayout {
-public:
-	implicit KeyRoot () = default ;
-
-	implicit KeyRoot (CREF<typeof (NULL)>) {
-		KeyNodeHolder::hold (thiz)->initialize () ;
-	}
-} ;
-
-template <class A>
-class KeyNode implement KeyNodeLayout {
-protected:
-	using KeyNodeLayout::mHandle ;
-
-public:
-	implicit KeyNode () noexcept {
-		const auto r1x = address (keep[TYPE<A>::expr] (thiz)) ;
-		KeyNodeHolder::hold (thiz)->initialize (RefUnknownBinder<A> () ,r1x) ;
-	}
-
-	KeyUid<A> key_uid () const {
-		const auto r1x = KeyNodeHolder::hold (thiz)->key_uid () ;
-		return KeyUid<A> (r1x) ;
-	}
-} ;
-
-struct KeyLayout {
-	FLAG mPointer ;
-
-public:
-	implicit KeyLayout () noexcept {
-		mPointer = ZERO ;
-	}
-} ;
-
-template <class A>
-class Key implement KeyLayout {
-public:
-	using Id = KeyUid<A> ;
-
-protected:
-	using KeyLayout::mPointer ;
-
-public:
-	implicit Key () = default ;
-
-	implicit Key (VREF<KeyNode<A>> node) {
-		mPointer = KeyNodeHolder::hold (node)->spwan () ;
-	}
-
-	template <class ARG1 = A>
-	explicit Key (VREF<KeyNodeLayout> node ,CREF<KeyUid<A>> uid) {
-		mPointer = KeyNodeHolder::hold (node)->spwan (RefUnknownBinder<KILL<A ,ARG1>> () ,uid.mUid) ;
-	}
-
-	BOOL equal (CREF<Key> that) const {
-		return inline_equal (mPointer ,that.mPointer) ;
-	}
-
-	forceinline BOOL operator== (CREF<Key> that) const {
-		return equal (that) ;
-	}
-
-	forceinline BOOL operator!= (CREF<Key> that) const {
-		return (!equal (that)) ;
-	}
-
-	FLAG compr (CREF<Key> that) const {
-		return inline_compr (mPointer ,that.mPointer) ;
-	}
-
-	forceinline BOOL operator< (CREF<Key> that) const {
-		return compr (that) < ZERO ;
-	}
-
-	forceinline BOOL operator<= (CREF<Key> that) const {
-		return compr (that) <= ZERO ;
-	}
-
-	forceinline BOOL operator> (CREF<Key> that) const {
-		return compr (that) > ZERO ;
-	}
-
-	forceinline BOOL operator>= (CREF<Key> that) const {
-		return compr (that) >= ZERO ;
-	}
-
-	void visit (VREF<VisitorFriend> visitor) const {
-		return inline_visit (visitor ,mPointer) ;
-	}
-
-	VREF<A> self_m () const leftvalue {
-		assert (mPointer != ZERO) ;
-		return Pointer::make (mPointer) ;
-	}
-
-	forceinline PTR<VREF<A>> operator-> () const leftvalue {
-		return (&self) ;
-	}
-} ;
-
 struct OptionalLayout {
 	FLAG mCode ;
 	Pin<BoxLayout> mValue ;
@@ -463,14 +318,15 @@ public:
 
 struct FunctionImplLayout ;
 
-struct FunctionLayout implement ThisLayout<Ref<FunctionImplLayout>> {} ;
+struct FunctionLayout {
+	Ref<FunctionImplLayout> mThis ;
+} ;
 
 struct FunctionHolder implement Interface {
 	imports VFat<FunctionHolder> hold (VREF<FunctionLayout> that) ;
 	imports CFat<FunctionHolder> hold (CREF<FunctionLayout> that) ;
 
 	virtual void initialize (RREF<BoxLayout> item ,CREF<Unknown> holder) = 0 ;
-	virtual void initialize (CREF<FunctionLayout> that) = 0 ;
 	virtual LENGTH rank () const = 0 ;
 	virtual void invoke (CREF<WrapperLayout> params) const = 0 ;
 } ;
@@ -507,18 +363,6 @@ public:
 		FunctionHolder::hold (thiz)->initialize (move (rax) ,FunctionUnknownBinder<ARG1> ()) ;
 	}
 
-	implicit Function (CREF<Function> that) {
-		FunctionHolder::hold (thiz)->initialize (that) ;
-	}
-
-	forceinline VREF<Function> operator= (CREF<Function> that) {
-		return assign (thiz ,that) ;
-	}
-
-	implicit Function (RREF<Function> that) = default ;
-
-	forceinline VREF<Function> operator= (RREF<Function> that) = default ;
-
 	LENGTH rank () const {
 		return FunctionHolder::hold (thiz)->rank () ;
 	}
@@ -533,7 +377,7 @@ public:
 } ;
 
 struct ReflectRecast implement Interface {
-	virtual FLAG recast (CREF<FLAG> pointer) const = 0 ;
+	virtual FLAG recast (CREF<FLAG> layout) const = 0 ;
 
 	forceinline static consteval FLAG expr_m () noexcept {
 		return 201 ;
@@ -543,8 +387,8 @@ struct ReflectRecast implement Interface {
 template <class A ,class B>
 class ReflectRecastBinder implement ReflectRecast {
 public:
-	FLAG recast (CREF<FLAG> pointer) const override {
-		auto &&rax = keep[TYPE<B>::expr] (Pointer::make (pointer)) ;
+	FLAG recast (CREF<FLAG> layout) const override {
+		auto &&rax = keep[TYPE<B>::expr] (Pointer::make (layout)) ;
 		return recast_impl (PHX ,TYPE<A>::expr ,rax) ;
 	}
 
@@ -568,11 +412,11 @@ struct AutoRefImplLayout ;
 
 struct AutoRefLayout {
 	Ref<AutoRefImplLayout> mThis ;
-	FLAG mPointer ;
+	FLAG mLayout ;
 
 public:
 	implicit AutoRefLayout () noexcept {
-		mPointer = ZERO ;
+		mLayout = ZERO ;
 	}
 
 	implicit ~AutoRefLayout () noexcept ;
@@ -616,7 +460,7 @@ template <class A>
 class AutoRef implement AutoRefLayout {
 protected:
 	using AutoRefLayout::mThis ;
-	using AutoRefLayout::mPointer ;
+	using AutoRefLayout::mLayout ;
 
 public:
 	implicit AutoRef () = default ;
@@ -703,11 +547,11 @@ struct SharedRefImplLayout ;
 
 struct SharedRefLayout {
 	Ref<SharedRefImplLayout> mThis ;
-	FLAG mPointer ;
+	FLAG mLayout ;
 
 public:
 	implicit SharedRefLayout () noexcept {
-		mPointer = ZERO ;
+		mLayout = ZERO ;
 	}
 
 	implicit ~SharedRefLayout () noexcept ;
@@ -731,7 +575,7 @@ struct SharedRefHolder implement Interface {
 
 	virtual void initialize (RREF<BoxLayout> item) = 0 ;
 	virtual void initialize (CREF<SharedRefLayout> that) = 0 ;
-	virtual void initialize (CREF<Unknown> holder ,CREF<FLAG> pointer) = 0 ;
+	virtual void initialize (CREF<Unknown> holder ,CREF<FLAG> layout) = 0 ;
 	virtual void destroy () = 0 ;
 	virtual BOOL exist () const = 0 ;
 	virtual VREF<BoxLayout> raw () leftvalue = 0 ;
@@ -749,7 +593,7 @@ template <class A>
 class SharedRef implement SharedRefLayout {
 protected:
 	using SharedRefLayout::mThis ;
-	using SharedRefLayout::mPointer ;
+	using SharedRefLayout::mLayout ;
 
 public:
 	implicit SharedRef () = default ;
@@ -827,11 +671,11 @@ struct UniqueRefImplLayout ;
 
 struct UniqueRefLayout {
 	Ref<UniqueRefImplLayout> mThis ;
-	FLAG mPointer ;
+	FLAG mLayout ;
 
 public:
 	implicit UniqueRefLayout () noexcept {
-		mPointer = ZERO ;
+		mLayout = ZERO ;
 	}
 
 	implicit ~UniqueRefLayout () noexcept ;
@@ -855,7 +699,7 @@ struct UniqueRefHolder implement Interface {
 
 	virtual void initialize (RREF<BoxLayout> item) = 0 ;
 	virtual void destroy () = 0 ;
-	virtual void use_owner (CREF<FunctionLayout> owner) = 0 ;
+	virtual void use_owner (CREF<Function<VREF<Pointer>>> owner) = 0 ;
 	virtual BOOL exist () const = 0 ;
 	virtual VREF<BoxLayout> raw () leftvalue = 0 ;
 	virtual CREF<BoxLayout> raw () const leftvalue = 0 ;
@@ -872,7 +716,7 @@ template <class A>
 class UniqueRef implement UniqueRefLayout {
 protected:
 	using UniqueRefLayout::mThis ;
-	using UniqueRefLayout::mPointer ;
+	using UniqueRefLayout::mLayout ;
 
 public:
 	implicit UniqueRef () = default ;
@@ -886,7 +730,7 @@ public:
 		auto rbx = Function<VREF<A>> (move (dtor)) ;
 		UniqueRefHolder::hold (thiz)->initialize (move (rax)) ;
 		ctor (BoxHolder::hold (raw ())->self) ;
-		UniqueRefHolder::hold (thiz)->use_owner (rbx) ;
+		UniqueRefHolder::hold (thiz)->use_owner (Pointer::from (rbx)) ;
 	}
 
 	template <class...ARG1>
@@ -1128,9 +972,9 @@ public:
 } ;
 
 struct FarBufferLayout {
+	Ref<Pointer> mThis ;
 	Function<CREF<INDEX> ,VREF<Pointer>> mGetter ;
 	Function<CREF<INDEX> ,CREF<Pointer>> mSetter ;
-	Ref<Pointer> mThis ;
 	LENGTH mSize ;
 	LENGTH mStep ;
 	INDEX mIndex ;
@@ -1143,8 +987,8 @@ struct FarBufferHolder implement Interface {
 	virtual void initialize (CREF<Unknown> holder ,CREF<LENGTH> size_) = 0 ;
 	virtual BOOL exist () const = 0 ;
 	virtual Unknown unknown () const = 0 ;
-	virtual void use_getter (CREF<FunctionLayout> getter) = 0 ;
-	virtual void use_setter (CREF<FunctionLayout> setter) = 0 ;
+	virtual void use_getter (CREF<Function<CREF<INDEX> ,VREF<Pointer>>> getter) = 0 ;
+	virtual void use_setter (CREF<Function<CREF<INDEX> ,CREF<Pointer>>> setter) = 0 ;
 	virtual LENGTH size () const = 0 ;
 	virtual LENGTH step () const = 0 ;
 	virtual VREF<Pointer> at (CREF<INDEX> index) leftvalue = 0 ;
@@ -1162,9 +1006,9 @@ public:
 template <class A>
 class FarBuffer implement FarBufferRealLayout<A> {
 protected:
+	using FarBufferRealLayout<A>::mThis ;
 	using FarBufferRealLayout<A>::mGetter ;
 	using FarBufferRealLayout<A>::mSetter ;
-	using FarBufferRealLayout<A>::mThis ;
 	using FarBufferRealLayout<A>::mSize ;
 	using FarBufferRealLayout<A>::mStep ;
 	using FarBufferRealLayout<A>::mIndex ;
@@ -1177,11 +1021,11 @@ public:
 	}
 
 	void use_getter (CREF<Function<CREF<INDEX> ,VREF<A>>> getter) {
-		return FarBufferHolder::hold (thiz)->use_getter (getter) ;
+		return FarBufferHolder::hold (thiz)->use_getter (Pointer::from (getter)) ;
 	}
 
 	void use_setter (CREF<Function<CREF<INDEX> ,CREF<A>>> setter) {
-		return FarBufferHolder::hold (thiz)->use_setter (setter) ;
+		return FarBufferHolder::hold (thiz)->use_setter (Pointer::from (setter)) ;
 	}
 
 	BOOL exist () const {
@@ -1314,6 +1158,7 @@ private:
 
 protected:
 	using AllocatorRealLayout<A ,B>::mAllocator ;
+	using AllocatorRealLayout<A ,B>::mOffset ;
 	using AllocatorRealLayout<A ,B>::mWidth ;
 	using AllocatorRealLayout<A ,B>::mLength ;
 	using AllocatorRealLayout<A ,B>::mFree ;
