@@ -16,6 +16,7 @@ public:
 		fake.mThis->mDataPath = Path (dire) ;
 		const auto r1x = FileProc::lock_dire (fake.mThis->mDataPath) ;
 		assume (r1x) ;
+		Global<Path> (slice ("mDataPath")).store (copy (fake.mThis->mDataPath)) ;
 	}
 } ;
 

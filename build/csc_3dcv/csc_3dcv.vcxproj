@@ -91,6 +91,7 @@
     <ClCompile Include="..\..\src\Meshing\Polyfit.cpp" />
     <ClCompile Include="..\..\src\Registration\GaussionSplatting.cpp" />
     <ClCompile Include="..\..\src\Rendering\Display.cpp" />
+    <ClCompile Include="..\..\src\test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\Calibration\export.h" />

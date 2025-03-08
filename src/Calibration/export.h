@@ -68,14 +68,16 @@ public:
 } ;
 
 struct CameraFrameLayout {
-	INDEX mFPose ;
-	INDEX mFView ;
-	INDEX mFTime ;
+	INDEX mPose1 ;
+	INDEX mView1 ;
+	INDEX mTime1 ;
 	String<STR> mImageFile ;
+	Image<Color3B> mImage ;
+	Image<FLT32> mDepth ;
+	Array<FLT32> mKeypoint ;
 	BOOL mUndistortion ;
 	Array<Point2F> mOriginPoint ;
 	Array<Point2F> mUndistPoint ;
-	Image<FLT32> mDepth ;
 } ;
 
 struct CameraFrameHolder implement Interface {
@@ -95,7 +97,7 @@ public:
 } ;
 
 struct CameraBlockLayout {
-	INDEX mFPose ;
+	INDEX mTime1 ;
 	Set<INDEX> mUseFrame ;
 	Array<Point3F> mPoint ;
 	Array<FLT32> mRadius ;
