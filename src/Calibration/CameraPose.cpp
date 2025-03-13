@@ -3,9 +3,7 @@
 namespace CSC3DCV {
 class CameraPoseImplHolder final implement Fat<CameraPoseHolder ,CameraPoseLayout> {
 public:
-	void initialize () override {
 
-	}
 } ;
 
 exports VFat<CameraPoseHolder> CameraPoseHolder::hold (VREF<CameraPoseLayout> that) {

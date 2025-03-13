@@ -9,10 +9,10 @@
 #include <opencv2/opencv.hpp>
 #include <csc_begin.h>
 
-using namespace SOLUTION ;
+using namespace CSC3DCV ;
 
 inline Image<FLT32> convert_to_flt32_image (CREF<Image<BYTE>> image) {
-	Image<FLT32> ret = Image<FLT32> (image.width ()) ;
+	Image<FLT32> ret = Image<FLT32> (image.shape ()) ;
 	ret.fill (infinity) ;
 	for (auto &&i : image.range ()) {
 		const auto r2x = image[i] ;
@@ -26,7 +26,7 @@ inline Image<FLT32> convert_to_flt32_image (CREF<Image<BYTE>> image) {
 }
 
 inline Image<FLT32> convert_to_flt32_image (CREF<Image<Color3B>> image) {
-	Image<FLT32> ret = Image<FLT32> (image.width ()) ;
+	Image<FLT32> ret = Image<FLT32> (image.shape ()) ;
 	ret.fill (infinity) ;
 	const auto r1x = MathProc::inverse (FLT32 (3)) ;
 	for (auto &&i : image.range ()) {
@@ -92,7 +92,7 @@ inline void save_sphere_ply () {
 	const auto GAP = slice ("\n") ;
 	mWriter.self << slice ("ply") << GAP ;
 	mWriter.self << slice ("format binary_little_endian 1.0") << GAP ;
-	const auto r7x = r3x.width ().size () ;
+	const auto r7x = r3x.shape ().size () ;
 	mWriter.self << slice ("element vertex ") << StringBuild<STRU8>::make (r7x) << GAP ;
 	mWriter.self << slice ("property float x") << GAP ;
 	mWriter.self << slice ("property float y") << GAP ;
@@ -116,19 +116,4 @@ inline void save_sphere_ply () {
 		mWriter.self << r3x[i].mB ;
 	}
 	mWriter.flush () ;
-}
-
-int main () {
-	Singleton<Console>::instance ().open (slice (".")) ;
-	Singleton<Console>::instance ().show () ;
-	Singleton<Console>::instance ().debug (slice ("library_file = ") ,RuntimeProc::library_file ()) ;
-	ConfigProc::set_data_dire (slice (".")) ;
-	ConfigProc::set_cxx_signal () ;
-
-	save_final_ply () ;
-	save_sphere_ply () ;
-
-
-	GlobalProc::shutdown () ;
-	return 0 ;
 }

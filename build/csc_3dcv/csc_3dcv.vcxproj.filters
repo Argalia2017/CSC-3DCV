@@ -3,22 +3,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\inl.cpp" />
-    <ClCompile Include="..\..\src\Calibration\Calibration.cpp">
-      <Filter>Calibration</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\Calibration\CameraBlock.cpp">
-      <Filter>Calibration</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\Calibration\CameraOptimizer.cpp">
-      <Filter>Calibration</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\Calibration\CameraPose.cpp">
-      <Filter>Calibration</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\Calibration\CameraView.cpp">
-      <Filter>Calibration</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\Common\Config.cpp">
+    <ClCompile Include="..\..\src\Common\ConfigProc.cpp">
       <Filter>Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\Detection\Board.cpp">
@@ -30,15 +15,6 @@
     <ClCompile Include="..\..\src\Detection\Phase.cpp">
       <Filter>Detection</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\Meshing\Delaunay.cpp">
-      <Filter>Meshing</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\Meshing\MarchingCube.cpp">
-      <Filter>Meshing</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\Meshing\Polyfit.cpp">
-      <Filter>Meshing</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\Rendering\Display.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
@@ -49,20 +25,50 @@
       <Filter>Estimation</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\test.cpp" />
+    <ClCompile Include="..\..\src\Calibration\Calibration.cpp">
+      <Filter>Calibration</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Calibration\CameraBlock.cpp">
+      <Filter>Calibration</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Calibration\CameraPose.cpp">
+      <Filter>Calibration</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Calibration\CameraView.cpp">
+      <Filter>Calibration</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Mapping\MarchingCube.cpp">
+      <Filter>Mapping</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Mapping\Polyfit.cpp">
+      <Filter>Mapping</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Common\ToolProc.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Calibration\CameraFrame.cpp">
+      <Filter>Calibration</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Detection\Aruco.cpp">
+      <Filter>Detection</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Rendering\Windows.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Mapping\VoxelMatrix.cpp">
+      <Filter>Mapping</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Esimation\LinearSolver.cpp">
+      <Filter>Estimation</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\util.h" />
-    <ClInclude Include="..\..\src\Calibration\export.h">
-      <Filter>Calibration</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\Common\export.h">
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\Detection\export.h">
       <Filter>Detection</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\Meshing\export.h">
-      <Filter>Meshing</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\Rendering\export.h">
       <Filter>Rendering</Filter>
@@ -73,11 +79,14 @@
     <ClInclude Include="..\..\src\Esimation\export.h">
       <Filter>Estimation</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\Calibration\export.h">
+      <Filter>Calibration</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Mapping\export.h">
+      <Filter>Mapping</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Calibration">
-      <UniqueIdentifier>{debce96d-abb6-48ae-863b-17be77cd760e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Common">
       <UniqueIdentifier>{a4c1fc1d-52c8-4ae2-84da-f029407d9788}</UniqueIdentifier>
     </Filter>
@@ -87,14 +96,17 @@
     <Filter Include="Estimation">
       <UniqueIdentifier>{3c0722a6-5fe8-4080-b38a-d49edd22b112}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Meshing">
-      <UniqueIdentifier>{7e210b6e-c793-49db-8e94-81a6a2ee6530}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Registration">
       <UniqueIdentifier>{862c3fd2-495e-4ca4-9f9e-81309de65f46}</UniqueIdentifier>
     </Filter>
     <Filter Include="Rendering">
       <UniqueIdentifier>{2c7fd247-5b21-4f4c-a157-75897b0950ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Mapping">
+      <UniqueIdentifier>{7e210b6e-c793-49db-8e94-81a6a2ee6530}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Calibration">
+      <UniqueIdentifier>{debce96d-abb6-48ae-863b-17be77cd760e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

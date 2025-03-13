@@ -38,7 +38,7 @@ public:
 	}
 
 	void initialize (CREF<ImageLayout> that) override {
-		const auto r1x = ImageHolder::hold (that)->width () ;
+		const auto r1x = ImageHolder::hold (that)->shape () ;
 		if (r1x.size () == 0)
 			return ;
 		initialize (that.mImage.unknown () ,r1x.mCX ,r1x.mCY ,r1x.mStep) ;
@@ -97,8 +97,10 @@ public:
 		return fake.mCY ;
 	}
 
-	ImageWidth width () const override {
-		ImageWidth ret ;
+	ImageShape shape () const override {
+		ImageShape ret ;
+		ret.mBX = bx () ;
+		ret.mBY = by () ;
 		ret.mCX = cx () ;
 		ret.mCY = cy () ;
 		ret.mStep = step () ;

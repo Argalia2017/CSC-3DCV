@@ -90,6 +90,8 @@ protected:
 public:
 	implicit Optional () = default ;
 
+	implicit Optional (CREF<A> that) :Optional (move (that)) {}
+
 	implicit Optional (RREF<A> that) {
 		auto rax = Box<A>::make (move (that)) ;
 		OptionalHolder::hold (thiz)->initialize (move (rax)) ;
@@ -117,6 +119,10 @@ public:
 
 	forceinline operator A () const {
 		return fetch () ;
+	}
+
+	void once (CREF<A> item) const {
+		once (move (item)) ;
 	}
 
 	void once (RREF<A> item) const {

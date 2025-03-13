@@ -5,17 +5,9 @@
 #include "Calibration/export.h"
 #include "Rendering/export.h"
 #include "Registration/export.h"
-#include "Meshing/export.h"
+#include "Mapping/export.h"
 
 using namespace CSC3DCV ;
-
-inline String<STR> format_time (CREF<Time> time) {
-	const auto r1x = time.milliseconds () ;
-	const auto r2x = r1x / 60000 ;
-	const auto r3x = r1x % 60000 / 1000 ;
-	const auto r4x = AlignedText (r1x % 1000 ,3) ;
-	return String<STR>::make (r2x ,slice ("m") ,r3x ,slice (".") ,r4x ,slice ("s")) ;
-}
 
 exports int main (int argc ,DEF<char **> argv) {
 	const auto r1x = Singleton<Console>::instance () ;
@@ -30,9 +22,12 @@ exports int main (int argc ,DEF<char **> argv) {
 		r1x.trace () ;
 		ConfigProc::set_data_dire (r2x) ;
 		const auto r3x = CurrentTime () ;
-		RuntimeProc::thread_sleep (Time (1000)) ;
+		if ifdo (TRUE) {
+			auto rax = Calibration (NULL) ;
+			rax.execute () ;
+		}
 		const auto r4x = CurrentTime () ;
-		const auto r5x = format_time (r4x - r3x) ;
+		const auto r5x = ToolProc::format_time (r4x - r3x) ;
 		r1x.trace () ;
 		r1x.info (slice ("all done")) ;
 		r1x.warn (slice ("time_cost = ") ,r5x) ;

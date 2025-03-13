@@ -36,7 +36,6 @@ protected:
 	XREF<A> mThat ;
 	INDEX mBegin ;
 	INDEX mEnd ;
-	INDEX mPeek ;
 
 public:
 	implicit ArrayIterator () = delete ;
@@ -44,7 +43,6 @@ public:
 	explicit ArrayIterator (XREF<A> that) :mThat (that) {
 		mBegin = mThat.ibegin () ;
 		mEnd = mThat.iend () ;
-		mPeek = mBegin ;
 	}
 
 	LENGTH length () const {
@@ -60,7 +58,7 @@ public:
 	}
 
 	BOOL good () const {
-		return mPeek != mEnd ;
+		return mBegin != mEnd ;
 	}
 
 	forceinline BOOL operator== (CREF<ArrayIterator>) const {
@@ -72,7 +70,7 @@ public:
 	}
 
 	XREF<ITEM> peek () const leftvalue {
-		return mThat.at (mPeek) ;
+		return mThat.at (mBegin) ;
 	}
 
 	forceinline XREF<ITEM> operator* () const leftvalue {
@@ -80,7 +78,7 @@ public:
 	}
 
 	void next () {
-		mPeek = mThat.inext (mPeek) ;
+		mBegin = mThat.inext (mBegin) ;
 	}
 
 	forceinline void operator++ () {
@@ -1182,7 +1180,7 @@ public:
 	}
 
 	void push (CREF<A> item) {
-		move (move (item)) ;
+		push (move (item)) ;
 	}
 
 	void push (RREF<A> item) {

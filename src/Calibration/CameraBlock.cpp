@@ -3,10 +3,6 @@
 namespace CSC3DCV {
 class CameraBlockImplHolder final implement Fat<CameraBlockHolder ,CameraBlockLayout> {
 public:
-	void initialize () override {
-
-	}
-
 
 } ;
 

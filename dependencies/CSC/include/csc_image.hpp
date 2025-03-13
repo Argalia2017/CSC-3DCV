@@ -65,7 +65,26 @@ public:
 	}
 } ;
 
-struct ImageWidth {
+struct ImageShapeLayout {
+	LENGTH mBX ;
+	LENGTH mBY ;
+	LENGTH mCX ;
+	LENGTH mCY ;
+	LENGTH mStep ;
+
+public:
+	implicit ImageShapeLayout () noexcept {
+		mBX = 0 ;
+		mBY = 0 ;
+		mCX = 0 ;
+		mCY = 0 ;
+		mStep = 0 ;
+	}
+} ;
+
+struct ImageShape {
+	LENGTH mBX ;
+	LENGTH mBY ;
 	LENGTH mCX ;
 	LENGTH mCY ;
 	LENGTH mStep ;
@@ -75,7 +94,11 @@ public:
 		return mCX * mCY ;
 	}
 
-	BOOL equal (CREF<ImageWidth> that) const {
+	BOOL equal (CREF<ImageShape> that) const {
+		if (mBX != that.mBX)
+			return FALSE ;
+		if (mBY != that.mBY)
+			return FALSE ;
 		if (mCX != that.mCX)
 			return FALSE ;
 		if (mCY != that.mCY)
@@ -83,11 +106,11 @@ public:
 		return TRUE ;
 	}
 
-	forceinline BOOL operator== (CREF<ImageWidth> that) const {
+	forceinline BOOL operator== (CREF<ImageShape> that) const {
 		return equal (that) ;
 	}
 
-	forceinline BOOL operator!= (CREF<ImageWidth> that) const {
+	forceinline BOOL operator!= (CREF<ImageShape> that) const {
 		return (!equal (that)) ;
 	}
 } ;
@@ -118,7 +141,7 @@ struct ImageHolder implement Interface {
 	virtual LENGTH by () const = 0 ;
 	virtual LENGTH cx () const = 0 ;
 	virtual LENGTH cy () const = 0 ;
-	virtual ImageWidth width () const = 0 ;
+	virtual ImageShape shape () const = 0 ;
 	virtual void reset () = 0 ;
 	virtual void reset (CREF<LENGTH> bx_ ,CREF<LENGTH> by_ ,CREF<LENGTH> cx_ ,CREF<LENGTH> cy_) = 0 ;
 	virtual VREF<BoxLayout> raw () leftvalue = 0 ;
@@ -158,8 +181,8 @@ public:
 		ImageHolder::hold (thiz)->initialize (BufferUnknownBinder<A> () ,move (that)) ;
 	}
 
-	explicit Image (CREF<ImageWidth> size_) {
-		ImageHolder::hold (thiz)->initialize (BufferUnknownBinder<A> () ,size_.mCX ,size_.mCY ,SIZE_OF<A>::expr) ;
+	explicit Image (CREF<ImageShape> shape) {
+		ImageHolder::hold (thiz)->initialize (BufferUnknownBinder<A> () ,shape.mCX ,shape.mCY ,SIZE_OF<A>::expr) ;
 	}
 
 	explicit Image (CREF<LENGTH> cx_ ,CREF<LENGTH> cy_) {
@@ -218,12 +241,16 @@ public:
 		return ImageHolder::hold (thiz)->cy () ;
 	}
 
-	ImageWidth width () const {
-		return ImageHolder::hold (thiz)->width () ;
+	ImageShape shape () const {
+		return ImageHolder::hold (thiz)->shape () ;
 	}
 
 	void reset () {
 		return ImageHolder::hold (thiz)->reset () ;
+	}
+
+	void reset (CREF<ImageShape> shape) {
+		return ImageHolder::hold (thiz)->reset (shape.mBX ,shape.mBY ,shape.mCX ,shape.mCY) ;
 	}
 
 	void reset (CREF<LENGTH> bx_ ,CREF<LENGTH> by_ ,CREF<LENGTH> cx_ ,CREF<LENGTH> cy_) {
@@ -285,123 +312,6 @@ public:
 	void splice (CREF<Pixel> index ,CREF<Image> item) {
 		return splice (index.mX ,index.mY ,item) ;
 	}
-
-	Image sadd (CREF<Image> that) const {
-		const auto r1x = width () ;
-		const auto r2x = that.width () ;
-		assert (r1x == r2x) ;
-		Image ret = Image (r1x.mCX ,r1x.mCY) ;
-		for (auto &&i : iter (0 ,r1x.mCX ,0 ,r1x.mCY)) {
-			ret[i] = thiz[i] + that[i] ;
-		}
-		return move (ret) ;
-	}
-
-	forceinline Image operator+ (CREF<Image> that) const {
-		return sadd (that) ;
-	}
-
-	forceinline void operator+= (CREF<Image> that) {
-		thiz = sadd (that) ;
-	}
-
-	Image ssub (CREF<Image> that) const {
-		const auto r1x = width () ;
-		const auto r2x = that.width () ;
-		assert (r1x == r2x) ;
-		Image ret = Image (r1x.mCX ,r1x.mCY) ;
-		for (auto &&i : iter (0 ,r1x.mCX ,0 ,r1x.mCY)) {
-			ret[i] = thiz[i] - that[i] ;
-		}
-		return move (ret) ;
-	}
-
-	forceinline Image operator- (CREF<Image> that) const {
-		return ssub (that) ;
-	}
-
-	forceinline void operator-= (CREF<Image> that) {
-		thiz = ssub (that) ;
-	}
-
-	Image smul (CREF<Image> that) const {
-		const auto r1x = width () ;
-		const auto r2x = that.width () ;
-		assert (r1x == r2x) ;
-		Image ret = Image (r1x.mCX ,r1x.mCY) ;
-		for (auto &&i : iter (0 ,r1x.mCX ,0 ,r1x.mCY)) {
-			ret[i] = thiz[i] * that[i] ;
-		}
-		return move (ret) ;
-	}
-
-	forceinline Image operator* (CREF<Image> that) const {
-		return smul (that) ;
-	}
-
-	forceinline void operator*= (CREF<Image> that) {
-		thiz = smul (that) ;
-	}
-
-	Image sdiv (CREF<Image> that) const {
-		const auto r1x = width () ;
-		const auto r2x = that.width () ;
-		assert (r1x == r2x) ;
-		Image ret = Image (r1x.mCX ,r1x.mCY) ;
-		for (auto &&i : iter (0 ,r1x.mCX ,0 ,r1x.mCY)) {
-			ret[i] = thiz[i] / that[i] ;
-		}
-		return move (ret) ;
-	}
-
-	forceinline Image operator/ (CREF<Image> that) const {
-		return sdiv (that) ;
-	}
-
-	forceinline void operator/= (CREF<Image> that) {
-		thiz = sdiv (that) ;
-	}
-
-	Image smod (CREF<Image> that) const {
-		const auto r1x = width () ;
-		const auto r2x = that.width () ;
-		assert (r1x == r2x) ;
-		Image ret = Image (r1x.mCX ,r1x.mCY) ;
-		for (auto &&i : iter (0 ,r1x.mCX ,0 ,r1x.mCY)) {
-			ret[i] = thiz[i] % that[i] ;
-		}
-		return move (ret) ;
-	}
-
-	forceinline Image operator% (CREF<Image> that) const {
-		return smod (that) ;
-	}
-
-	forceinline void operator%= (CREF<Image> that) {
-		thiz = smod (that) ;
-	}
-
-	Image sabs () const {
-		const auto r1x = width () ;
-		Image ret = Image (r1x.mCX ,r1x.mCY) ;
-		for (auto &&i : iter (0 ,r1x.mCX ,0 ,r1x.mCY)) {
-			ret[i] = MathProc::abs (thiz[i]) ;
-		}
-		return move (ret) ;
-	}
-
-	Image minus () const {
-		const auto r1x = width () ;
-		Image ret = Image (r1x.mCX ,r1x.mCY) ;
-		for (auto &&i : iter (0 ,r1x.mCX ,0 ,r1x.mCY)) {
-			ret[i] = -thiz[i] ;
-		}
-		return move (ret) ;
-	}
-
-	forceinline Image operator- () const {
-		return minus () ;
-	}
 } ;
 
 struct ImageProcImplLayout ;
@@ -414,8 +324,8 @@ struct ImageProcHolder implement Interface {
 
 	virtual void initialize () = 0 ;
 	virtual ImageLayout make_image (RREF<BoxLayout> image) const = 0 ;
-	virtual ImageLayout make_image (CREF<ImageWidth> width) const = 0 ;
-	virtual ImageLayout make_image (CREF<ImageWidth> width ,CREF<Clazz> clazz ,CREF<LENGTH> channel) const = 0 ;
+	virtual ImageLayout make_image (CREF<ImageShape> shape) const = 0 ;
+	virtual ImageLayout make_image (CREF<ImageShape> shape ,CREF<Clazz> clazz ,CREF<LENGTH> channel) const = 0 ;
 	virtual VREF<Pointer> peek_image (VREF<ImageLayout> image) const = 0 ;
 	virtual CREF<Pointer> peek_image (CREF<ImageLayout> image) const = 0 ;
 	virtual ImageLayout load_image (CREF<String<STR>> file) const = 0 ;
@@ -438,12 +348,12 @@ public:
 		return ImageProcHolder::hold (instance ())->make_image (move (image)) ;
 	}
 
-	static ImageLayout make_image (CREF<ImageWidth> width) {
-		return ImageProcHolder::hold (instance ())->make_image (width) ;
+	static ImageLayout make_image (CREF<ImageShape> shape) {
+		return ImageProcHolder::hold (instance ())->make_image (shape) ;
 	}
 
-	static ImageLayout make_image (CREF<ImageWidth> width ,CREF<Clazz> clazz ,CREF<LENGTH> channel) {
-		return ImageProcHolder::hold (instance ())->make_image (width ,clazz ,channel) ;
+	static ImageLayout make_image (CREF<ImageShape> shape ,CREF<Clazz> clazz ,CREF<LENGTH> channel) {
+		return ImageProcHolder::hold (instance ())->make_image (shape ,clazz ,channel) ;
 	}
 
 	template <class A>
@@ -588,6 +498,92 @@ public:
 
 	Ref<RefBuffer<BYTE>> borrow () const leftvalue {
 		return TensorHolder::hold (thiz)->borrow () ;
+	}
+
+	Tensor sadd (CREF<Tensor> that) const {
+		Tensor ret ;
+		unimplemented () ;
+		return move (ret) ;
+	}
+
+	forceinline Tensor operator+ (CREF<Tensor> that) const {
+		return sadd (that) ;
+	}
+
+	forceinline void operator+= (CREF<Tensor> that) {
+		thiz = sadd (that) ;
+	}
+
+	Tensor ssub (CREF<Tensor> that) const {
+		Tensor ret ;
+		unimplemented () ;
+		return move (ret) ;
+	}
+
+	forceinline Tensor operator- (CREF<Tensor> that) const {
+		return ssub (that) ;
+	}
+
+	forceinline void operator-= (CREF<Tensor> that) {
+		thiz = ssub (that) ;
+	}
+
+	Tensor smul (CREF<Tensor> that) const {
+		Tensor ret ;
+		unimplemented () ;
+		return move (ret) ;
+	}
+
+	forceinline Tensor operator* (CREF<Tensor> that) const {
+		return smul (that) ;
+	}
+
+	forceinline void operator*= (CREF<Tensor> that) {
+		thiz = smul (that) ;
+	}
+
+	Tensor sdiv (CREF<Tensor> that) const {
+		Tensor ret ;
+		unimplemented () ;
+		return move (ret) ;
+	}
+
+	forceinline Tensor operator/ (CREF<Tensor> that) const {
+		return sdiv (that) ;
+	}
+
+	forceinline void operator/= (CREF<Tensor> that) {
+		thiz = sdiv (that) ;
+	}
+
+	Tensor smod (CREF<Tensor> that) const {
+		Tensor ret ;
+		unimplemented () ;
+		return move (ret) ;
+	}
+
+	forceinline Tensor operator% (CREF<Tensor> that) const {
+		return smod (that) ;
+	}
+
+	forceinline void operator%= (CREF<Tensor> that) {
+		thiz = smod (that) ;
+	}
+
+	Tensor sabs () const {
+		Tensor ret ;
+		unimplemented () ;
+		return move (ret) ;
+	}
+
+	Tensor minus () const {
+		Tensor ret ;
+		unimplemented () ;
+		return move (ret) ;
+	}
+
+	forceinline Tensor operator- () const {
+		return minus () ;
 	}
 } ;
 

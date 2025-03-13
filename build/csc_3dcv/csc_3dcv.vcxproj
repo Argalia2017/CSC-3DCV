@@ -76,21 +76,25 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\Calibration\Calibration.cpp" />
     <ClCompile Include="..\..\src\Calibration\CameraBlock.cpp" />
-    <ClCompile Include="..\..\src\Calibration\CameraOptimizer.cpp" />
+    <ClCompile Include="..\..\src\Calibration\CameraFrame.cpp" />
     <ClCompile Include="..\..\src\Calibration\CameraPose.cpp" />
     <ClCompile Include="..\..\src\Calibration\CameraView.cpp" />
-    <ClCompile Include="..\..\src\Common\Config.cpp" />
+    <ClCompile Include="..\..\src\Common\ConfigProc.cpp" />
+    <ClCompile Include="..\..\src\Common\ToolProc.cpp" />
+    <ClCompile Include="..\..\src\Detection\Aruco.cpp" />
     <ClCompile Include="..\..\src\Detection\Board.cpp" />
     <ClCompile Include="..\..\src\Detection\Feature.cpp" />
     <ClCompile Include="..\..\src\Detection\Phase.cpp" />
     <ClCompile Include="..\..\src\Esimation\DepthEstimation.cpp" />
+    <ClCompile Include="..\..\src\Esimation\LinearSolver.cpp" />
     <ClCompile Include="..\..\src\inl.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
-    <ClCompile Include="..\..\src\Meshing\Delaunay.cpp" />
-    <ClCompile Include="..\..\src\Meshing\MarchingCube.cpp" />
-    <ClCompile Include="..\..\src\Meshing\Polyfit.cpp" />
+    <ClCompile Include="..\..\src\Mapping\MarchingCube.cpp" />
+    <ClCompile Include="..\..\src\Mapping\Polyfit.cpp" />
+    <ClCompile Include="..\..\src\Mapping\VoxelMatrix.cpp" />
     <ClCompile Include="..\..\src\Registration\GaussionSplatting.cpp" />
     <ClCompile Include="..\..\src\Rendering\Display.cpp" />
+    <ClCompile Include="..\..\src\Rendering\Windows.cpp" />
     <ClCompile Include="..\..\src\test.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -98,7 +102,7 @@
     <ClInclude Include="..\..\src\Common\export.h" />
     <ClInclude Include="..\..\src\Detection\export.h" />
     <ClInclude Include="..\..\src\Esimation\export.h" />
-    <ClInclude Include="..\..\src\Meshing\export.h" />
+    <ClInclude Include="..\..\src\Mapping\export.h" />
     <ClInclude Include="..\..\src\Registration\export.h" />
     <ClInclude Include="..\..\src\Rendering\export.h" />
     <ClInclude Include="..\..\src\util.h" />

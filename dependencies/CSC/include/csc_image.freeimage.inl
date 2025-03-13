@@ -73,11 +73,11 @@ public:
 		return move (ret) ;
 	}
 
-	ImageLayout make_image (CREF<ImageWidth> width) const override {
+	ImageLayout make_image (CREF<ImageShape> shape) const override {
 		auto rax = Box<UniqueRef<HFIBITMAP>>::make () ;
-		const auto r1x = width.mStep * 8 ;
+		const auto r1x = shape.mStep * 8 ;
 		rax.self = UniqueRef<HFIBITMAP> ([&] (VREF<HFIBITMAP> me) {
-			me = FreeImage_Allocate (VAL32 (width.mCX) ,VAL32 (width.mCY) ,VAL32 (r1x)) ;
+			me = FreeImage_Allocate (VAL32 (shape.mCX) ,VAL32 (shape.mCY) ,VAL32 (r1x)) ;
 			assume (me != NULL) ;
 		} ,[&] (VREF<HFIBITMAP> me) {
 			FreeImage_Unload (me) ;
@@ -85,12 +85,12 @@ public:
 		return make_image (move (rax)) ;
 	}
 
-	ImageLayout make_image (CREF<ImageWidth> width ,CREF<Clazz> clazz ,CREF<LENGTH> channel) const override {
+	ImageLayout make_image (CREF<ImageShape> shape ,CREF<Clazz> clazz ,CREF<LENGTH> channel) const override {
 		auto rax = Box<UniqueRef<HFIBITMAP>>::make () ;
 		const auto r1x = fibitmap_type_of_clazz (clazz) ;
 		const auto r2x = align_of_fibitmap_type (r1x) * channel * 8 ;
 		rax.self = UniqueRef<HFIBITMAP> ([&] (VREF<HFIBITMAP> me) {
-			me = FreeImage_AllocateT (r1x ,VAL32 (width.mCX) ,VAL32 (width.mCY) ,VAL32 (r2x)) ;
+			me = FreeImage_AllocateT (r1x ,VAL32 (shape.mCX) ,VAL32 (shape.mCY) ,VAL32 (r2x)) ;
 			assume (me != NULL) ;
 		} ,[&] (VREF<HFIBITMAP> me) {
 			FreeImage_Unload (me) ;

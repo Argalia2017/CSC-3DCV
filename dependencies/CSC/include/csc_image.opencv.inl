@@ -50,19 +50,19 @@ public:
 		return move (ret) ;
 	}
 
-	ImageLayout make_image (CREF<ImageWidth> width) const override {
+	ImageLayout make_image (CREF<ImageShape> shape) const override {
 		auto rax = Box<Pin<cv::Mat>>::make () ;
-		const auto r1x = CV_MAKE_TYPE (CV_8U ,VAL32 (width.mStep)) ;
-		auto rbx = cv::Mat (cv::Size (VAL32 (width.mCX) ,VAL32 (width.mCY)) ,r1x) ;
+		const auto r1x = CV_MAKE_TYPE (CV_8U ,VAL32 (shape.mStep)) ;
+		auto rbx = cv::Mat (cv::Size (VAL32 (shape.mCX) ,VAL32 (shape.mCY)) ,r1x) ;
 		rax->set (rbx) ;
 		return make_image (move (rax)) ;
 	}
 
-	ImageLayout make_image (CREF<ImageWidth> width ,CREF<Clazz> clazz ,CREF<LENGTH> channel) const override {
+	ImageLayout make_image (CREF<ImageShape> shape ,CREF<Clazz> clazz ,CREF<LENGTH> channel) const override {
 		auto rax = Box<Pin<cv::Mat>>::make () ;
 		const auto r1x = cvmat_depth_of_clazz (clazz) ;
 		const auto r2x = CV_MAKE_TYPE (VAL32 (r1x) ,VAL32 (channel)) ;
-		auto rbx = cv::Mat (cv::Size (VAL32 (width.mCX) ,VAL32 (width.mCY)) ,r2x) ;
+		auto rbx = cv::Mat (cv::Size (VAL32 (shape.mCX) ,VAL32 (shape.mCY)) ,r2x) ;
 		rax->set (rbx) ;
 		return make_image (move (rax)) ;
 	}

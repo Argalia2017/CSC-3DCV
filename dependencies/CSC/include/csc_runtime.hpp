@@ -812,6 +812,10 @@ public:
 		return fetch () ;
 	}
 
+	void store (CREF<A> item) const {
+		store (move (item)) ;
+	}
+
 	void store (RREF<A> item) const {
 		auto rax = AutoRef<A>::make (move (item)) ;
 		return GlobalHolder::hold (thiz)->store (move (rax)) ;

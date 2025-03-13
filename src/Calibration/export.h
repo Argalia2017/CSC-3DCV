@@ -5,7 +5,7 @@ struct CameraViewLayout {
 	String<STR> mName ;
 	String<STR> mGroup ;
 	Set<INDEX> mUsePose ;
-	ImageWidth mWidth ;
+	ImageShape mShape ;
 	DuplexMatrix mMatK ;
 	BOOL mConstMatK ;
 	Array<FLT64> mDist ;
@@ -22,17 +22,11 @@ struct CameraViewLayout {
 struct CameraViewHolder implement Interface {
 	imports VFat<CameraViewHolder> hold (VREF<CameraViewLayout> that) ;
 	imports CFat<CameraViewHolder> hold (CREF<CameraViewLayout> that) ;
-
-	virtual void initialize () = 0 ;
 } ;
 
 class CameraView implement CameraViewLayout {
 public:
 	implicit CameraView () = default ;
-
-	explicit CameraView (CREF<typeof (NULL)>) {
-		CameraViewHolder::hold (thiz)->initialize () ;
-	}
 } ;
 
 struct CameraPoseLayout {
@@ -40,8 +34,8 @@ struct CameraPoseLayout {
 	String<STR> mGroup ;
 	Color3B mColor ;
 	Set<INDEX> mUseView ;
-	INDEX mLFrame ;
-	INDEX mRFrame ;
+	INDEX mFrame1 ;
+	INDEX mFrame2 ;
 	DuplexMatrix mMatV ;
 	BOOL mUsingMatV ;
 	FLT64 mWeight ;
@@ -54,17 +48,11 @@ struct CameraPoseLayout {
 struct CameraPoseHolder implement Interface {
 	imports VFat<CameraPoseHolder> hold (VREF<CameraPoseLayout> that) ;
 	imports CFat<CameraPoseHolder> hold (CREF<CameraPoseLayout> that) ;
-
-	virtual void initialize () = 0 ;
 } ;
 
 class CameraPose implement CameraPoseLayout {
 public:
 	implicit CameraPose () = default ;
-
-	explicit CameraPose (CREF<typeof (NULL)>) {
-		CameraPoseHolder::hold (thiz)->initialize () ;
-	}
 } ;
 
 struct CameraFrameLayout {
@@ -83,17 +71,11 @@ struct CameraFrameLayout {
 struct CameraFrameHolder implement Interface {
 	imports VFat<CameraFrameHolder> hold (VREF<CameraFrameLayout> that) ;
 	imports CFat<CameraFrameHolder> hold (CREF<CameraFrameLayout> that) ;
-
-	virtual void initialize () = 0 ;
 } ;
 
 class CameraFrame implement CameraFrameLayout {
 public:
 	implicit CameraFrame () = default ;
-
-	explicit CameraFrame (CREF<typeof (NULL)>) {
-		CameraFrameHolder::hold (thiz)->initialize () ;
-	}
 } ;
 
 struct CameraBlockLayout {
@@ -107,37 +89,11 @@ struct CameraBlockLayout {
 struct CameraBlockHolder implement Interface {
 	imports VFat<CameraBlockHolder> hold (VREF<CameraBlockLayout> that) ;
 	imports CFat<CameraBlockHolder> hold (CREF<CameraBlockLayout> that) ;
-
-	virtual void initialize () = 0 ;
 } ;
 
 class CameraBlock implement CameraBlockLayout {
 public:
 	implicit CameraBlock () = default ;
-
-	explicit CameraBlock (CREF<typeof (NULL)>) {
-		CameraBlockHolder::hold (thiz)->initialize () ;
-	}
-} ;
-
-struct CameraOptimizerImplLayout ;
-
-struct CameraOptimizerLayout implement OfThis<AutoRef<CameraOptimizerImplLayout>> {} ;
-
-struct CameraOptimizerHolder implement Interface {
-	imports VFat<CameraOptimizerHolder> hold (VREF<CameraOptimizerLayout> that) ;
-	imports CFat<CameraOptimizerHolder> hold (CREF<CameraOptimizerLayout> that) ;
-
-	virtual void initialize () = 0 ;
-} ;
-
-class CameraOptimizer implement CameraOptimizerLayout {
-public:
-	implicit CameraOptimizer () = default ;
-
-	explicit CameraOptimizer (CREF<typeof (NULL)>) {
-		CameraOptimizerHolder::hold (thiz)->initialize () ;
-	}
 } ;
 
 struct CalibrationImplLayout ;
