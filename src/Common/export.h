@@ -2,7 +2,6 @@
 
 namespace CSC3DCV {
 struct ToolProcImplLayout ;
-
 struct ToolProcLayout implement OfThis<SharedRef<ToolProcImplLayout>> {} ;
 
 struct ToolProcHolder implement Interface {
@@ -36,7 +35,6 @@ public:
 } ;
 
 struct ConfigProcImplLayout ;
-
 struct ConfigProcLayout implement OfThis<SharedRef<ConfigProcImplLayout>> {} ;
 
 struct ConfigProcHolder implement Interface {

@@ -1,6 +1,11 @@
 ﻿#include "../util.h"
 
 namespace CSC3DCV {
+class CameraView ;
+class CameraPose ;
+class CameraFrame ;
+class CameraBlock ;
+
 struct CameraViewLayout {
 	String<STR> mName ;
 	String<STR> mGroup ;
@@ -22,11 +27,17 @@ struct CameraViewLayout {
 struct CameraViewHolder implement Interface {
 	imports VFat<CameraViewHolder> hold (VREF<CameraViewLayout> that) ;
 	imports CFat<CameraViewHolder> hold (CREF<CameraViewLayout> that) ;
+
+	virtual void sfm_view_mat_k (CREF<CameraFrame> frame1 ,CREF<CameraFrame> frame2) = 0 ;
 } ;
 
 class CameraView implement CameraViewLayout {
 public:
 	implicit CameraView () = default ;
+
+	void sfm_view_mat_k (CREF<CameraFrame> frame1 ,CREF<CameraFrame> frame2) {
+		return CameraViewHolder::hold (thiz)->sfm_view_mat_k (frame1 ,frame2) ;
+	}
 } ;
 
 struct CameraPoseLayout {
@@ -97,10 +108,10 @@ public:
 } ;
 
 struct CalibrationImplLayout ;
-
 struct CalibrationLayout implement OfThis<AutoRef<CalibrationImplLayout>> {} ;
 
 struct CalibrationHolder implement Interface {
+	imports CalibrationLayout create () ;
 	imports VFat<CalibrationHolder> hold (VREF<CalibrationLayout> that) ;
 	imports CFat<CalibrationHolder> hold (CREF<CalibrationLayout> that) ;
 
@@ -113,6 +124,7 @@ public:
 	implicit Calibration () = default ;
 
 	explicit Calibration (CREF<typeof (NULL)>) {
+		mThis = CalibrationHolder::create () ;
 		CalibrationHolder::hold (thiz)->initialize () ;
 	}
 

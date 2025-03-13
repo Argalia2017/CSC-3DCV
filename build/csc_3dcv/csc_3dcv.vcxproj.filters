@@ -58,7 +58,7 @@
     <ClCompile Include="..\..\src\Mapping\VoxelMatrix.cpp">
       <Filter>Mapping</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\Esimation\LinearSolver.cpp">
+    <ClCompile Include="..\..\src\Esimation\Solver.cpp">
       <Filter>Estimation</Filter>
     </ClCompile>
   </ItemGroup>

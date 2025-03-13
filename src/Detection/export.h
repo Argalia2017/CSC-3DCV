@@ -4,14 +4,14 @@ namespace CSC3DCV {
 struct BoardType {
 	enum {
 		CHESS ,
+		CHESS_INV ,
 		CIRCLE ,
-		LINE ,
+		CIRCLE_INV ,
 		ETC
 	} ;
 } ;
 
 struct BoardImplLayout ;
-
 struct BoardLayout implement OfThis<AutoRef<BoardImplLayout>> {} ;
 
 struct BoardHolder implement Interface {
@@ -21,7 +21,9 @@ struct BoardHolder implement Interface {
 	virtual void initialize () = 0 ;
 	virtual void set_board_width (CREF<ImageShape> shape) = 0 ;
 	virtual void set_board_type (CREF<Just<BoardType>> type) = 0 ;
-	virtual Array<Point2F> detect (CREF<Image<Color3B>> image) = 0 ;
+	virtual void set_board_baseline (CREF<FLT64> baseline_x ,CREF<FLT64> baseline_y) = 0 ;
+	virtual Array<Point3F> extract () const = 0 ;
+	virtual Optional<Array<Point2F>> detect (CREF<Image<Color3B>> image) = 0 ;
 } ;
 
 class Board implement BoardLayout {
@@ -40,13 +42,20 @@ public:
 		return BoardHolder::hold (thiz)->set_board_type (type) ;
 	}
 
-	Array<Point2F> detect (CREF<Image<Color3B>> image) {
+	void set_board_baseline (CREF<FLT64> baseline_x ,CREF<FLT64> baseline_y) {
+		return BoardHolder::hold (thiz)->set_board_baseline (baseline_x ,baseline_y) ;
+	}
+
+	Array<Point3F> extract () const {
+		return BoardHolder::hold (thiz)->extract () ;
+	}
+
+	Optional<Array<Point2F>> detect (CREF<Image<Color3B>> image) {
 		return BoardHolder::hold (thiz)->detect (image) ;
 	}
 } ;
 
 struct FeatureImplLayout ;
-
 struct FeatureLayout implement OfThis<AutoRef<FeatureImplLayout>> {} ;
 
 struct FeatureHolder implement Interface {

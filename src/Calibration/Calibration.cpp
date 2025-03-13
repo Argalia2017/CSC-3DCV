@@ -27,21 +27,26 @@ public:
 		fake.mRandom = CurrentRandom () ;
 		fake.mWorkThread = WorkThread (NULL) ;
 		fake.mBoard = Board (NULL) ;
-		fake.mBoard.set_board_width (ImageShape (0 ,0 ,0 ,0 ,0)) ;
+		fake.mBoard.set_board_width (ImageShape (0 ,0 ,15 ,5 ,0)) ;
 		fake.mBoard.set_board_type (BoardType::CIRCLE) ;
+		fake.mBoard.set_board_baseline (37.6 ,37.6) ;
 	}
 
 	void execute () override {
 		load_data_json () ;
-		work_frame_detection () ;
+		work_board_detection () ;
 		work_sfm_view_mat_k () ;
 		work_sfm_view_mat_v () ;
 		work_sfm_pose_mat_v () ;
 		work_bundle_adjustment () ;
+		work_undistortion () ;
 		save_data_json () ;
 	}
 
 	void load_data_json () {
+		fake.mView = ArrayList<CameraView> () ;
+		fake.mPose = ArrayList<CameraPose> () ;
+		fake.mFrame = ArrayList<CameraFrame> () ;
 		const auto r1x = fake.mDataPath.child (slice ("data.json")) ;
 		auto act = TRUE ;
 		if ifdo (act) {
@@ -50,6 +55,8 @@ public:
 			const auto r2x = JsonParser (FileProc::load_file (r1x)) ;
 			load_data_json_view (r2x) ;
 			load_data_json_pose (r2x) ;
+			fake.mView.remap () ;
+			fake.mPose.remap () ;
 		}
 		if ifdo (act) {
 			const auto r3x = fake.mDataPath.child (slice ("image")).list () ;
@@ -68,32 +75,35 @@ public:
 				fake.mPose[ix].mUseView.add (iy) ;
 				fake.mView[iy].mUsePose.add (ix) ;
 			}
+			fake.mView.remap () ;
+			fake.mPose.remap () ;
 		}
-		const auto r8x = Array<INDEX>::make (fake.mViewNameSet.range ()) ;
-		assume (r8x.length () >= 2) ;
-		fake.mFrame1View = r8x[0] ;
-		fake.mFrame2View = r8x[1] ;
-		for (auto &&i : fake.mPose.range ()) {
-			for (auto &&j : fake.mPose[i].mUseView) {
-				INDEX ix = insert_new_frame (i ,j) ;
-				if ifdo (TRUE) {
-					if (j != fake.mFrame1View)
-						discard ;
-					fake.mPose[i].mFrame1 = ix ;
-				}
-				if ifdo (TRUE) {
-					if (j != fake.mFrame2View)
-						discard ;
-					fake.mPose[i].mFrame2 = ix ;
+		if ifdo (TRUE) {
+			const auto r8x = Array<INDEX>::make (fake.mViewNameSet.range ()) ;
+			assume (r8x.length () >= 2) ;
+			fake.mFrame1View = r8x[0] ;
+			fake.mFrame2View = r8x[1] ;
+			for (auto &&i : fake.mPose.range ()) {
+				for (auto &&j : fake.mPose[i].mUseView) {
+					INDEX ix = insert_new_frame (i ,j) ;
+					if ifdo (TRUE) {
+						if (j != fake.mFrame1View)
+							discard ;
+						fake.mPose[i].mFrame1 = ix ;
+					}
+					if ifdo (TRUE) {
+						if (j != fake.mFrame2View)
+							discard ;
+						fake.mPose[i].mFrame2 = ix ;
+					}
 				}
 			}
+			fake.mFrame.remap () ;
 		}
-		fake.mFrame.remap () ;
 	}
 
 	void load_data_json_view (CREF<JsonParser> parser) {
 		const auto r1x = parser.child (slice ("mView")).list () ;
-		fake.mView = ArrayList<CameraView> (r1x.length ()) ;
 		for (auto &&i : fake.mView.range ()) {
 			fake.mView[i].mName = r1x[i].child (slice ("mName")).parse (String<STR> ()) ;
 			fake.mView[i].mGroup = r1x[i].child (slice ("mGroup")).parse (String<STR> ()) ;
@@ -109,12 +119,10 @@ public:
 			fake.mView[i].mBaseLine = r1x[i].child (slice ("mBaseLine")).parse (FLT64 (0)) ;
 			fake.mView[i].mRelative = r1x[i].child (slice ("mRelative")).parse (FLT64 (0)) ;
 		}
-		fake.mView.remap () ;
 	}
 
 	void load_data_json_pose (CREF<JsonParser> parser) {
 		const auto r1x = parser.child (slice ("mPose")).list () ;
-		fake.mPose = ArrayList<CameraPose> (r1x.length ()) ;
 		for (auto &&i : fake.mPose.range ()) {
 			fake.mPose[i].mName = r1x[i].child (slice ("mName")).parse (String<STR> ()) ;
 			fake.mPose[i].mGroup = r1x[i].child (slice ("mGroup")).parse (String<STR> ()) ;
@@ -135,7 +143,6 @@ public:
 			fake.mPose[i].mError.mAvgError = r5x.child (1).parse (FLT64 (0)) ;
 			fake.mPose[i].mError.mStdError = r5x.child (2).parse (FLT64 (0)) ;
 		}
-		fake.mPose.remap () ;
 	}
 
 	INDEX insert_new_view (CREF<String<STR>> name ,CREF<String<STR>> group) {
@@ -198,17 +205,59 @@ public:
 		return move (ret) ;
 	}
 
-	void work_frame_detection () {
-
+	void work_board_detection () {
+		Singleton<Console>::instance ().info () ;
+		Singleton<Console>::instance ().info (slice ("work_board_detection")) ;
+		if ifdo (TRUE) {
+			fake.mBlock = ArrayList<CameraBlock> () ;
+			INDEX ix = fake.mBlock.insert () ;
+			fake.mBlock[ix].mTime1 = ix ;
+			for (auto &&i : fake.mFrame.range ()) {
+				fake.mBlock[ix].mUseFrame.add (i) ;
+			}
+			fake.mBlock[ix].mPoint = fake.mBoard.extract () ;
+			fake.mBlock.remap () ;
+		}
+		for (auto &&i : fake.mFrame.range ()) {
+			fake.mFrame[i].mImage = ImageProc::load_image (fake.mFrame[i].mImageFile) ;
+			fake.mFrame[i].mOriginPoint = fake.mBoard.detect (fake.mFrame[i].mImage) ;
+			fake.mFrame[i].mImage = Image<Color3B> () ;
+		}
 	}
 
-	void work_sfm_view_mat_k () {}
+	void work_sfm_view_mat_k () {
+		Singleton<Console>::instance ().info () ;
+		Singleton<Console>::instance ().info (slice ("work_sfm_view_mat_k")) ;
+		for (auto &&i : fake.mView.range ()) {
+			const auto r1x = Array<INDEX>::make (fake.mView[i].mUsePose) ;
+			assume (r1x.length () >= 2) ;
+			INDEX ix = fake.mFramePixelSet.map (Pixel ({r1x[0] ,i})) ;
+			INDEX iy = fake.mFramePixelSet.map (Pixel ({r1x[1] ,i})) ;
+			assume (ix != NONE) ;
+			assume (iy != NONE) ;
+			fake.mView[i].sfm_view_mat_k (fake.mFrame[ix] ,fake.mFrame[iy]) ;
+		}
+	}
 
-	void work_sfm_view_mat_v () {}
+	void work_sfm_view_mat_v () {
+		Singleton<Console>::instance ().info () ;
+		Singleton<Console>::instance ().info (slice ("work_sfm_view_mat_v")) ;
+	}
 
-	void work_sfm_pose_mat_v () {}
+	void work_sfm_pose_mat_v () {
+		Singleton<Console>::instance ().info () ;
+		Singleton<Console>::instance ().info (slice ("work_sfm_pose_mat_v")) ;
+	}
 
-	void work_bundle_adjustment () {}
+	void work_bundle_adjustment () {
+		Singleton<Console>::instance ().info () ;
+		Singleton<Console>::instance ().info (slice ("work_bundle_adjustment")) ;
+	}
+
+	void work_undistortion () {
+		Singleton<Console>::instance ().info () ;
+		Singleton<Console>::instance ().info (slice ("work_undistortion")) ;
+	}
 
 	void save_data_json () {
 		const auto r1x = fake.mDataPath.child (slice ("data.json")) ;
