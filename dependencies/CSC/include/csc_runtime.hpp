@@ -464,6 +464,8 @@ public:
 	}
 
 	void stop () {
+		if (!mThis.exist ())
+			return ;
 		return ThreadHolder::hold (thiz)->stop () ;
 	}
 } ;

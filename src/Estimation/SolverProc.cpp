@@ -29,6 +29,7 @@ public:
 exports CREF<OfThis<SharedRef<SolverProcLayout>>> SolverProcHolder::instance () {
 	return memorize ([&] () {
 		OfThis<SharedRef<SolverProcLayout>> ret ;
+		ret.mThis = SharedRef<SolverProcLayout>::make () ;
 		SolverProcHolder::hold (ret)->initialize () ;
 		return move (ret) ;
 	}) ;

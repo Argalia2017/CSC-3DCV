@@ -24,7 +24,7 @@
 
   <Type Name="CSC::Fat&lt;*&gt;">
     <Expand HideRawView="true">
-      <Item Name="[deref]" Condition="mLayout!=0">($T2*)mLayout</Item>
+      <Item Name="[self]" Condition="mLayout!=0">($T2*)mLayout</Item>
       <ExpandedItem>($T2*)mLayout</ExpandedItem>
     </Expand>
   </Type>

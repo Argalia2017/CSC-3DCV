@@ -3,7 +3,9 @@
 namespace CSC3DCV {
 class CameraPoseImplHolder final implement Fat<CameraPoseHolder ,CameraPoseLayout> {
 public:
+	void sfm_pose_mat_v (CREF<ModelFrame> frame1) override {
 
+	}
 } ;
 
 exports VFat<CameraPoseHolder> CameraPoseHolder::hold (VREF<CameraPoseLayout> that) {

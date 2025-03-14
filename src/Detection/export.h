@@ -19,7 +19,7 @@ struct BoardHolder implement Interface {
 	imports CFat<BoardHolder> hold (CREF<BoardLayout> that) ;
 
 	virtual void initialize () = 0 ;
-	virtual void set_board_width (CREF<ImageShape> shape) = 0 ;
+	virtual void set_board_shape (CREF<ImageShape> shape) = 0 ;
 	virtual void set_board_type (CREF<Just<BoardType>> type) = 0 ;
 	virtual void set_board_baseline (CREF<FLT64> baseline_x ,CREF<FLT64> baseline_y) = 0 ;
 	virtual Array<Point3F> extract () const = 0 ;
@@ -35,8 +35,8 @@ public:
 		BoardHolder::hold (thiz)->initialize () ;
 	}
 
-	void set_board_width (CREF<ImageShape> shape) {
-		return BoardHolder::hold (thiz)->set_board_width (shape) ;
+	void set_board_shape (CREF<ImageShape> shape) {
+		return BoardHolder::hold (thiz)->set_board_shape (shape) ;
 	}
 
 	void set_board_type (CREF<Just<BoardType>> type) {

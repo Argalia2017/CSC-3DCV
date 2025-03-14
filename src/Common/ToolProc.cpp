@@ -38,6 +38,7 @@ public:
 exports CREF<OfThis<SharedRef<ToolProcLayout>>> ToolProcHolder::instance () {
 	return memorize ([&] () {
 		OfThis<SharedRef<ToolProcLayout>> ret ;
+		ret.mThis = SharedRef<ToolProcLayout>::make () ;
 		ToolProcHolder::hold (ret)->initialize () ;
 		return move (ret) ;
 	}) ;

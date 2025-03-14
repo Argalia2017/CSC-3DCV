@@ -1336,50 +1336,52 @@ public:
 			return ;
 		if (self.mRemap)
 			return ;
-		if (self.mWrite == 0)
-			return ;
-		auto &&rax = self.mThis.deref ;
-		const auto r1x = RFat<ReflectCompr> (rax.mList.unknown ()) ;
-		const auto r2x = RFat<ReflectEqual> (rax.mList.unknown ()) ;
 		if ifdo (TRUE) {
-			self.mRange = RefBuffer<INDEX> (self.mWrite) ;
-			INDEX ix = self.mRoot ;
-			for (auto &&i : iter (0 ,self.mWrite)) {
-				assert (ix != NONE) ;
-				self.mRange[i] = ix ;
-				ix = rax.mList.bt (ix).mDown ;
+			if (self.mWrite == 0)
+				discard ;
+			auto &&rax = self.mThis.deref ;
+			const auto r1x = RFat<ReflectCompr> (rax.mList.unknown ()) ;
+			const auto r2x = RFat<ReflectEqual> (rax.mList.unknown ()) ;
+			if ifdo (TRUE) {
+				self.mRange = RefBuffer<INDEX> (self.mWrite) ;
+				INDEX ix = self.mRoot ;
+				for (auto &&i : iter (0 ,self.mWrite)) {
+					assert (ix != NONE) ;
+					self.mRange[i] = ix ;
+					ix = rax.mList.bt (ix).mDown ;
+				}
+				assert (ix == NONE) ;
 			}
-			assert (ix == NONE) ;
-		}
-		if ifdo (TRUE) {
-			const auto r3x = (&self.mRange[0]) ;
-			const auto r4x = r3x + self.mRange.size () ;
-			std::sort (r3x ,r4x ,[&] (CREF<INDEX> a ,CREF<INDEX> b) {
-				return r1x->compr (rax.mList[a] ,rax.mList[b]) < ZERO ;
-			}) ;
-		}
-		if ifdo (TRUE) {
-			INDEX ix = 0 ;
-			for (auto &&i : iter (1 ,self.mWrite)) {
-				const auto r5x = r2x->equal (rax.mList[self.mRange[ix]] ,rax.mList[self.mRange[i]]) ;
-				if (r5x)
-					continue ;
+			if ifdo (TRUE) {
+				const auto r3x = (&self.mRange[0]) ;
+				const auto r4x = r3x + self.mRange.size () ;
+				std::sort (r3x ,r4x ,[&] (CREF<INDEX> a ,CREF<INDEX> b) {
+					return r1x->compr (rax.mList[a] ,rax.mList[b]) < ZERO ;
+				}) ;
+			}
+			if ifdo (TRUE) {
+				INDEX ix = 0 ;
+				for (auto &&i : iter (1 ,self.mWrite)) {
+					const auto r5x = r2x->equal (rax.mList[self.mRange[ix]] ,rax.mList[self.mRange[i]]) ;
+					if (r5x)
+						continue ;
+					ix++ ;
+					self.mRange[ix] = self.mRange[i] ;
+				}
 				ix++ ;
-				self.mRange[ix] = self.mRange[i] ;
+				//@warn: length would be decresed due to remove the same item
+				self.mWrite = ix ;
+				for (auto &&i : iter (self.mWrite ,self.mRange.size ()))
+					self.mRange[i] = NONE ;
 			}
-			ix++ ;
-			//@warn: length would be decresed due to remove the same item
-			self.mWrite = ix ;
-			for (auto &&i : iter (self.mWrite ,self.mRange.size ()))
-				self.mRange[i] = NONE ;
-		}
-		if ifdo (TRUE) {
-			self.mRoot = self.mRange[0] ;
-			for (auto &&i : iter (0 ,self.mWrite - 1)) {
-				rax.mList.bt (self.mRange[i]).mDown = self.mRange[i + 1] ;
+			if ifdo (TRUE) {
+				self.mRoot = self.mRange[0] ;
+				for (auto &&i : iter (0 ,self.mWrite - 1)) {
+					rax.mList.bt (self.mRange[i]).mDown = self.mRange[i + 1] ;
+				}
+				INDEX ix = self.mRange[self.mWrite - 1] ;
+				rax.mList.bt (ix).mDown = NONE ;
 			}
-			INDEX ix = self.mRange[self.mWrite - 1] ;
-			rax.mList.bt (ix).mDown = NONE ;
 		}
 		self.mRemap = TRUE ;
 	}

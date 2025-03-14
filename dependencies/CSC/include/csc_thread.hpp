@@ -109,6 +109,8 @@ public:
 	}
 
 	void stop () const {
+		if (!mThis.exist ())
+			return ;
 		return WorkThreadHolder::hold (thiz)->stop () ;
 	}
 } ;
@@ -177,6 +179,8 @@ public:
 	}
 
 	void stop () const {
+		if (!mThis.exist ())
+			return ;
 		return CalcThreadHolder::hold (thiz)->stop () ;
 	}
 } ;
@@ -257,6 +261,8 @@ public:
 	}
 
 	void stop () const {
+		if (!mThis.exist ())
+			return ;
 		return PromiseHolder::hold (thiz)->stop () ;
 	}
 } ;

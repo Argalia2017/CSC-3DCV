@@ -26,7 +26,7 @@ public:
 		noop () ;
 	}
 
-	void set_board_width (CREF<ImageShape> shape) override {
+	void set_board_shape (CREF<ImageShape> shape) override {
 		self.mBoardShape = shape ;
 	}
 
@@ -110,7 +110,7 @@ public:
 	}
 } ;
 
-exports OfThis<AutoRef<BoardLayout>> create () {
+exports OfThis<AutoRef<BoardLayout>> BoardHolder::create () {
 	OfThis<AutoRef<BoardLayout>> ret ;
 	ret.mThis = AutoRef<BoardLayout>::make () ;
 	return move (ret) ;

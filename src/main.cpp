@@ -14,10 +14,10 @@ exports int main (int argc ,DEF<char **> argv) {
 	r1x.show () ;
 	try {
 		r1x.trace () ;
-		r1x.info (slice ("library_file = ") ,RuntimeProc::library_file ()) ;
+		r1x.debug (slice ("library_file = ") ,RuntimeProc::library_file ()) ;
 		assume (argc >= 2) ;
 		const auto r2x = Path (Slice (FLAG (argv[1]) ,SLICE_MAX_SIZE::expr ,1)).absolute ().fetch () ;
-		r1x.info (slice ("working_path = ") ,r2x) ;
+		r1x.debug (slice ("working_path = ") ,r2x) ;
 		r1x.open (r2x) ;
 		r1x.trace () ;
 		ConfigProc::set_data_dire (r2x) ;

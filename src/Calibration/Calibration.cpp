@@ -9,14 +9,14 @@ struct CalibrationLayout {
 	Path mDataPath ;
 	Random mRandom ;
 	WorkThread mWorkThread ;
-	ArrayList<CameraView> mView ;
-	Set<String<STR>> mViewNameSet ;
-	ArrayList<CameraPose> mPose ;
-	Set<String<STR>> mPoseNameSet ;
-	ArrayList<CameraFrame> mFrame ;
-	Set<Pixel> mFramePixelSet ;
-	ArrayList<CameraBlock> mBlock ;
+	CameraView mView ;
+	CameraPose mPose ;
+	CameraFrame mFrame ;
+	CameraBlock mBlock ;
 	Board mBoard ;
+	String<STR> mExtension ;
+	Time mBeginTime ;
+	Time mEndTime ;
 } ;
 
 class CalibrationImplHolder final implement Fat<CalibrationHolder ,CalibrationLayout> {
@@ -26,9 +26,7 @@ public:
 		self.mRandom = CurrentRandom () ;
 		self.mWorkThread = WorkThread (NULL) ;
 		self.mBoard = Board (NULL) ;
-		self.mBoard.set_board_width (ImageShape (0 ,0 ,15 ,5 ,0)) ;
-		self.mBoard.set_board_type (BoardType::CIRCLE) ;
-		self.mBoard.set_board_baseline (37.6 ,37.6) ;
+		self.mExtension = slice (".bmp") ;
 	}
 
 	void execute () override {
@@ -43,34 +41,42 @@ public:
 	}
 
 	void load_data_json () {
-		self.mView = ArrayList<CameraView> () ;
-		self.mPose = ArrayList<CameraPose> () ;
-		self.mFrame = ArrayList<CameraFrame> () ;
+		self.mView = CameraView () ;
+		self.mPose = CameraPose () ;
+		self.mFrame = CameraFrame () ;
 		const auto r1x = self.mDataPath.child (slice ("data.json")) ;
 		auto act = TRUE ;
 		if ifdo (act) {
 			if (!r1x.is_file ())
 				discard ;
 			const auto r2x = JsonParser (FileProc::load_file (r1x)) ;
+			load_data_json_info (r2x) ;
 			load_data_json_view (r2x) ;
 			load_data_json_pose (r2x) ;
 			self.mView.remap () ;
 			self.mPose.remap () ;
 		}
 		if ifdo (act) {
-			const auto r3x = self.mDataPath.child (slice ("image")).list () ;
+			if ifdo (TRUE) {
+				self.mBoard.set_board_shape (ImageShape (0 ,0 ,15 ,5 ,0)) ;
+				self.mBoard.set_board_type (BoardType::CIRCLE) ;
+				const auto r3x = FLT64 (54.75) ;
+				self.mBoard.set_board_baseline (r3x ,r3x) ;
+				self.mExtension = slice (".bmp") ;
+			}
+			const auto r4x = self.mDataPath.child (slice ("image")).list () ;
 			auto rax = Regex (slice ("(\\w+)_(\\w+)")) ;
-			for (auto &&i : r3x) {
-				if (i.extension () != slice (".bmp"))
+			for (auto &&i : r4x) {
+				if (i.extension () != self.mExtension)
 					continue ;
-				const auto r4x = i.stem () ;
-				const auto r5x = rax.search (Ref<String<STR>>::reference (r4x) ,0) ;
-				if (r5x == NONE)
+				const auto r5x = i.stem () ;
+				const auto r6x = rax.search (Ref<String<STR>>::reference (r5x) ,0) ;
+				if (r6x == NONE)
 					continue ;
-				const auto r6x = String<STR> (rax.match (1)) ;
-				const auto r7x = String<STR> (rax.match (2)) ;
-				INDEX ix = insert_new_pose (r6x ,slice ("image")) ;
-				INDEX iy = insert_new_view (r7x ,slice ("image")) ;
+				const auto r7x = String<STR> (rax.match (1)) ;
+				const auto r8x = String<STR> (rax.match (2)) ;
+				INDEX ix = insert_new_pose (r7x ,slice ("image")) ;
+				INDEX iy = insert_new_view (r8x ,slice ("image")) ;
 				self.mPose[ix].mUseView.add (iy) ;
 				self.mView[iy].mUsePose.add (ix) ;
 			}
@@ -78,18 +84,18 @@ public:
 			self.mPose.remap () ;
 		}
 		if ifdo (TRUE) {
-			const auto r8x = Array<INDEX>::make (self.mViewNameSet.range ()) ;
-			assume (r8x.length () >= 2) ;
+			const auto r9x = Array<INDEX>::make (self.mView.mViewNameSet.range ()) ;
+			assume (r9x.length () >= 2) ;
 			for (auto &&i : self.mPose.range ()) {
 				for (auto &&j : self.mPose[i].mUseView) {
 					INDEX ix = insert_new_frame (i ,j) ;
 					if ifdo (TRUE) {
-						if (j != r8x[0])
+						if (j != r9x[0])
 							discard ;
 						self.mPose[i].mFrame1 = ix ;
 					}
 					if ifdo (TRUE) {
-						if (j != r8x[1])
+						if (j != r9x[1])
 							discard ;
 						self.mPose[i].mFrame2 = ix ;
 					}
@@ -97,6 +103,20 @@ public:
 			}
 			self.mFrame.remap () ;
 		}
+	}
+
+	void load_data_json_info (CREF<JsonParser> parser) {
+		const auto r1x = parser.child (slice ("mInfo")) ;
+		const auto r2x = r1x.child (slice ("mShape")).child (0).parse (ZERO) ;
+		const auto r3x = r1x.child (slice ("mShape")).child (1).parse (ZERO) ;
+		const auto r4x = r1x.child (slice ("mType")).parse (String<STR> ()) ;
+		const auto r5x = r1x.child (slice ("mBaseLine")).child (0).parse (FLT64 (0)) ;
+		const auto r6x = r1x.child (slice ("mBaseLine")).child (1).parse (FLT64 (0)) ;
+		self.mBoard.set_board_shape (ImageShape (0 ,0 ,r2x ,r3x ,0)) ;
+		assume (r4x == slice ("CIRCLE")) ;
+		self.mBoard.set_board_type (BoardType::CIRCLE) ;
+		self.mBoard.set_board_baseline (r5x ,r6x) ;
+		self.mExtension = r1x.child (slice ("mExtension")).parse (String<STR> ()) ;
 	}
 
 	void load_data_json_view (CREF<JsonParser> parser) {
@@ -123,8 +143,10 @@ public:
 		for (auto &&i : self.mPose.range ()) {
 			self.mPose[i].mName = r1x[i].child (slice ("mName")).parse (String<STR> ()) ;
 			self.mPose[i].mGroup = r1x[i].child (slice ("mGroup")).parse (String<STR> ()) ;
-			const auto r2x = r1x[i].child (slice ("mColor")).parse (String<STR> ()) ;
-			self.mPose[i].mColor = StringParse<Color3B>::make (r2x) ;
+			const auto r2x = r1x[i].child (slice ("mColor")).parse (VAL32 (0) ,3) ;
+			self.mPose[i].mColor.mR = BYTE (r2x[0]) ;
+			self.mPose[i].mColor.mG = BYTE (r2x[1]) ;
+			self.mPose[i].mColor.mB = BYTE (r2x[2]) ;
 			self.mPose[i].mUseView = Set<INDEX> () ;
 			self.mPose[i].mFrame1 = NONE ;
 			self.mPose[i].mFrame2 = NONE ;
@@ -143,11 +165,12 @@ public:
 	}
 
 	INDEX insert_new_view (CREF<String<STR>> name ,CREF<String<STR>> group) {
-		INDEX ret = self.mViewNameSet.map (name) ;
+		INDEX ret = self.mView.mViewNameSet.map (name) ;
 		if ifdo (TRUE) {
 			if (ret != NONE)
 				discard ;
 			ret = self.mView.insert () ;
+			self.mView.mViewNameSet.add (name ,ret) ;
 			self.mView[ret].mName = name ;
 			self.mView[ret].mGroup = group ;
 			self.mView[ret].mUsePose = Set<INDEX> () ;
@@ -162,11 +185,12 @@ public:
 	}
 
 	INDEX insert_new_pose (CREF<String<STR>> name ,CREF<String<STR>> group) {
-		INDEX ret = self.mPoseNameSet.map (name) ;
+		INDEX ret = self.mPose.mPoseNameSet.map (name) ;
 		if ifdo (TRUE) {
 			if (ret != NONE)
 				discard ;
 			ret = self.mPose.insert () ;
+			self.mPose.mPoseNameSet.add (name ,ret) ;
 			self.mPose[ret].mName = name ;
 			self.mPose[ret].mGroup = group ;
 			self.mPose[ret].mColor = ToolProc::random_color (self.mRandom) ;
@@ -182,16 +206,17 @@ public:
 
 	INDEX insert_new_frame (CREF<INDEX> pose1 ,CREF<INDEX> view1) {
 		const auto r1x = Pixel ({pose1 ,view1}) ;
-		INDEX ret = self.mFramePixelSet.map (r1x) ;
+		INDEX ret = self.mFrame.mFramePixelSet.map (r1x) ;
 		if ifdo (TRUE) {
 			if (ret != NONE)
 				discard ;
 			ret = self.mFrame.insert () ;
+			self.mFrame.mFramePixelSet.add (r1x ,ret) ;
 			self.mFrame[ret].mPose1 = pose1 ;
 			self.mFrame[ret].mView1 = view1 ;
 			self.mFrame[ret].mTime1 = 0 ;
-			const auto r2x = Format (slice ("$1_$2.bmp")) ;
-			const auto r3x = self.mDataPath.child (r2x (self.mPose[pose1].mName ,self.mView[view1].mName)) ;
+			const auto r2x = Format (slice ("$1_$2$3")) ;
+			const auto r3x = self.mDataPath.child (self.mPose[pose1].mGroup).child (r2x (self.mPose[pose1].mName ,self.mView[view1].mName ,self.mExtension)) ;
 			self.mFrame[ret].mImageFile = r3x ;
 			self.mFrame[ret].mImage = Image<Color3B> () ;
 			self.mFrame[ret].mDepth = Image<FLT32> () ;
@@ -206,7 +231,7 @@ public:
 		Singleton<Console>::instance ().info () ;
 		Singleton<Console>::instance ().info (slice ("work_board_detection")) ;
 		if ifdo (TRUE) {
-			self.mBlock = ArrayList<CameraBlock> () ;
+			self.mBlock = CameraBlock () ;
 			INDEX ix = self.mBlock.insert () ;
 			self.mBlock[ix].mTime1 = ix ;
 			for (auto &&i : self.mFrame.range ()) {
@@ -226,17 +251,16 @@ public:
 		Singleton<Console>::instance ().info () ;
 		Singleton<Console>::instance ().info (slice ("work_sfm_view_mat_k")) ;
 		assume (self.mView.length () > 0) ;
-		auto rax = self.mView[0].sfm_view_mat_k_problem () ;
 		for (auto &&i : self.mView.range ()) {
 			if (self.mView[i].mConstMatK)
 				continue ;
 			const auto r1x = Array<INDEX>::make (self.mView[i].mUsePose) ;
-			assume (r1x.length () >= 2) ;
-			INDEX ix = self.mFramePixelSet.map (Pixel ({r1x[0] ,i})) ;
-			INDEX iy = self.mFramePixelSet.map (Pixel ({r1x[1] ,i})) ;
+			assume (r1x.length () >= 1) ;
+			INDEX ix = self.mPose[r1x[0]].mFrame1 ;
+			INDEX iy = self.mPose[r1x[0]].mFrame2 ;
 			assume (ix != NONE) ;
 			assume (iy != NONE) ;
-			self.mView[i].sfm_view_mat_k (self.mFrame[ix] ,self.mFrame[iy] ,rax) ;
+			self.mView.sfm_view_mat_k (self.mFrame[ix] ,self.mFrame[iy]) ;
 		}
 	}
 
@@ -248,18 +272,19 @@ public:
 			if ifdo (TRUE) {
 				if (self.mView[jx].mConstMatV)
 					discard ;
-				self.mView[i].mMatV = Matrix::identity () ;
+				self.mView[jx].mMatV = Matrix::identity () ;
 			}
-			INDEX ix = self.mFramePixelSet.map (Pixel ({i ,jx})) ;
+			INDEX ix = self.mFrame.mFramePixelSet.map (Pixel ({i ,jx})) ;
 			assume (ix != NONE) ;
 			for (auto &&j : self.mPose[i].mUseView) {
 				if (self.mView[j].mConstMatV)
 					continue ;
 				if (j == jx)
 					continue ;
-				INDEX iy = self.mFramePixelSet.map (Pixel ({i ,j})) ;
+				INDEX iy = self.mFrame.mFramePixelSet.map (Pixel ({i ,j})) ;
 				assume (iy != NONE) ;
-				self.mView[i].sfm_view_mat_v (self.mFrame[ix] ,self.mFrame[iy]) ;
+				self.mView.sfm_view_mat_v (self.mFrame[ix] ,self.mFrame[iy]) ;
+				self.mView[j].mMatV = self.mView[jx].mMatV[0] * self.mView[j].mMatV[0] ;
 			}
 		}
 	}
@@ -270,7 +295,7 @@ public:
 		assume (self.mPose.length () > 0) ;
 		for (auto &&i : self.mPose.range ()) {
 			INDEX ix = self.mPose[i].mFrame1 ;
-			self.mPose[i].sfm_pose_mat_v (self.mFrame[ix]) ;
+			self.mPose.sfm_pose_mat_v (self.mFrame[ix]) ;
 		}
 	}
 
@@ -282,6 +307,9 @@ public:
 	void work_undistortion () {
 		Singleton<Console>::instance ().info () ;
 		Singleton<Console>::instance ().info (slice ("work_undistortion")) ;
+		for (auto &&i : self.mFrame.range ()) {
+		
+		}
 	}
 
 	void save_data_json () {
@@ -291,6 +319,14 @@ public:
 		mWriter.deref << slice ("{") ;
 		mComma++ ;
 		if ifdo (TRUE) {
+			mWriter.deref << mComma ;
+			mWriter.deref << slice ("\"mInfo\":{") ;
+			mComma++ ;
+			if ifdo (TRUE) {
+			}
+			mComma-- ;
+			mWriter.deref << mComma ;
+			mWriter.deref << slice ("}") ;
 			mWriter.deref << mComma ;
 			mWriter.deref << slice ("\"mView\":[") ;
 			mComma++ ;
@@ -441,6 +477,7 @@ public:
 					mWriter.deref << slice ("\"mError\":[") ;
 					mComma++ ;
 					mComma.tight () ;
+					mWriter.deref << mComma ;
 					mWriter.deref << self.mPose[i].mError.mMaxError ;
 					mWriter.deref << mComma ;
 					mWriter.deref << self.mPose[i].mError.mAvgError ;
