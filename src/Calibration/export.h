@@ -1,7 +1,7 @@
 ﻿#include "../util.h"
 
 namespace CSC3DCV {
-struct ModelView {
+struct CameraView {
 	String<STR> mName ;
 	String<STR> mGroup ;
 	Set<INDEX> mUsePose ;
@@ -12,14 +12,14 @@ struct ModelView {
 	BOOL mConstDist ;
 	DuplexMatrix mMatV ;
 	BOOL mConstMatV ;
-	FLT64 mBaseLine ;
+	FLT64 mBaseline ;
 	FLT64 mRelative ;
 	INDEX mParam1 ;
 	INDEX mParam2 ;
 	INDEX mParam3 ;
 } ;
 
-struct ModelPose {
+struct CameraPose {
 	String<STR> mName ;
 	String<STR> mGroup ;
 	Color3B mColor ;
@@ -35,7 +35,7 @@ struct ModelPose {
 	INDEX mParam4 ;
 } ;
 
-struct ModelFrame {
+struct CameraFrame {
 	INDEX mPose1 ;
 	INDEX mView1 ;
 	INDEX mTime1 ;
@@ -43,91 +43,38 @@ struct ModelFrame {
 	Image<Color3B> mImage ;
 	Image<FLT32> mDepth ;
 	Array<FLT32> mKeypoint ;
-	BOOL mUndistortion ;
-	Array<Point2F> mOriginPoint ;
-	Array<Point2F> mUndistPoint ;
+	Array<Point2F> mPoint2D ;
+	Array<Point3F> mPointRay ;
+	BOOL mUsingPointRay ;
 } ;
 
-struct ModelBlock {
+struct CameraBlock {
 	INDEX mTime1 ;
 	Set<INDEX> mUseFrame ;
-	Array<Point3F> mPoint ;
+	Array<Point3F> mPoint3D ;
 	Array<FLT32> mRadius ;
+	BOOL mConstPoint ;
 	INDEX mParam5 ;
 } ;
 
-struct CameraViewContext ;
-
-struct CameraViewLayout implement ArrayList<ModelView> {
+struct PoseGraphLayout {
+	ArrayList<CameraView> mView ;
 	Set<String<STR>> mViewNameSet ;
-	AutoRef<CameraViewContext> mContext ;
-} ;
-
-struct CameraViewHolder implement Interface {
-	imports VFat<CameraViewHolder> hold (VREF<CameraViewLayout> that) ;
-	imports CFat<CameraViewHolder> hold (CREF<CameraViewLayout> that) ;
-
-	virtual void sfm_view_mat_k (CREF<ModelFrame> frame1 ,CREF<ModelFrame> frame2) = 0 ;
-	virtual void sfm_view_mat_v (CREF<ModelFrame> frame1 ,CREF<ModelFrame> frame2) = 0 ;
-} ;
-
-class CameraView implement CameraViewLayout {
-public:
-	implicit CameraView () = default ;
-
-	void sfm_view_mat_k (CREF<ModelFrame> frame1 ,CREF<ModelFrame> frame2) {
-		return CameraViewHolder::hold (thiz)->sfm_view_mat_k (frame1 ,frame2) ;
-	}
-
-	void sfm_view_mat_v (CREF<ModelFrame> frame1 ,CREF<ModelFrame> frame2) {
-		return CameraViewHolder::hold (thiz)->sfm_view_mat_v (frame1 ,frame2) ;
-	}
-} ;
-
-struct CameraPoseLayout implement ArrayList<ModelPose> {
+	ArrayList<CameraPose> mPose ;
 	Set<String<STR>> mPoseNameSet ;
-} ;
-
-struct CameraPoseHolder implement Interface {
-	imports VFat<CameraPoseHolder> hold (VREF<CameraPoseLayout> that) ;
-	imports CFat<CameraPoseHolder> hold (CREF<CameraPoseLayout> that) ;
-
-	virtual void sfm_pose_mat_v (CREF<ModelFrame> frame1) = 0 ;
-} ;
-
-class CameraPose implement CameraPoseLayout {
-public:
-	implicit CameraPose () = default ;
-
-	void sfm_pose_mat_v (CREF<ModelFrame> frame1) {
-		return CameraPoseHolder::hold (thiz)->sfm_pose_mat_v (frame1) ;
-	}
-} ;
-
-struct CameraFrameLayout implement ArrayList<ModelFrame> {
+	ArrayList<CameraFrame> mFrame ;
 	Set<Pixel> mFramePixelSet ;
+	ArrayList<CameraBlock> mBlock ;
 } ;
 
-struct CameraFrameHolder implement Interface {
-	imports VFat<CameraFrameHolder> hold (VREF<CameraFrameLayout> that) ;
-	imports CFat<CameraFrameHolder> hold (CREF<CameraFrameLayout> that) ;
+struct PoseGraphHolder implement Interface {
+	imports VFat<PoseGraphHolder> hold (VREF<PoseGraphLayout> that) ;
+	imports CFat<PoseGraphHolder> hold (CREF<PoseGraphLayout> that) ;
 } ;
 
-class CameraFrame implement CameraFrameLayout {
+class PoseGraph implement PoseGraphLayout {
 public:
-	implicit CameraFrame () = default ;
-} ;
-
-struct CameraBlockLayout implement ArrayList<ModelBlock> {} ;
-
-struct CameraBlockHolder implement Interface {
-	imports VFat<CameraBlockHolder> hold (VREF<CameraBlockLayout> that) ;
-	imports CFat<CameraBlockHolder> hold (CREF<CameraBlockLayout> that) ;
-} ;
-
-class CameraBlock implement CameraBlockLayout {
-public:
-	implicit CameraBlock () = default ;
+	implicit PoseGraph () = default ;
 } ;
 
 struct CalibrationLayout ;

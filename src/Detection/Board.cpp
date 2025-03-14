@@ -15,9 +15,8 @@ inline cv::Size cvt_cv_size (CREF<ImageShape> a) {
 
 struct BoardLayout {
 	ImageShape mBoardShape ;
+	Vector mBoardBaseline ;
 	Just<BoardType> mBoardType ;
-	FLT64 mBoardBaselineX ;
-	FLT64 mBoardBaselineY ;
 } ;
 
 class BoardImplHolder final implement Fat<BoardHolder ,BoardLayout> {
@@ -34,14 +33,13 @@ public:
 		self.mBoardType = type ;
 	}
 
-	void set_board_baseline (CREF<FLT64> baseline_x ,CREF<FLT64> baseline_y) override {
-		self.mBoardBaselineX = baseline_x ;
-		self.mBoardBaselineY = baseline_y ;
+	void set_board_baseline (CREF<Vector> baseline) override {
+		self.mBoardBaseline = baseline ;
 	}
 
 	Array<Point3F> extract () const {
 		Array<Point3F> ret = Array<Point3F> (self.mBoardShape.size ()) ;
-		const auto r1x = DiagMatrix (self.mBoardBaselineX ,self.mBoardBaselineY ,1 ,1) ;
+		const auto r1x = DiagMatrix (self.mBoardBaseline[0] ,self.mBoardBaseline[1] ,self.mBoardBaseline[2] ,1) ;
 		for (auto &&i : iter (0 ,self.mBoardShape.mCX ,0 ,self.mBoardShape.mCY)) {
 			INDEX ix = i.mX + i.mY * self.mBoardShape.mCX ;
 			const auto r2x = r1x * Vector (i) ;

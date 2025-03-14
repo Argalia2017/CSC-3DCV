@@ -8,7 +8,7 @@ struct ConfigProcLayout {
 class ConfigProcImplHolder final implement Fat<ConfigProcHolder ,ConfigProcLayout> {
 public:
 	void initialize () override {
-		Singleton<Console>::instance ().debug (slice ("library_file = ") ,RuntimeProc::library_file ()) ;
+		noop () ;
 	}
 
 	void set_data_dire (CREF<String<STR>> dire) override {

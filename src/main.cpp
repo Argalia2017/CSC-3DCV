@@ -12,7 +12,9 @@ using namespace CSC3DCV ;
 exports int main (int argc ,DEF<char **> argv) {
 	const auto r1x = Singleton<Console>::instance () ;
 	r1x.show () ;
+#ifdef __CSC_VER_RELEASE__
 	try {
+#endif
 		r1x.trace () ;
 		r1x.debug (slice ("library_file = ") ,RuntimeProc::library_file ()) ;
 		assume (argc >= 2) ;
@@ -32,6 +34,7 @@ exports int main (int argc ,DEF<char **> argv) {
 		r1x.info (slice ("all done")) ;
 		r1x.warn (slice ("time_cost = ") ,r5x) ;
 		r1x.trace () ;
+#ifdef __CSC_VER_RELEASE__
 	} catch (CREF<Exception> e) {
 		r1x.trace () ;
 		r1x.error (slice ("ERROR")) ;
@@ -39,6 +42,7 @@ exports int main (int argc ,DEF<char **> argv) {
 		r1x.error (r6x (e.what () ,e.func () ,e.file () ,e.line ())) ;
 		r1x.trace () ;
 	}
+#endif
 	GlobalProc::shutdown () ;
 	return 0 ;
 }

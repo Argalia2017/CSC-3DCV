@@ -79,10 +79,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\Calibration\Calibration.cpp" />
-    <ClCompile Include="..\..\src\Calibration\CameraBlock.cpp" />
-    <ClCompile Include="..\..\src\Calibration\CameraFrame.cpp" />
-    <ClCompile Include="..\..\src\Calibration\CameraPose.cpp" />
-    <ClCompile Include="..\..\src\Calibration\CameraView.cpp" />
+    <ClCompile Include="..\..\src\Calibration\PoseGraph.cpp" />
     <ClCompile Include="..\..\src\Common\ConfigProc.cpp" />
     <ClCompile Include="..\..\src\Common\ToolProc.cpp" />
     <ClCompile Include="..\..\src\Detection\Aruco.cpp" />

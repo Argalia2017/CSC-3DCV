@@ -21,7 +21,7 @@ struct BoardHolder implement Interface {
 	virtual void initialize () = 0 ;
 	virtual void set_board_shape (CREF<ImageShape> shape) = 0 ;
 	virtual void set_board_type (CREF<Just<BoardType>> type) = 0 ;
-	virtual void set_board_baseline (CREF<FLT64> baseline_x ,CREF<FLT64> baseline_y) = 0 ;
+	virtual void set_board_baseline (CREF<Vector> baseline) = 0 ;
 	virtual Array<Point3F> extract () const = 0 ;
 	virtual Optional<Array<Point2F>> detect (CREF<Image<Color3B>> image) = 0 ;
 } ;
@@ -43,8 +43,8 @@ public:
 		return BoardHolder::hold (thiz)->set_board_type (type) ;
 	}
 
-	void set_board_baseline (CREF<FLT64> baseline_x ,CREF<FLT64> baseline_y) {
-		return BoardHolder::hold (thiz)->set_board_baseline (baseline_x ,baseline_y) ;
+	void set_board_baseline (CREF<Vector> baseline) {
+		return BoardHolder::hold (thiz)->set_board_baseline (baseline) ;
 	}
 
 	Array<Point3F> extract () const {

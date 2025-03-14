@@ -25,15 +25,6 @@
     <ClCompile Include="..\..\src\Calibration\Calibration.cpp">
       <Filter>Calibration</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\Calibration\CameraBlock.cpp">
-      <Filter>Calibration</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\Calibration\CameraPose.cpp">
-      <Filter>Calibration</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\Calibration\CameraView.cpp">
-      <Filter>Calibration</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\Mapping\MarchingCube.cpp">
       <Filter>Mapping</Filter>
     </ClCompile>
@@ -42,9 +33,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\Common\ToolProc.cpp">
       <Filter>Common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\Calibration\CameraFrame.cpp">
-      <Filter>Calibration</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\Detection\Aruco.cpp">
       <Filter>Detection</Filter>
@@ -60,6 +48,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\Estimation\SolverProc.cpp">
       <Filter>Estimation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Calibration\PoseGraph.cpp">
+      <Filter>Calibration</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
