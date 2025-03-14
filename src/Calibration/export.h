@@ -24,19 +24,32 @@ struct CameraViewLayout {
 	INDEX mParam3 ;
 } ;
 
+struct Problem_sfm_view_mat_k ;
+struct Problem_sfm_view_mat_v ;
+
 struct CameraViewHolder implement Interface {
 	imports VFat<CameraViewHolder> hold (VREF<CameraViewLayout> that) ;
 	imports CFat<CameraViewHolder> hold (CREF<CameraViewLayout> that) ;
 
-	virtual void sfm_view_mat_k (CREF<CameraFrame> frame1 ,CREF<CameraFrame> frame2) = 0 ;
+	virtual AutoRef<Problem_sfm_view_mat_k> sfm_view_mat_k_problem () = 0 ;
+	virtual void sfm_view_mat_k (CREF<CameraFrame> frame1 ,CREF<CameraFrame> frame2 ,VREF<Problem_sfm_view_mat_k> ctx) = 0 ;
+	virtual void sfm_view_mat_v (CREF<CameraFrame> frame1 ,CREF<CameraFrame> frame2) = 0 ;
 } ;
 
 class CameraView implement CameraViewLayout {
 public:
 	implicit CameraView () = default ;
 
-	void sfm_view_mat_k (CREF<CameraFrame> frame1 ,CREF<CameraFrame> frame2) {
-		return CameraViewHolder::hold (thiz)->sfm_view_mat_k (frame1 ,frame2) ;
+	AutoRef<Problem_sfm_view_mat_k> sfm_view_mat_k_problem () {
+		return CameraViewHolder::hold (thiz)->sfm_view_mat_k_problem () ;
+	}
+
+	void sfm_view_mat_k (CREF<CameraFrame> frame1 ,CREF<CameraFrame> frame2 ,VREF<Problem_sfm_view_mat_k> ctx) {
+		return CameraViewHolder::hold (thiz)->sfm_view_mat_k (frame1 ,frame2 ,ctx) ;
+	}
+
+	void sfm_view_mat_v (CREF<CameraFrame> frame1 ,CREF<CameraFrame> frame2) {
+		return CameraViewHolder::hold (thiz)->sfm_view_mat_v (frame1 ,frame2) ;
 	}
 } ;
 
@@ -107,11 +120,10 @@ public:
 	implicit CameraBlock () = default ;
 } ;
 
-struct CalibrationImplLayout ;
-struct CalibrationLayout implement OfThis<AutoRef<CalibrationImplLayout>> {} ;
+struct CalibrationLayout ;
 
 struct CalibrationHolder implement Interface {
-	imports CalibrationLayout create () ;
+	imports OfThis<AutoRef<CalibrationLayout>> create () ;
 	imports VFat<CalibrationHolder> hold (VREF<CalibrationLayout> that) ;
 	imports CFat<CalibrationHolder> hold (CREF<CalibrationLayout> that) ;
 
@@ -119,7 +131,7 @@ struct CalibrationHolder implement Interface {
 	virtual void execute () = 0 ;
 } ;
 
-class Calibration implement CalibrationLayout {
+class Calibration implement OfThis<AutoRef<CalibrationLayout>> {
 public:
 	implicit Calibration () = default ;
 

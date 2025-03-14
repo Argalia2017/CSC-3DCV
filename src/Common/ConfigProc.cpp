@@ -1,7 +1,7 @@
 ﻿#include "export.h"
 
 namespace CSC3DCV {
-struct ConfigProcImplLayout {
+struct ConfigProcLayout {
 	Path mDataPath ;
 } ;
 
@@ -9,20 +9,20 @@ class ConfigProcImplHolder final implement Fat<ConfigProcHolder ,ConfigProcLayou
 public:
 	void initialize () override {
 		Singleton<Console>::instance ().debug (slice ("library_file = ") ,RuntimeProc::library_file ()) ;
-		fake.mThis = SharedRef<ConfigProcImplLayout>::make () ;
 	}
 
-	void set_data_dire (CREF<String<STR>> dire) const override {
-		fake.mThis->mDataPath = Path (dire) ;
-		const auto r1x = FileProc::lock_dire (fake.mThis->mDataPath) ;
+	void set_data_dire (CREF<String<STR>> dire) override {
+		self.mDataPath = Path (dire) ;
+		const auto r1x = FileProc::lock_dire (self.mDataPath) ;
 		assume (r1x) ;
-		Global<Path> (slice ("mDataPath")).store (fake.mThis->mDataPath) ;
+		Global<Path> (slice ("mDataPath")).store (self.mDataPath) ;
 	}
 } ;
 
-exports CREF<ConfigProcLayout> ConfigProcHolder::instance () {
+exports CREF<OfThis<SharedRef<ConfigProcLayout>>> ConfigProcHolder::instance () {
 	return memorize ([&] () {
-		ConfigProcLayout ret ;
+		OfThis<SharedRef<ConfigProcLayout>> ret ;
+		ret.mThis = SharedRef<ConfigProcLayout>::make () ;
 		ConfigProcHolder::hold (ret)->initialize () ;
 		return move (ret) ;
 	}) ;

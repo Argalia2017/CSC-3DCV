@@ -31,39 +31,38 @@ public:
 	}
 
 	void before () override {
-		return thiz.fake.before () ;
+		return thiz.self.before () ;
 	}
 
 	BOOL tick (CREF<FLT64> deltatime) override {
-		return thiz.fake.tick (deltatime) ;
+		return thiz.self.tick (deltatime) ;
 	}
 
 	BOOL idle () override {
-		return thiz.fake.idle () ;
+		return thiz.self.idle () ;
 	}
 
 	void after () override {
-		return thiz.fake.after () ;
+		return thiz.self.after () ;
 	}
 
 	void execute () override {
-		thiz.fake.before () ;
+		thiz.self.before () ;
 		while (TRUE) {
-			while (thiz.fake.tick (0)) ;
-			if (!thiz.fake.idle ())
+			while (thiz.self.tick (0)) ;
+			if (!thiz.self.idle ())
 				break ;
 		}
-		thiz.fake.after () ;
+		thiz.self.after () ;
 	}
 } ;
 
-struct WorkThreadImplLayout ;
-struct WorkThreadLayout implement OfThis<SharedRef<WorkThreadImplLayout>> {} ;
+struct WorkThreadLayout ;
 
 struct WorkThreadHolder implement Interface {
-	imports WorkThreadLayout create () ;
-	imports VFat<WorkThreadHolder> hold (VREF<WorkThreadImplLayout> that) ;
-	imports CFat<WorkThreadHolder> hold (CREF<WorkThreadImplLayout> that) ;
+	imports OfThis<SharedRef<WorkThreadLayout>> create () ;
+	imports VFat<WorkThreadHolder> hold (VREF<WorkThreadLayout> that) ;
+	imports CFat<WorkThreadHolder> hold (CREF<WorkThreadLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual void set_thread_size (CREF<LENGTH> size_) = 0 ;
@@ -76,7 +75,7 @@ struct WorkThreadHolder implement Interface {
 	virtual void stop () = 0 ;
 } ;
 
-class WorkThread implement WorkThreadLayout {
+class WorkThread implement OfThis<SharedRef<WorkThreadLayout>> {
 public:
 	implicit WorkThread () = default ;
 
@@ -121,13 +120,12 @@ struct CalcSolution {
 	BitSet mInput ;
 } ;
 
-struct CalcThreadImplLayout ;
-struct CalcThreadLayout implement OfThis<SharedRef<CalcThreadImplLayout>> {} ;
+struct CalcThreadLayout ;
 
 struct CalcThreadHolder implement Interface {
-	imports CalcThreadLayout create () ;
-	imports VFat<CalcThreadHolder> hold (VREF<CalcThreadImplLayout> that) ;
-	imports CFat<CalcThreadHolder> hold (CREF<CalcThreadImplLayout> that) ;
+	imports OfThis<SharedRef<CalcThreadLayout>> create () ;
+	imports VFat<CalcThreadHolder> hold (VREF<CalcThreadLayout> that) ;
+	imports CFat<CalcThreadHolder> hold (CREF<CalcThreadLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual void set_thread_size (CREF<LENGTH> size_) = 0 ;
@@ -141,7 +139,7 @@ struct CalcThreadHolder implement Interface {
 	virtual void stop () = 0 ;
 } ;
 
-class CalcThread implement CalcThreadLayout {
+class CalcThread implement OfThis<SharedRef<CalcThreadLayout>> {
 public:
 	implicit CalcThread () = default ;
 
@@ -183,13 +181,12 @@ public:
 	}
 } ;
 
-struct PromiseImplLayout ;
-struct PromiseLayout implement OfThis<SharedRef<PromiseImplLayout>> {} ;
+struct PromiseLayout ;
 
 struct PromiseHolder implement Interface {
-	imports PromiseLayout create () ;
-	imports VFat<PromiseHolder> hold (VREF<PromiseImplLayout> that) ;
-	imports CFat<PromiseHolder> hold (CREF<PromiseImplLayout> that) ;
+	imports OfThis<SharedRef<PromiseLayout>> create () ;
+	imports VFat<PromiseHolder> hold (VREF<PromiseLayout> that) ;
+	imports CFat<PromiseHolder> hold (CREF<PromiseLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual void set_retry (CREF<BOOL> flag) = 0 ;
@@ -206,7 +203,7 @@ struct PromiseHolder implement Interface {
 } ;
 
 template <class A>
-class Promise implement PromiseLayout {
+class Promise implement OfThis<SharedRef<PromiseLayout>> {
 public:
 	implicit Promise () = default ;
 
@@ -252,7 +249,7 @@ public:
 		auto rax = PromiseHolder::hold (thiz)->poll () ;
 		if (!rax.exist ())
 			return Optional<A>::error (1) ;
-		return move (rax.rebind (TYPE<A>::expr).self) ;
+		return move (rax.rebind (TYPE<A>::expr).deref) ;
 	}
 
 	void future () const {

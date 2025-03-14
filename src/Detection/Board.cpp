@@ -13,7 +13,7 @@ inline cv::Size cvt_cv_size (CREF<ImageShape> a) {
 	return cv::Size (int (a.mCX) ,int (a.mCY)) ;
 }
 
-struct BoardImplLayout {
+struct BoardLayout {
 	ImageShape mBoardShape ;
 	Just<BoardType> mBoardType ;
 	FLT64 mBoardBaselineX ;
@@ -23,27 +23,27 @@ struct BoardImplLayout {
 class BoardImplHolder final implement Fat<BoardHolder ,BoardLayout> {
 public:
 	void initialize () override {
-		fake.mThis = AutoRef<BoardImplLayout>::make () ;
+		noop () ;
 	}
 
 	void set_board_width (CREF<ImageShape> shape) override {
-		fake.mThis->mBoardShape = shape ;
+		self.mBoardShape = shape ;
 	}
 
 	void set_board_type (CREF<Just<BoardType>> type) override {
-		fake.mThis->mBoardType = type ;
+		self.mBoardType = type ;
 	}
 
 	void set_board_baseline (CREF<FLT64> baseline_x ,CREF<FLT64> baseline_y) override {
-		fake.mThis->mBoardBaselineX = baseline_x ;
-		fake.mThis->mBoardBaselineY = baseline_y ;
+		self.mBoardBaselineX = baseline_x ;
+		self.mBoardBaselineY = baseline_y ;
 	}
 
 	Array<Point3F> extract () const {
-		Array<Point3F> ret = Array<Point3F> (fake.mThis->mBoardShape.size ()) ;
-		const auto r1x = DiagMatrix (fake.mThis->mBoardBaselineX ,fake.mThis->mBoardBaselineY ,1 ,1) ;
-		for (auto &&i : iter (0 ,fake.mThis->mBoardShape.mCX ,0 ,fake.mThis->mBoardShape.mCY)) {
-			INDEX ix = i.mX + i.mY * fake.mThis->mBoardShape.mCX ;
+		Array<Point3F> ret = Array<Point3F> (self.mBoardShape.size ()) ;
+		const auto r1x = DiagMatrix (self.mBoardBaselineX ,self.mBoardBaselineY ,1 ,1) ;
+		for (auto &&i : iter (0 ,self.mBoardShape.mCX ,0 ,self.mBoardShape.mCY)) {
+			INDEX ix = i.mX + i.mY * self.mBoardShape.mCX ;
 			const auto r2x = r1x * Vector (i) ;
 			ret[ix] = r2x.xyz () ;
 		}
@@ -68,7 +68,7 @@ public:
 		if (!r4x.exist ())
 			return Optional<Array<Point2F>>::error (r4x.code ()) ;
 		const auto r6x = r4x.fetch () ;
-		Array<Point2F> ret = Array<Point2F> (fake.mThis->mBoardShape.size ()) ;
+		Array<Point2F> ret = Array<Point2F> (self.mBoardShape.size ()) ;
 		if (r6x[0].x < r6x[1].x) {
 			for (auto &&i : iter (0 ,r6x.size ())) {
 				INDEX ix = i ;
@@ -102,13 +102,19 @@ public:
 		}) ;
 		const auto r2x = cv::SimpleBlobDetector::create (r1x) ;
 		const auto r3x = csc_enum_t (cv::CALIB_CB_SYMMETRIC_GRID | cv::CALIB_CB_CLUSTERING) ;
-		if (fake.mThis->mBoardType == BoardType::CIRCLE)
-			return cv::findCirclesGrid (image ,cvt_cv_size (fake.mThis->mBoardShape) ,result ,r3x) ;
-		if (fake.mThis->mBoardType == BoardType::CHESS)
-			return cv::findChessboardCorners (image ,cvt_cv_size (fake.mThis->mBoardShape) ,result ,r3x) ;
+		if (self.mBoardType == BoardType::CIRCLE)
+			return cv::findCirclesGrid (image ,cvt_cv_size (self.mBoardShape) ,result ,r3x) ;
+		if (self.mBoardType == BoardType::CHESS)
+			return cv::findChessboardCorners (image ,cvt_cv_size (self.mBoardShape) ,result ,r3x) ;
 		return FALSE ;
 	}
 } ;
+
+exports OfThis<AutoRef<BoardLayout>> create () {
+	OfThis<AutoRef<BoardLayout>> ret ;
+	ret.mThis = AutoRef<BoardLayout>::make () ;
+	return move (ret) ;
+}
 
 exports VFat<BoardHolder> BoardHolder::hold (VREF<BoardLayout> that) {
 	return VFat<BoardHolder> (BoardImplHolder () ,that) ;

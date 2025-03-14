@@ -24,7 +24,7 @@
 
   <Type Name="CSC::Fat&lt;*&gt;">
     <Expand HideRawView="true">
-      <Item Name="[fake]" Condition="mLayout!=0">($T2*)mLayout</Item>
+      <Item Name="[deref]" Condition="mLayout!=0">($T2*)mLayout</Item>
       <ExpandedItem>($T2*)mLayout</ExpandedItem>
     </Expand>
   </Type>
@@ -68,7 +68,7 @@
 
   <Type Name="CSC::RefLayout">
     <Expand HideRawView="true">
-      <ExpandedItem Condition="mHandle!=0">(CSC::RefImplLayout*)mHandle</ExpandedItem>
+      <ExpandedItem Condition="mHandle!=0">(CSC::RefTree*)mHandle</ExpandedItem>
     </Expand>
   </Type>
 
@@ -437,7 +437,7 @@
 
   <!--csc_string.hpp-->
 
-  <Type Name="CSC::XmlParserImplLayout">
+  <Type Name="CSC::XmlParserTree">
     <Expand HideRawView="true">
       <ExpandedItem>mTree</ExpandedItem>
     </Expand>
@@ -447,11 +447,11 @@
     <Expand HideRawView="true">
       <Item Name="[index]">mIndex</Item>
       <ExpandedItem>mThis</ExpandedItem>
-      <ExpandedItem Condition="mThis.mLayout!=0">((CSC::XmlParserNode*)(*(CSC::XmlParserImplLayout*)mThis.mLayout).mTree.mArray.mBuffer)[mIndex]</ExpandedItem>
+      <ExpandedItem Condition="mThis.mLayout!=0">((CSC::XmlParserNode*)(*(CSC::XmlParserTree*)mThis.mLayout).mTree.mArray.mBuffer)[mIndex]</ExpandedItem>
     </Expand>
   </Type>
 
-  <Type Name="CSC::JsonParserImplLayout">
+  <Type Name="CSC::JsonParserTree">
     <Expand HideRawView="true">
       <ExpandedItem>mTree</ExpandedItem>
     </Expand>
@@ -461,7 +461,7 @@
     <Expand HideRawView="true">
       <Item Name="[index]">mIndex</Item>
       <ExpandedItem>mThis</ExpandedItem>
-      <ExpandedItem Condition="mThis.mLayout!=0">((CSC::JsonParserNode*)(*(CSC::JsonParserImplLayout*)mThis.mLayout).mTree.mArray.mBuffer)[mIndex]</ExpandedItem>
+      <ExpandedItem Condition="mThis.mLayout!=0">((CSC::JsonParserNode*)(*(CSC::JsonParserTree*)mThis.mLayout).mTree.mArray.mBuffer)[mIndex]</ExpandedItem>
     </Expand>
   </Type>
 

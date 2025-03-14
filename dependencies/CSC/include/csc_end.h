@@ -6,8 +6,8 @@
 #undef leftvalue
 #undef rightvalue
 #undef thiz
+#undef deref
 #undef self
-#undef fake
 #undef expr
 #undef trait
 #undef implement

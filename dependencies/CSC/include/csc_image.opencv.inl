@@ -19,17 +19,21 @@
 #include "csc_begin.h"
 
 namespace CSC {
-struct ImageProcImplLayout {} ;
+struct ImageProcLayout {} ;
 
-class ImageProcImplHolder final implement Fat<ImageProcHolder ,ImageProcImplLayout> {
+class ImageProcImplHolder final implement Fat<ImageProcHolder ,ImageProcLayout> {
 public:
+	void create (VREF<UniqueRef<ImageProcLayout>> that) const override {
+		that = UniqueRef<ImageProcLayout>::make () ;
+	}
+
 	void initialize () override {
 		noop () ;
 	}
 
 	ImageLayout make_image (RREF<BoxLayout> image) const override {
 		ImageLayout ret ;
-		auto &&rax = keep[TYPE<Box<cv::Mat>>::expr] (image).self ;
+		auto &&rax = keep[TYPE<Box<cv::Mat>>::expr] (image).deref ;
 		const auto r1x = rax.size () ;
 		const auto r2x = LENGTH (rax.depth ()) ;
 		const auto r3x = align_of_cvmat_depth (r2x) ;
@@ -42,7 +46,7 @@ public:
 		const auto r9x = r7x * LENGTH (r1x.height) ;
 		const auto r10x = Slice (r8x ,r9x ,r5x) ;
 		RefBufferHolder::hold (ret.mImage)->initialize (r4x ,r10x ,Box<Pin<cv::Mat>>::make ()) ;
-		auto &&rbx = keep[TYPE<Box<cv::Mat>>::expr] (RefBufferHolder::hold (ret.mImage)->raw ()).self ;
+		auto &&rbx = keep[TYPE<Box<cv::Mat>>::expr] (RefBufferHolder::hold (ret.mImage)->raw ()).deref ;
 		assign (rbx ,rax) ;
 		ret.mWidth = LENGTH (r1x.width) ;
 		ret.mStride = r7x ;
@@ -116,19 +120,19 @@ public:
 	VREF<Pointer> peek_image (VREF<ImageLayout> image) const override {
 		assert (ImageHolder::hold (image)->fixed ()) ;
 		auto &&rax = keep[TYPE<Box<Pin<cv::Mat>>>::expr] (ImageHolder::hold (image)->raw ()) ;
-		return rax.self ;
+		return rax.deref ;
 	}
 
 	CREF<Pointer> peek_image (CREF<ImageLayout> image) const override {
 		assert (ImageHolder::hold (image)->fixed ()) ;
 		auto &&rax = keep[TYPE<Box<Pin<cv::Mat>>>::expr] (ImageHolder::hold (image)->raw ()) ;
-		return rax.self ;
+		return rax.deref ;
 	}
 
 	ImageLayout load_image (CREF<String<STR>> file) const override {
 		auto rax = Box<Pin<cv::Mat>>::make () ;
 		const auto r1x = StringProc::stra_from_strs (file) ;
-		auto rbx = cv::imread (r1x.self ,cv::IMREAD_UNCHANGED) ;
+		auto rbx = cv::imread (r1x.deref ,cv::IMREAD_UNCHANGED) ;
 		assume (!rbx.empty ()) ;
 		rax->set (rbx) ;
 		return make_image (move (rax)) ;
@@ -140,10 +144,10 @@ public:
 		const auto r3x = ImageHolder::hold (image)->by () ;
 		const auto r4x = ImageHolder::hold (image)->cx () ;
 		const auto r5x = ImageHolder::hold (image)->cy () ;
-		auto &&rax = keep[TYPE<Box<cv::Mat>>::expr] (image.mImage.raw ()).self ;
+		auto &&rax = keep[TYPE<Box<cv::Mat>>::expr] (image.mImage.raw ()).deref ;
 		const auto r6x = cv::Rect (VAL32 (r2x) ,VAL32 (r3x) ,VAL32 (r4x) ,VAL32 (r5x)) ;
 		auto rbx = rax (r6x) ;
-		cv::imwrite (r1x.self ,rbx) ;
+		cv::imwrite (r1x.deref ,rbx) ;
 	}
 
 	Color1B sampler (CREF<Image<Color1B>> image ,CREF<FLT64> x ,CREF<FLT64> y) const override {

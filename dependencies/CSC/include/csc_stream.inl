@@ -11,7 +11,7 @@
 #include "csc_begin.h"
 
 namespace CSC {
-struct StreamProcImplLayout {
+struct StreamProcLayout {
 	Slice mBlankSlice ;
 	Slice mPunctSlice ;
 	Slice mAlphaSlice ;
@@ -20,15 +20,15 @@ struct StreamProcImplLayout {
 	Slice mEscapeCtrlSlice ;
 } ;
 
-class StreamProcImplHolder final implement Fat<StreamProcHolder ,StreamProcImplLayout> {
+class StreamProcImplHolder final implement Fat<StreamProcHolder ,StreamProcLayout> {
 public:
 	void initialize () override {
-		fake.mBlankSlice = slice ("\b\t\n\v\f\r ") ;
-		fake.mPunctSlice = slice ("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") ;
-		fake.mAlphaSlice = slice ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz") ;
-		fake.mDigitSlice = slice ("0123456789") ;
-		fake.mEscapeWordSlice = slice ("\\/tvbrnf\'\"?u") ;
-		fake.mEscapeCtrlSlice = slice ("\\/\t\v\b\r\n\f\'\"?\a") ;
+		self.mBlankSlice = slice ("\b\t\n\v\f\r ") ;
+		self.mPunctSlice = slice ("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") ;
+		self.mAlphaSlice = slice ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz") ;
+		self.mDigitSlice = slice ("0123456789") ;
+		self.mEscapeWordSlice = slice ("\\/tvbrnf\'\"?u") ;
+		self.mEscapeCtrlSlice = slice ("\\/\t\v\b\r\n\f\'\"?\a") ;
 	}
 
 	BOOL big_endian () const override {
@@ -38,7 +38,7 @@ public:
 	}
 
 	BOOL is_blank (CREF<STRU32> str) const override {
-		const auto r1x = fake.mBlankSlice ;
+		const auto r1x = self.mBlankSlice ;
 		for (auto &&i : iter (0 ,r1x.size ())) {
 			if (r1x[i] == str)
 				return TRUE ;
@@ -69,7 +69,7 @@ public:
 	}
 
 	BOOL is_punct (CREF<STRU32> str) const override {
-		const auto r1x = fake.mPunctSlice ;
+		const auto r1x = self.mPunctSlice ;
 		for (auto &&i : iter (0 ,r1x.size ())) {
 			if (r1x[i] == str)
 				return TRUE ;
@@ -157,7 +157,7 @@ public:
 	}
 
 	BOOL is_ctrl (CREF<STRU32> str) const override {
-		const auto r1x = fake.mEscapeCtrlSlice ;
+		const auto r1x = self.mEscapeCtrlSlice ;
 		for (auto &&i : iter (0 ,r1x.size ())) {
 			if (r1x[i] == str)
 				return TRUE ;
@@ -166,8 +166,8 @@ public:
 	}
 
 	STRU32 word_from_ctrl (CREF<STRU32> str) const override {
-		const auto r1x = fake.mEscapeWordSlice ;
-		const auto r2x = fake.mEscapeCtrlSlice ;
+		const auto r1x = self.mEscapeWordSlice ;
+		const auto r2x = self.mEscapeCtrlSlice ;
 		for (auto &&i : iter (0 ,r2x.size ())) {
 			if (r2x[i] == str)
 				return r1x[i] ;
@@ -177,8 +177,8 @@ public:
 	}
 
 	STRU32 ctrl_from_word (CREF<STRU32> str) const override {
-		const auto r1x = fake.mEscapeWordSlice ;
-		const auto r2x = fake.mEscapeCtrlSlice ;
+		const auto r1x = self.mEscapeWordSlice ;
+		const auto r2x = self.mEscapeCtrlSlice ;
 		for (auto &&i : iter (0 ,r1x.size ())) {
 			if (r1x[i] == str)
 				return r2x[i] ;
@@ -188,20 +188,20 @@ public:
 	}
 } ;
 
-exports CREF<StreamProcLayout> StreamProcHolder::instance () {
+exports CREF<OfThis<UniqueRef<StreamProcLayout>>> StreamProcHolder::instance () {
 	return memorize ([&] () {
-		StreamProcLayout ret ;
-		ret.mThis = UniqueRef<StreamProcImplLayout>::make () ;
+		OfThis<UniqueRef<StreamProcLayout>> ret ;
+		ret.mThis = UniqueRef<StreamProcLayout>::make () ;
 		StreamProcHolder::hold (ret)->initialize () ;
 		return move (ret) ;
 	}) ;
 }
 
-exports VFat<StreamProcHolder> StreamProcHolder::hold (VREF<StreamProcImplLayout> that) {
+exports VFat<StreamProcHolder> StreamProcHolder::hold (VREF<StreamProcLayout> that) {
 	return VFat<StreamProcHolder> (StreamProcImplHolder () ,that) ;
 }
 
-exports CFat<StreamProcHolder> StreamProcHolder::hold (CREF<StreamProcImplLayout> that) {
+exports CFat<StreamProcHolder> StreamProcHolder::hold (CREF<StreamProcLayout> that) {
 	return CFat<StreamProcHolder> (StreamProcImplHolder () ,that) ;
 }
 
@@ -210,37 +210,37 @@ public:
 	void initialize (RREF<Ref<RefBuffer<BYTE>>> stream) override {
 		assert (stream != NULL) ;
 		assert (stream->step () == 1) ;
-		fake.mStream = move (stream) ;
-		fake.mDiffEndian = FALSE ;
+		self.mStream = move (stream) ;
+		self.mDiffEndian = FALSE ;
 		reset () ;
 	}
 
 	void use_overflow (CREF<Function<VREF<ByteReaderLayout>>> overflow) override {
-		fake.mOverflow = overflow ;
+		self.mOverflow = overflow ;
 	}
 
 	LENGTH size () const override {
-		return fake.mStream->size () ;
+		return self.mStream->size () ;
 	}
 
 	LENGTH length () const override {
-		return fake.mRead ;
+		return self.mRead ;
 	}
 
 	void reset () override {
-		fake.mRead = 0 ;
-		fake.mWrite = fake.mStream->size () ;
+		self.mRead = 0 ;
+		self.mWrite = self.mStream->size () ;
 	}
 
 	void reset (CREF<StreamShape> shape) override {
-		fake.mRead = shape.mRead ;
-		fake.mWrite = shape.mWrite ;
+		self.mRead = shape.mRead ;
+		self.mWrite = shape.mWrite ;
 	}
 
 	StreamShape backup () const override {
 		StreamShape ret ;
-		ret.mRead = fake.mRead ;
-		ret.mWrite = fake.mWrite ;
+		ret.mRead = self.mRead ;
+		ret.mWrite = self.mWrite ;
 		return move (ret) ;
 	}
 
@@ -280,16 +280,16 @@ public:
 
 	void read (VREF<BYTE> item) override {
 		if ifdo (TRUE) {
-			if (fake.mRead < fake.mWrite)
+			if (self.mRead < self.mWrite)
 				discard ;
-			fake.mOverflow (fake) ;
+			self.mOverflow (self) ;
 		}
 		auto act = TRUE ;
 		if ifdo (act) {
-			if (fake.mRead >= fake.mWrite)
+			if (self.mRead >= self.mWrite)
 				discard ;
-			item = fake.mStream.self[fake.mRead] ;
-			fake.mRead++ ;
+			item = self.mStream.deref[self.mRead] ;
+			self.mRead++ ;
 		}
 		if ifdo (act) {
 			item = BYTE (0X00) ;
@@ -316,7 +316,7 @@ public:
 		}
 		item = bitwise[TYPE<ARG1>::expr] (rax) ;
 		if ifdo (TRUE) {
-			if (!fake.mDiffEndian)
+			if (!self.mDiffEndian)
 				discard ;
 			item = ByteProc::reverse (item) ;
 		}
@@ -381,7 +381,7 @@ public:
 	}
 
 	void read (CREF<typeof (BOM)>) override {
-		fake.mDiffEndian = !fake.mDiffEndian ;
+		self.mDiffEndian = !self.mDiffEndian ;
 	}
 
 	void read (CREF<typeof (GAP)>) override {
@@ -395,7 +395,7 @@ public:
 	void read (CREF<typeof (EOS)>) override {
 		auto rax = BYTE () ;
 		while (TRUE) {
-			if (fake.mRead >= fake.mWrite)
+			if (self.mRead >= self.mWrite)
 				break ;
 			read (rax) ;
 			assume (rax == BYTE (0X00)) ;
@@ -416,37 +416,37 @@ public:
 	void initialize (RREF<Ref<RefBuffer<BYTE>>> stream) override {
 		assert (stream != NULL) ;
 		assert (stream->step () <= 4) ;
-		fake.mStream = move (stream) ;
-		fake.mDiffEndian = FALSE ;
+		self.mStream = move (stream) ;
+		self.mDiffEndian = FALSE ;
 		reset () ;
 	}
 
 	void use_overflow (CREF<Function<VREF<TextReaderLayout>>> overflow) override {
-		fake.mOverflow = overflow ;
+		self.mOverflow = overflow ;
 	}
 
 	LENGTH size () const override {
-		return fake.mStream->size () ;
+		return self.mStream->size () ;
 	}
 
 	LENGTH length () const override {
-		return fake.mRead ;
+		return self.mRead ;
 	}
 
 	void reset () override {
-		fake.mRead = 0 ;
-		fake.mWrite = fake.mStream->size () ;
+		self.mRead = 0 ;
+		self.mWrite = self.mStream->size () ;
 	}
 
 	void reset (CREF<StreamShape> shape) override {
-		fake.mRead = shape.mRead ;
-		fake.mWrite = shape.mWrite ;
+		self.mRead = shape.mRead ;
+		self.mWrite = shape.mWrite ;
 	}
 
 	StreamShape backup () const override {
 		StreamShape ret ;
-		ret.mRead = fake.mRead ;
-		ret.mWrite = fake.mWrite ;
+		ret.mRead = self.mRead ;
+		ret.mWrite = self.mWrite ;
 		return move (ret) ;
 	}
 
@@ -701,37 +701,37 @@ public:
 
 	void read (VREF<STRU32> item) override {
 		if ifdo (TRUE) {
-			if (fake.mRead < fake.mWrite)
+			if (self.mRead < self.mWrite)
 				discard ;
-			fake.mOverflow (fake) ;
+			self.mOverflow (self) ;
 		}
 		auto act = TRUE ;
 		if ifdo (act) {
-			if (fake.mStream->step () != SIZE_OF<STRU8>::expr)
+			if (self.mStream->step () != SIZE_OF<STRU8>::expr)
 				discard ;
-			if (fake.mRead >= fake.mWrite)
+			if (self.mRead >= self.mWrite)
 				discard ;
-			auto &&rax = keep[TYPE<RefBuffer<STRU8>>::expr] (Pointer::from (fake.mStream.self)) ;
-			item = rax[fake.mRead] ;
-			fake.mRead++ ;
+			auto &&rax = keep[TYPE<RefBuffer<STRU8>>::expr] (Pointer::from (self.mStream.deref)) ;
+			item = rax[self.mRead] ;
+			self.mRead++ ;
 		}
 		if ifdo (act) {
-			if (fake.mStream->step () != SIZE_OF<STRU16>::expr)
+			if (self.mStream->step () != SIZE_OF<STRU16>::expr)
 				discard ;
-			if (fake.mRead >= fake.mWrite)
+			if (self.mRead >= self.mWrite)
 				discard ;
-			auto &&rax = keep[TYPE<RefBuffer<STRU16>>::expr] (Pointer::from (fake.mStream.self)) ;
-			item = rax[fake.mRead] ;
-			fake.mRead++ ;
+			auto &&rax = keep[TYPE<RefBuffer<STRU16>>::expr] (Pointer::from (self.mStream.deref)) ;
+			item = rax[self.mRead] ;
+			self.mRead++ ;
 		}
 		if ifdo (act) {
-			if (fake.mStream->step () != SIZE_OF<STRU32>::expr)
+			if (self.mStream->step () != SIZE_OF<STRU32>::expr)
 				discard ;
-			if (fake.mRead >= fake.mWrite)
+			if (self.mRead >= self.mWrite)
 				discard ;
-			auto &&rax = keep[TYPE<RefBuffer<STRU32>>::expr] (Pointer::from (fake.mStream.self)) ;
-			item = rax[fake.mRead] ;
-			fake.mRead++ ;
+			auto &&rax = keep[TYPE<RefBuffer<STRU32>>::expr] (Pointer::from (self.mStream.deref)) ;
+			item = rax[self.mRead] ;
+			self.mRead++ ;
 		}
 		if ifdo (act) {
 			item = STRU32 (0X00) ;
@@ -743,12 +743,12 @@ public:
 		if ifdo (act) {
 			if (item != STRU32 (0X00))
 				discard ;
-			if (fake.mRead < fake.mWrite)
+			if (self.mRead < self.mWrite)
 				discard ;
 			noop () ;
 		}
 		if ifdo (act) {
-			fake.mRead-- ;
+			self.mRead-- ;
 		}
 	}
 
@@ -800,7 +800,7 @@ public:
 		const auto r1x = backup () ;
 		auto act = TRUE ;
 		if ifdo (act) {
-			if (fake.mStream->step () != SIZE_OF<STRU8>::expr)
+			if (self.mStream->step () != SIZE_OF<STRU8>::expr)
 				discard ;
 			read (rax) ;
 			if (rax != STRU32 (0XEF))
@@ -814,22 +814,22 @@ public:
 			noop (rax) ;
 		}
 		if ifdo (act) {
-			if (fake.mStream->step () != SIZE_OF<STRU16>::expr)
+			if (self.mStream->step () != SIZE_OF<STRU16>::expr)
 				discard ;
 			read (rax) ;
 			if (rax != STRU32 (0XFEFF))
 				if (rax != STRU32 (0XFFFE))
 					discard ;
-			fake.mDiffEndian = rax != STRU32 (0XFEFF) ;
+			self.mDiffEndian = rax != STRU32 (0XFEFF) ;
 		}
 		if ifdo (act) {
-			if (fake.mStream->step () != SIZE_OF<STRU32>::expr)
+			if (self.mStream->step () != SIZE_OF<STRU32>::expr)
 				discard ;
 			read (rax) ;
 			if (rax != STRU32 (0X0000FEFF))
 				if (rax != STRU32 (0XFFFE0000))
 					discard ;
-			fake.mDiffEndian = rax != STRU32 (0X0000FEFF) ;
+			self.mDiffEndian = rax != STRU32 (0X0000FEFF) ;
 		}
 		if ifdo (act) {
 			reset (r1x) ;
@@ -869,38 +869,38 @@ public:
 	void initialize (RREF<Ref<RefBuffer<BYTE>>> stream) override {
 		assert (stream != NULL) ;
 		assert (stream->step () == 1) ;
-		fake.mStream = move (stream) ;
-		assert (fake.mStream.exclusive ()) ;
-		fake.mDiffEndian = FALSE ;
+		self.mStream = move (stream) ;
+		assert (self.mStream.exclusive ()) ;
+		self.mDiffEndian = FALSE ;
 		reset () ;
 	}
 
 	void use_overflow (CREF<Function<VREF<ByteWriterLayout>>> overflow) override {
-		fake.mOverflow = overflow ;
+		self.mOverflow = overflow ;
 	}
 
 	LENGTH size () const override {
-		return fake.mStream->size () ;
+		return self.mStream->size () ;
 	}
 
 	LENGTH length () const override {
-		return fake.mWrite ;
+		return self.mWrite ;
 	}
 
 	void reset () override {
-		fake.mRead = fake.mStream->size () ;
-		fake.mWrite = 0 ;
+		self.mRead = self.mStream->size () ;
+		self.mWrite = 0 ;
 	}
 
 	void reset (CREF<StreamShape> shape) override {
-		fake.mRead = shape.mRead ;
-		fake.mWrite = shape.mWrite ;
+		self.mRead = shape.mRead ;
+		self.mWrite = shape.mWrite ;
 	}
 
 	StreamShape backup () const override {
 		StreamShape ret ;
-		ret.mRead = fake.mRead ;
-		ret.mWrite = fake.mWrite ;
+		ret.mRead = self.mRead ;
+		ret.mWrite = self.mWrite ;
 		return move (ret) ;
 	}
 
@@ -935,17 +935,17 @@ public:
 
 	void write (CREF<BYTE> item) override {
 		if ifdo (TRUE) {
-			if (fake.mWrite < fake.mRead)
+			if (self.mWrite < self.mRead)
 				discard ;
-			fake.mOverflow (fake) ;
+			self.mOverflow (self) ;
 		}
 		auto act = TRUE ;
 		if ifdo (act) {
-			if (fake.mWrite >= fake.mRead)
+			if (self.mWrite >= self.mRead)
 				discard ;
-			auto &&rax = keep[TYPE<RefBuffer<BYTE>>::expr] (Pointer::from (fake.mStream.self)) ;
-			rax[fake.mWrite] = item ;
-			fake.mWrite++ ;
+			auto &&rax = keep[TYPE<RefBuffer<BYTE>>::expr] (Pointer::from (self.mStream.deref)) ;
+			rax[self.mWrite] = item ;
+			self.mWrite++ ;
 		}
 	}
 
@@ -965,7 +965,7 @@ public:
 	forceinline void write_byte_impl (CREF<ARG1> item) {
 		auto rax = item ;
 		if ifdo (TRUE) {
-			if (!fake.mDiffEndian)
+			if (!self.mDiffEndian)
 				discard ;
 			rax = ByteProc::reverse (rax) ;
 		}
@@ -1029,7 +1029,7 @@ public:
 	}
 
 	void write (CREF<typeof (BOM)>) override {
-		fake.mDiffEndian = !fake.mDiffEndian ;
+		self.mDiffEndian = !self.mDiffEndian ;
 	}
 
 	void write (CREF<typeof (GAP)>) override {
@@ -1039,7 +1039,7 @@ public:
 
 	void write (CREF<typeof (EOS)>) override {
 		while (TRUE) {
-			if (fake.mWrite >= fake.mRead)
+			if (self.mWrite >= self.mRead)
 				break ;
 			write (BYTE (0X00)) ;
 		}
@@ -1064,38 +1064,38 @@ public:
 	void initialize (RREF<Ref<RefBuffer<BYTE>>> stream) override {
 		assert (stream != NULL) ;
 		assert (stream->step () <= 4) ;
-		fake.mStream = move (stream) ;
-		assert (fake.mStream.exclusive ()) ;
-		fake.mDiffEndian = FALSE ;
+		self.mStream = move (stream) ;
+		assert (self.mStream.exclusive ()) ;
+		self.mDiffEndian = FALSE ;
 		reset () ;
 	}
 
 	void use_overflow (CREF<Function<VREF<TextWriterLayout>>> overflow) override {
-		fake.mOverflow = overflow ;
+		self.mOverflow = overflow ;
 	}
 
 	LENGTH size () const override {
-		return fake.mStream->size () ;
+		return self.mStream->size () ;
 	}
 
 	LENGTH length () const override {
-		return fake.mWrite ;
+		return self.mWrite ;
 	}
 
 	void reset () override {
-		fake.mRead = fake.mStream->size () ;
-		fake.mWrite = 0 ;
+		self.mRead = self.mStream->size () ;
+		self.mWrite = 0 ;
 	}
 
 	void reset (CREF<StreamShape> shape) override {
-		fake.mRead = shape.mRead ;
-		fake.mWrite = shape.mWrite ;
+		self.mRead = shape.mRead ;
+		self.mWrite = shape.mWrite ;
 	}
 
 	StreamShape backup () const override {
 		StreamShape ret ;
-		ret.mRead = fake.mRead ;
-		ret.mWrite = fake.mWrite ;
+		ret.mRead = self.mRead ;
+		ret.mWrite = self.mWrite ;
 		return move (ret) ;
 	}
 
@@ -1424,37 +1424,37 @@ public:
 
 	void write (CREF<STRU32> item) override {
 		if ifdo (TRUE) {
-			if (fake.mWrite < fake.mRead)
+			if (self.mWrite < self.mRead)
 				discard ;
-			fake.mOverflow (fake) ;
+			self.mOverflow (self) ;
 		}
 		auto act = TRUE ;
 		if ifdo (act) {
-			if (fake.mStream->step () != SIZE_OF<STRU8>::expr)
+			if (self.mStream->step () != SIZE_OF<STRU8>::expr)
 				discard ;
-			if (fake.mWrite >= fake.mRead)
+			if (self.mWrite >= self.mRead)
 				discard ;
-			auto &&rax = keep[TYPE<RefBuffer<STRU8>>::expr] (Pointer::from (fake.mStream.self)) ;
-			rax[fake.mWrite] = STRU8 (item) ;
-			fake.mWrite++ ;
+			auto &&rax = keep[TYPE<RefBuffer<STRU8>>::expr] (Pointer::from (self.mStream.deref)) ;
+			rax[self.mWrite] = STRU8 (item) ;
+			self.mWrite++ ;
 		}
 		if ifdo (act) {
-			if (fake.mStream->step () != SIZE_OF<STRU16>::expr)
+			if (self.mStream->step () != SIZE_OF<STRU16>::expr)
 				discard ;
-			if (fake.mWrite >= fake.mRead)
+			if (self.mWrite >= self.mRead)
 				discard ;
-			auto &&rax = keep[TYPE<RefBuffer<STRU16>>::expr] (Pointer::from (fake.mStream.self)) ;
-			rax[fake.mWrite] = STRU16 (item) ;
-			fake.mWrite++ ;
+			auto &&rax = keep[TYPE<RefBuffer<STRU16>>::expr] (Pointer::from (self.mStream.deref)) ;
+			rax[self.mWrite] = STRU16 (item) ;
+			self.mWrite++ ;
 		}
 		if ifdo (act) {
-			if (fake.mStream->step () != SIZE_OF<STRU32>::expr)
+			if (self.mStream->step () != SIZE_OF<STRU32>::expr)
 				discard ;
-			if (fake.mWrite >= fake.mRead)
+			if (self.mWrite >= self.mRead)
 				discard ;
-			auto &&rax = keep[TYPE<RefBuffer<STRU32>>::expr] (Pointer::from (fake.mStream.self)) ;
-			rax[fake.mWrite] = STRU32 (item) ;
-			fake.mWrite++ ;
+			auto &&rax = keep[TYPE<RefBuffer<STRU32>>::expr] (Pointer::from (self.mStream.deref)) ;
+			rax[self.mWrite] = STRU32 (item) ;
+			self.mWrite++ ;
 		}
 	}
 
@@ -1501,19 +1501,19 @@ public:
 	void write (CREF<typeof (BOM)>) override {
 		auto act = TRUE ;
 		if ifdo (act) {
-			if (fake.mStream->step () != SIZE_OF<STRU8>::expr)
+			if (self.mStream->step () != SIZE_OF<STRU8>::expr)
 				discard ;
 			write (STRU32 (0XEF)) ;
 			write (STRU32 (0XBB)) ;
 			write (STRU32 (0XBF)) ;
 		}
 		if ifdo (act) {
-			if (fake.mStream->step () != SIZE_OF<STRU16>::expr)
+			if (self.mStream->step () != SIZE_OF<STRU16>::expr)
 				discard ;
 			write (STRU32 (0XFEFF)) ;
 		}
 		if ifdo (act) {
-			if (fake.mStream->step () != SIZE_OF<STRU32>::expr)
+			if (self.mStream->step () != SIZE_OF<STRU32>::expr)
 				discard ;
 			write (STRU32 (0X0000FEFF)) ;
 		}
@@ -1525,7 +1525,7 @@ public:
 	}
 
 	void write (CREF<typeof (EOS)>) override {
-		assume (fake.mWrite < fake.mRead) ;
+		assume (self.mWrite < self.mRead) ;
 		write (STRU32 (0X00)) ;
 	}
 } ;
@@ -1541,25 +1541,25 @@ exports CFat<TextWriterHolder> TextWriterHolder::hold (CREF<TextWriterLayout> th
 class FormatImplHolder final implement Fat<FormatHolder ,FormatLayout> {
 public:
 	void initialize (CREF<Slice> format) override {
-		fake.mFormat = format ;
+		self.mFormat = format ;
 	}
 
 	void friend_write (VREF<WriterBinder> writer) const override {
 		auto rax = FLAG (0) ;
 		auto rbx = FatLayout () ;
-		for (auto &&i : iter (0 ,fake.mFormat.size ())) {
+		for (auto &&i : iter (0 ,self.mFormat.size ())) {
 			auto act = TRUE ;
 			if ifdo (act) {
 				if (rax != FLAG (0))
 					discard ;
-				if (fake.mFormat[i] != STRU32 ('$'))
+				if (self.mFormat[i] != STRU32 ('$'))
 					discard ;
 				rax = FLAG (2) ;
 			}
 			if ifdo (act) {
 				if (rax != FLAG (2))
 					discard ;
-				if (fake.mFormat[i] != STRU32 ('{'))
+				if (self.mFormat[i] != STRU32 ('{'))
 					discard ;
 				rax = FLAG (1) ;
 			}
@@ -1567,10 +1567,10 @@ public:
 				if (rax != FLAG (2))
 					discard ;
 				if ifdo (TRUE) {
-					const auto r1x = StreamProc::hex_from_str (fake.mFormat[i]) - 1 ;
-					if (!inline_between (r1x ,0 ,fake.mWrite.self))
+					const auto r1x = StreamProc::hex_from_str (self.mFormat[i]) - 1 ;
+					if (!inline_between (r1x ,0 ,self.mWrite.deref))
 						discard ;
-					fake.mParams[r1x].get (rbx) ;
+					self.mParams[r1x].get (rbx) ;
 					const auto r2x = keep[TYPE<CFat<FormatBinder>>::expr] (rbx) ;
 					r2x->friend_write (writer) ;
 				}
@@ -1579,10 +1579,10 @@ public:
 			if ifdo (act) {
 				if (rax != FLAG (1))
 					discard ;
-				if (fake.mFormat[i] != STRU32 ('0'))
+				if (self.mFormat[i] != STRU32 ('0'))
 					discard ;
-				for (auto &&j : iter (0 ,fake.mWrite.self)) {
-					fake.mParams[j].get (rbx) ;
+				for (auto &&j : iter (0 ,self.mWrite.deref)) {
+					self.mParams[j].get (rbx) ;
 					const auto r3x = keep[TYPE<CFat<FormatBinder>>::expr] (rbx) ;
 					r3x->friend_write (writer) ;
 				}
@@ -1592,10 +1592,10 @@ public:
 				if (rax != FLAG (1))
 					discard ;
 				if ifdo (TRUE) {
-					const auto r4x = StreamProc::hex_from_str (fake.mFormat[i]) - 1 ;
-					if (!inline_between (r4x ,0 ,fake.mWrite.self))
+					const auto r4x = StreamProc::hex_from_str (self.mFormat[i]) - 1 ;
+					if (!inline_between (r4x ,0 ,self.mWrite.deref))
 						discard ;
-					fake.mParams[r4x].get (rbx) ;
+					self.mParams[r4x].get (rbx) ;
 					const auto r5x = keep[TYPE<CFat<FormatBinder>>::expr] (rbx) ;
 					r5x->friend_write (writer) ;
 				}
@@ -1604,12 +1604,12 @@ public:
 			if ifdo (act) {
 				if (rax != FLAG (3))
 					discard ;
-				assert (fake.mFormat[i] == STRU32 ('}')) ;
+				assert (self.mFormat[i] == STRU32 ('}')) ;
 				rax = FLAG (0) ;
 			}
 			if ifdo (act) {
 				assume (rax == FLAG (0)) ;
-				writer.write (fake.mFormat[i]) ;
+				writer.write (self.mFormat[i]) ;
 			}
 		}
 	}
@@ -1619,10 +1619,10 @@ public:
 		INDEX ix = 0 ;
 		for (auto &&i : iter (0 ,params.mRank)) {
 			auto rbx = rax[i] ;
-			fake.mParams[ix].set (rbx) ;
+			self.mParams[ix].set (rbx) ;
 			ix++ ;
 		}
-		fake.mWrite.set (ix) ;
+		self.mWrite.set (ix) ;
 	}
 } ;
 
@@ -1634,9 +1634,9 @@ exports CFat<FormatHolder> FormatHolder::hold (CREF<FormatLayout> that) {
 	return CFat<FormatHolder> (FormatImplHolder () ,that) ;
 }
 
-struct StreamTextProcImplLayout {} ;
+struct StreamTextProcLayout {} ;
 
-class StreamTextProcImplHolder final implement Fat<StreamTextProcHolder ,StreamTextProcImplLayout> {
+class StreamTextProcImplHolder final implement Fat<StreamTextProcHolder ,StreamTextProcLayout> {
 public:
 	void initialize () override {
 		noop () ;
@@ -1834,24 +1834,24 @@ public:
 	}
 } ;
 
-exports CREF<StreamTextProcLayout> StreamTextProcHolder::instance () {
+exports CREF<OfThis<UniqueRef<StreamTextProcLayout>>> StreamTextProcHolder::instance () {
 	return memorize ([&] () {
-		StreamTextProcLayout ret ;
-		ret.mThis = UniqueRef<StreamTextProcImplLayout>::make () ;
+		OfThis<UniqueRef<StreamTextProcLayout>> ret ;
+		ret.mThis = UniqueRef<StreamTextProcLayout>::make () ;
 		StreamTextProcHolder::hold (ret)->initialize () ;
 		return move (ret) ;
 	}) ;
 }
 
-exports VFat<StreamTextProcHolder> StreamTextProcHolder::hold (VREF<StreamTextProcImplLayout> that) {
+exports VFat<StreamTextProcHolder> StreamTextProcHolder::hold (VREF<StreamTextProcLayout> that) {
 	return VFat<StreamTextProcHolder> (StreamTextProcImplHolder () ,that) ;
 }
 
-exports CFat<StreamTextProcHolder> StreamTextProcHolder::hold (CREF<StreamTextProcImplLayout> that) {
+exports CFat<StreamTextProcHolder> StreamTextProcHolder::hold (CREF<StreamTextProcLayout> that) {
 	return CFat<StreamTextProcHolder> (StreamTextProcImplHolder () ,that) ;
 }
 
-struct CommaImplLayout {
+struct CommaLayout {
 	Slice mIndent ;
 	Slice mComma ;
 	Slice mEndline ;
@@ -1861,125 +1861,125 @@ struct CommaImplLayout {
 	LENGTH mLastTight ;
 } ;
 
-class CommaImplHolder final implement Fat<CommaHolder ,CommaImplLayout> {
+class CommaImplHolder final implement Fat<CommaHolder ,CommaLayout> {
 public:
 	void initialize (CREF<Slice> indent ,CREF<Slice> comma ,CREF<Slice> endline) override {
-		fake.mIndent = indent ;
-		fake.mComma = comma ;
-		fake.mEndline = endline ;
-		fake.mDepth = 0 ;
-		fake.mTight = 255 ;
-		fake.mLastTight = 0 ;
+		self.mIndent = indent ;
+		self.mComma = comma ;
+		self.mEndline = endline ;
+		self.mDepth = 0 ;
+		self.mTight = 255 ;
+		self.mLastTight = 0 ;
 	}
 
 	void friend_write (VREF<WriterBinder> writer) override {
 		if ifdo (TRUE) {
-			if (fake.mDepth >= fake.mTight + fake.mLastTight)
+			if (self.mDepth >= self.mTight + self.mLastTight)
 				discard ;
-			writer.write (fake.mEndline) ;
+			writer.write (self.mEndline) ;
 		}
 		if ifdo (TRUE) {
-			if (fake.mFirst.empty ())
+			if (self.mFirst.empty ())
 				discard ;
-			INDEX ix = fake.mFirst.tail () ;
+			INDEX ix = self.mFirst.tail () ;
 			if ifdo (TRUE) {
-				if (fake.mFirst[ix])
+				if (self.mFirst[ix])
 					discard ;
-				writer.write (fake.mComma) ;
+				writer.write (self.mComma) ;
 			}
-			fake.mFirst[ix] = FALSE ;
+			self.mFirst[ix] = FALSE ;
 		}
 		if ifdo (TRUE) {
-			if (fake.mDepth >= fake.mTight + fake.mLastTight)
+			if (self.mDepth >= self.mTight + self.mLastTight)
 				discard ;
-			for (auto &&i : iter (0 ,fake.mDepth)) {
+			for (auto &&i : iter (0 ,self.mDepth)) {
 				noop (i) ;
-				writer.write (fake.mIndent) ;
+				writer.write (self.mIndent) ;
 			}
 		}
-		fake.mLastTight = 0 ;
+		self.mLastTight = 0 ;
 	}
 
 	void increase () override {
-		fake.mDepth++ ;
+		self.mDepth++ ;
 		if ifdo (TRUE) {
-			if (fake.mFirst.empty ())
+			if (self.mFirst.empty ())
 				discard ;
-			fake.mFirst[fake.mFirst.tail ()] = TRUE ;
+			self.mFirst[self.mFirst.tail ()] = TRUE ;
 		}
-		fake.mFirst.add (TRUE) ;
+		self.mFirst.add (TRUE) ;
 	}
 
 	void decrease () override {
-		fake.mFirst.pop () ;
-		fake.mDepth-- ;
-		fake.mLastTight = fake.mTight - 256 ;
-		fake.mTight = 255 ;
+		self.mFirst.pop () ;
+		self.mDepth-- ;
+		self.mLastTight = self.mTight - 256 ;
+		self.mTight = 255 ;
 	}
 
 	void tight () override {
-		fake.mTight = inline_min (fake.mTight ,fake.mDepth) ;
+		self.mTight = inline_min (self.mTight ,self.mDepth) ;
 	}
 } ;
 
-exports CommaLayout CommaHolder::create () {
-	CommaLayout ret ;
-	ret.mThis = SharedRef<CommaImplLayout>::make () ;
+exports OfThis<SharedRef<CommaLayout>> CommaHolder::create () {
+	OfThis<SharedRef<CommaLayout>> ret ;
+	ret.mThis = SharedRef<CommaLayout>::make () ;
 	return move (ret) ;
 }
 
-exports VFat<CommaHolder> CommaHolder::hold (VREF<CommaImplLayout> that) {
+exports VFat<CommaHolder> CommaHolder::hold (VREF<CommaLayout> that) {
 	return VFat<CommaHolder> (CommaImplHolder () ,that) ;
 }
 
-exports CFat<CommaHolder> CommaHolder::hold (CREF<CommaImplLayout> that) {
+exports CFat<CommaHolder> CommaHolder::hold (CREF<CommaLayout> that) {
 	return CFat<CommaHolder> (CommaImplHolder () ,that) ;
 }
 
-struct RegexImplLayout {
+struct RegexLayout {
 	std::basic_regex<STR> mRegex ;
 	std::match_results<PTR<CREF<STR>>> mMatch ;
 	Ref<String<STR>> mText ;
 } ;
 
-class RegexImplHolder final implement Fat<RegexHolder ,RegexImplLayout> {
+class RegexImplHolder final implement Fat<RegexHolder ,RegexLayout> {
 public:
 	void initialize (CREF<String<STR>> format) override {
-		fake.mRegex = std::basic_regex<STR> (format) ;
+		self.mRegex = std::basic_regex<STR> (format) ;
 	}
 
 	INDEX search (RREF<Ref<String<STR>>> text ,CREF<INDEX> offset) override {
-		fake.mText = move (text) ;
-		const auto r1x = (&fake.mText.self[offset]) ;
-		const auto r2x = std::regex_search (r1x ,fake.mMatch ,fake.mRegex) ;
+		self.mText = move (text) ;
+		const auto r1x = (&self.mText.deref[offset]) ;
+		const auto r2x = std::regex_search (r1x ,self.mMatch ,self.mRegex) ;
 		if (!r2x)
 			return NONE ;
-		const auto r3x = FLAG (fake.mMatch[0].first) ;
+		const auto r3x = FLAG (self.mMatch[0].first) ;
 		const auto r4x = (r3x - FLAG (r1x)) / SIZE_OF<STR>::expr ;
 		return offset + r4x ;
 	}
 
 	Slice match (CREF<INDEX> index) const override {
-		assert (!fake.mMatch.empty ()) ;
-		assert (inline_between (index ,0 ,fake.mMatch.size ())) ;
-		const auto r1x = FLAG (fake.mMatch[index].first) ;
-		const auto r2x = FLAG (fake.mMatch[index].second) ;
+		assert (!self.mMatch.empty ()) ;
+		assert (inline_between (index ,0 ,self.mMatch.size ())) ;
+		const auto r1x = FLAG (self.mMatch[index].first) ;
+		const auto r2x = FLAG (self.mMatch[index].second) ;
 		const auto r3x = (r2x - r1x) / SIZE_OF<STR>::expr ;
 		return Slice (r1x ,r3x ,SIZE_OF<STR>::expr) ;
 	}
 } ;
 
-exports RegexLayout RegexHolder::create () {
-	RegexLayout ret ;
-	ret.mThis = AutoRef<RegexImplLayout>::make () ;
+exports OfThis<AutoRef<RegexLayout>> RegexHolder::create () {
+	OfThis<AutoRef<RegexLayout>> ret ;
+	ret.mThis = AutoRef<RegexLayout>::make () ;
 	return move (ret) ;
 }
 
-exports VFat<RegexHolder> RegexHolder::hold (VREF<RegexImplLayout> that) {
+exports VFat<RegexHolder> RegexHolder::hold (VREF<RegexLayout> that) {
 	return VFat<RegexHolder> (RegexImplHolder () ,that) ;
 }
 
-exports CFat<RegexHolder> RegexHolder::hold (CREF<RegexImplLayout> that) {
+exports CFat<RegexHolder> RegexHolder::hold (CREF<RegexLayout> that) {
 	return CFat<RegexHolder> (RegexImplHolder () ,that) ;
 }
 } ;

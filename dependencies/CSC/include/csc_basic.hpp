@@ -114,7 +114,7 @@ public:
 	A fetch () const {
 		auto rax = Box<A> () ;
 		OptionalHolder::hold (thiz)->get (rax) ;
-		return move (rax.self) ;
+		return move (rax.deref) ;
 	}
 
 	forceinline operator A () const {
@@ -144,7 +144,7 @@ public:
 			return ;
 		auto rax = Box<A> () ;
 		OptionalHolder::hold (thiz)->get (rax) ;
-		func (rax.self) ;
+		func (rax.deref) ;
 		OptionalHolder::hold (thiz)->set (rax) ;
 	}
 } ;
@@ -176,20 +176,20 @@ public:
 		return SIZE_OF<A>::expr ;
 	}
 
-	VREF<ARR<A>> self_m () leftvalue {
+	VREF<ARR<A>> deref_m () leftvalue {
 		return Pointer::from (mBuffer) ;
 	}
 
 	forceinline operator VREF<ARR<A>> () leftvalue {
-		return self ;
+		return deref ;
 	}
 
-	CREF<ARR<A>> self_m () const leftvalue {
+	CREF<ARR<A>> deref_m () const leftvalue {
 		return Pointer::from (mBuffer) ;
 	}
 
 	forceinline operator CREF<ARR<A>> () const leftvalue {
-		return self ;
+		return deref ;
 	}
 
 	forceinline BOOL operator== (CREF<Buffer> that) = delete ;
@@ -198,7 +198,7 @@ public:
 
 	VREF<A> at (CREF<INDEX> index) leftvalue {
 		assert (inline_between (index ,0 ,size ())) ;
-		return self[index] ;
+		return deref[index] ;
 	}
 
 	forceinline VREF<A> operator[] (CREF<INDEX> index) leftvalue {
@@ -207,7 +207,7 @@ public:
 
 	CREF<A> at (CREF<INDEX> index) const leftvalue {
 		assert (inline_between (index ,0 ,size ())) ;
-		return self[index] ;
+		return deref[index] ;
 	}
 
 	forceinline CREF<A> operator[] (CREF<INDEX> index) const leftvalue {
@@ -264,7 +264,7 @@ public:
 
 	CREF<ITEM> at (CREF<INDEX> index) const leftvalue {
 		assert (inline_between (index ,0 ,mRank)) ;
-		return Pointer::make (mWrapper.self[index]) ;
+		return Pointer::make (mWrapper.deref[index]) ;
 	}
 
 	forceinline CREF<ITEM> operator[] (CREF<INDEX> index) const leftvalue {
@@ -279,7 +279,7 @@ public:
 	template <class ARG1 ,class...ARG2>
 	forceinline void invoke_impl (CREF<ARG1> func ,TYPE<ARG2...>) const {
 		//@fatal: GCC is so bad
-		return func (keep[TYPE<XREF<A>>::expr] (Pointer::make (mWrapper.self[ARG2::expr]))...) ;
+		return func (keep[TYPE<XREF<A>>::expr] (Pointer::make (mWrapper.deref[ARG2::expr]))...) ;
 	}
 
 	template <class ARG1>
@@ -322,10 +322,10 @@ public:
 	}
 } ;
 
-struct FunctionImplLayout ;
+struct FunctionTree ;
 
 struct FunctionLayout {
-	Ref<FunctionImplLayout> mThis ;
+	Ref<FunctionTree> mThis ;
 } ;
 
 struct FunctionHolder implement Interface {
@@ -405,7 +405,7 @@ public:
 
 	template <class ARG1 ,class ARG2 ,class = REQUIRE<IS_VIRTUAL<ARG1 ,ARG2>>>
 	forceinline FLAG recast_impl (CREF<typeof (PH2)> ,TYPE<ARG1> ,CREF<ARG2> b) const {
-		return address (b.self) ;
+		return address (b.deref) ;
 	}
 
 	template <class ARG1 ,class ARG2 ,class = REQUIRE<IS_SAME<ARG1 ,Pointer>>>
@@ -414,10 +414,10 @@ public:
 	}
 } ;
 
-struct AutoRefImplLayout ;
+struct AutoRefTree ;
 
 struct AutoRefLayout {
-	Ref<AutoRefImplLayout> mThis ;
+	Ref<AutoRefTree> mThis ;
 	FLAG mLayout ;
 
 public:
@@ -451,8 +451,8 @@ struct AutoRefHolder implement Interface {
 	virtual VREF<BoxLayout> raw () leftvalue = 0 ;
 	virtual CREF<BoxLayout> raw () const leftvalue = 0 ;
 	virtual Clazz clazz () const = 0 ;
-	virtual VREF<Pointer> self_m () leftvalue = 0 ;
-	virtual CREF<Pointer> self_m () const leftvalue = 0 ;
+	virtual VREF<Pointer> deref_m () leftvalue = 0 ;
+	virtual CREF<Pointer> deref_m () const leftvalue = 0 ;
 	virtual VREF<Pointer> rebind (CREF<Clazz> clazz_) leftvalue = 0 ;
 	virtual CREF<Pointer> rebind (CREF<Clazz> clazz_) const leftvalue = 0 ;
 	virtual AutoRefLayout recast (CREF<Unknown> simple) = 0 ;
@@ -503,28 +503,28 @@ public:
 		return AutoRefHolder::hold (thiz)->clazz () ;
 	}
 
-	VREF<A> self_m () leftvalue {
-		return AutoRefHolder::hold (thiz)->self ;
+	VREF<A> deref_m () leftvalue {
+		return AutoRefHolder::hold (thiz)->deref ;
 	}
 
 	forceinline operator VREF<A> () leftvalue {
-		return self ;
+		return deref ;
 	}
 
 	forceinline PTR<VREF<A>> operator-> () leftvalue {
-		return (&self) ;
+		return (&deref) ;
 	}
 
-	CREF<A> self_m () const leftvalue {
-		return AutoRefHolder::hold (thiz)->self ;
+	CREF<A> deref_m () const leftvalue {
+		return AutoRefHolder::hold (thiz)->deref ;
 	}
 
 	forceinline operator CREF<A> () const leftvalue {
-		return self ;
+		return deref ;
 	}
 
 	forceinline PTR<CREF<A>> operator-> () const leftvalue {
-		return (&self) ;
+		return (&deref) ;
 	}
 
 	forceinline BOOL operator== (CREF<AutoRef> that) = delete ;
@@ -549,10 +549,10 @@ public:
 	}
 } ;
 
-struct SharedRefImplLayout ;
+struct SharedRefTree ;
 
 struct SharedRefLayout {
-	Ref<SharedRefImplLayout> mThis ;
+	Ref<SharedRefTree> mThis ;
 	FLAG mLayout ;
 
 public:
@@ -587,7 +587,7 @@ struct SharedRefHolder implement Interface {
 	virtual VREF<BoxLayout> raw () leftvalue = 0 ;
 	virtual CREF<BoxLayout> raw () const leftvalue = 0 ;
 	virtual LENGTH counter () const = 0 ;
-	virtual VREF<Pointer> self_m () const leftvalue = 0 ;
+	virtual VREF<Pointer> deref_m () const leftvalue = 0 ;
 	virtual SharedRefLayout recast (CREF<Unknown> simple) = 0 ;
 } ;
 
@@ -649,16 +649,16 @@ public:
 		return SharedRefHolder::hold (thiz)->counter () ;
 	}
 
-	VREF<A> self_m () const leftvalue {
-		return SharedRefHolder::hold (thiz)->self ;
+	VREF<A> deref_m () const leftvalue {
+		return SharedRefHolder::hold (thiz)->deref ;
 	}
 
 	forceinline operator VREF<A> () const leftvalue {
-		return self ;
+		return deref ;
 	}
 
 	forceinline PTR<VREF<A>> operator-> () const leftvalue {
-		return (&self) ;
+		return (&deref) ;
 	}
 
 	forceinline BOOL operator== (CREF<SharedRef> that) = delete ;
@@ -673,10 +673,10 @@ public:
 	}
 } ;
 
-struct UniqueRefImplLayout ;
+struct UniqueRefTree ;
 
 struct UniqueRefLayout {
-	Ref<UniqueRefImplLayout> mThis ;
+	Ref<UniqueRefTree> mThis ;
 	FLAG mLayout ;
 
 public:
@@ -710,7 +710,7 @@ struct UniqueRefHolder implement Interface {
 	virtual VREF<BoxLayout> raw () leftvalue = 0 ;
 	virtual CREF<BoxLayout> raw () const leftvalue = 0 ;
 	virtual void depend (VREF<UniqueRefLayout> that) const = 0 ;
-	virtual CREF<Pointer> self_m () const leftvalue = 0 ;
+	virtual CREF<Pointer> deref_m () const leftvalue = 0 ;
 	virtual UniqueRefLayout recast (CREF<Unknown> simple) = 0 ;
 } ;
 
@@ -735,7 +735,7 @@ public:
 		auto rax = Box<A>::make () ;
 		auto rbx = Function<VREF<A>> (move (dtor)) ;
 		UniqueRefHolder::hold (thiz)->initialize (move (rax)) ;
-		ctor (BoxHolder::hold (raw ())->self) ;
+		ctor (BoxHolder::hold (raw ())->deref) ;
 		UniqueRefHolder::hold (thiz)->use_owner (Pointer::from (rbx)) ;
 	}
 
@@ -759,16 +759,16 @@ public:
 		return UniqueRefHolder::hold (thiz)->raw () ;
 	}
 
-	CREF<A> self_m () const leftvalue {
-		return UniqueRefHolder::hold (thiz)->self ;
+	CREF<A> deref_m () const leftvalue {
+		return UniqueRefHolder::hold (thiz)->deref ;
 	}
 
 	forceinline operator CREF<A> () const leftvalue {
-		return self ;
+		return deref ;
 	}
 
 	forceinline PTR<CREF<A>> operator-> () const leftvalue {
-		return (&self) ;
+		return (&deref) ;
 	}
 
 	forceinline BOOL operator== (CREF<UniqueRef> that) = delete ;
@@ -803,10 +803,10 @@ public:
 	}
 } ;
 
-struct RefBufferImplLayout ;
+struct RefBufferTree ;
 
 struct RefBufferLayout {
-	Ref<RefBufferImplLayout> mThis ;
+	Ref<RefBufferTree> mThis ;
 	FLAG mHolder ;
 	FLAG mBuffer ;
 	LENGTH mSize ;
@@ -851,8 +851,8 @@ struct RefBufferHolder implement Interface {
 	virtual CREF<BoxLayout> raw () const leftvalue = 0 ;
 	virtual LENGTH size () const = 0 ;
 	virtual LENGTH step () const = 0 ;
-	virtual VREF<Pointer> self_m () leftvalue = 0 ;
-	virtual CREF<Pointer> self_m () const leftvalue = 0 ;
+	virtual VREF<Pointer> deref_m () leftvalue = 0 ;
+	virtual CREF<Pointer> deref_m () const leftvalue = 0 ;
 	virtual VREF<Pointer> at (CREF<INDEX> index) leftvalue = 0 ;
 	virtual CREF<Pointer> at (CREF<INDEX> index) const leftvalue = 0 ;
 	virtual void resize (CREF<LENGTH> size_) = 0 ;
@@ -935,20 +935,20 @@ public:
 		return RefBufferHolder::hold (thiz)->step () ;
 	}
 
-	VREF<ARR<A>> self_m () leftvalue {
-		return RefBufferHolder::hold (thiz)->self ;
+	VREF<ARR<A>> deref_m () leftvalue {
+		return RefBufferHolder::hold (thiz)->deref ;
 	}
 
 	forceinline operator VREF<ARR<A>> () leftvalue {
-		return self ;
+		return deref ;
 	}
 
-	CREF<ARR<A>> self_m () const leftvalue {
-		return RefBufferHolder::hold (thiz)->self ;
+	CREF<ARR<A>> deref_m () const leftvalue {
+		return RefBufferHolder::hold (thiz)->deref ;
 	}
 
 	forceinline operator CREF<ARR<A>> () const leftvalue {
-		return self ;
+		return deref ;
 	}
 
 	forceinline BOOL operator== (CREF<RefBuffer> that) = delete ;

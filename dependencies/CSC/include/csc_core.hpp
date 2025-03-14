@@ -734,11 +734,11 @@ protected:
 	FLAG mLayout ;
 
 public:
-	VREF<B> fake_m () leftvalue {
+	VREF<B> self_m () leftvalue {
 		return Pointer::make (mLayout) ;
 	}
 
-	CREF<B> fake_m () const leftvalue {
+	CREF<B> self_m () const leftvalue {
 		return Pointer::make (mLayout) ;
 	}
 } ;
@@ -760,18 +760,18 @@ public:
 		require (IS_EXTEND<A ,ARG1>) ;
 		require (ENUM_EQUAL<SIZE_OF<ARG1> ,SIZE_OF<VFat>>) ;
 		require (ENUM_EQUAL<ALIGN_OF<ARG1> ,ALIGN_OF<VFat>>) ;
-		using R1X = typeof (nullof (ARG1).fake) ;
+		using R1X = typeof (nullof (ARG1).self) ;
 		require (IS_SAME<R1X ,ARG2>) ;
 		mHolder = inline_vptr (holder) ;
 		mLayout = address (that) ;
 	}
 
-	VREF<A> self_m () const {
+	VREF<A> deref_m () const {
 		return Pointer::from (const_cast<VREF<VFat>> (thiz)) ;
 	}
 
 	forceinline PTR<VREF<A>> operator-> () const {
-		return (&self) ;
+		return (&deref) ;
 	}
 } ;
 
@@ -792,18 +792,18 @@ public:
 		require (IS_EXTEND<A ,ARG1>) ;
 		require (ENUM_EQUAL<SIZE_OF<ARG1> ,SIZE_OF<CFat>>) ;
 		require (ENUM_EQUAL<ALIGN_OF<ARG1> ,ALIGN_OF<CFat>>) ;
-		using R1X = typeof (nullof (ARG1).fake) ;
+		using R1X = typeof (nullof (ARG1).self) ;
 		require (IS_SAME<R1X ,ARG2>) ;
 		mHolder = inline_vptr (holder) ;
 		mLayout = address (that) ;
 	}
 
-	CREF<A> self_m () const {
+	CREF<A> deref_m () const {
 		return Pointer::from (const_cast<CREF<CFat>> (thiz)) ;
 	}
 
 	forceinline PTR<CREF<A>> operator-> () const {
-		return (&self) ;
+		return (&deref) ;
 	}
 } ;
 
@@ -825,12 +825,12 @@ public:
 		mLayout = ZERO ;
 	}
 
-	CREF<A> self_m () const {
+	CREF<A> deref_m () const {
 		return Pointer::from (const_cast<CREF<RFat>> (thiz)) ;
 	}
 
 	forceinline PTR<CREF<A>> operator-> () const {
-		return (&self) ;
+		return (&deref) ;
 	}
 } ;
 
@@ -1063,8 +1063,8 @@ struct BoxHolder implement Interface {
 	virtual void destroy () = 0 ;
 	virtual BOOL exist () const = 0 ;
 	virtual Unknown unknown () const = 0 ;
-	virtual VREF<Pointer> self_m () leftvalue = 0 ;
-	virtual CREF<Pointer> self_m () const leftvalue = 0 ;
+	virtual VREF<Pointer> deref_m () leftvalue = 0 ;
+	virtual CREF<Pointer> deref_m () const leftvalue = 0 ;
 	virtual void remake (CREF<Unknown> holder) = 0 ;
 	virtual void acquire (CREF<BoxLayout> that) = 0 ;
 	virtual void release () = 0 ;
@@ -1130,20 +1130,20 @@ public:
 		return BoxHolder::hold (thiz)->unknown () ;
 	}
 
-	VREF<A> self_m () leftvalue {
-		return BoxHolder::hold (thiz)->self ;
+	VREF<A> deref_m () leftvalue {
+		return BoxHolder::hold (thiz)->deref ;
 	}
 
 	forceinline PTR<VREF<A>> operator-> () leftvalue {
-		return (&self) ;
+		return (&deref) ;
 	}
 
-	CREF<A> self_m () const leftvalue {
-		return BoxHolder::hold (thiz)->self ;
+	CREF<A> deref_m () const leftvalue {
+		return BoxHolder::hold (thiz)->deref ;
 	}
 
 	forceinline PTR<CREF<A>> operator-> () const leftvalue {
-		return (&self) ;
+		return (&deref) ;
 	}
 
 	template <class...ARG1>
@@ -1179,7 +1179,7 @@ public:
 		const auto r1x = zeroize () ;
 		if (inline_memcmp (mStorage ,r1x) == 0)
 			return ;
-		auto &&rax = keep[TYPE<A>::expr] (self) ;
+		auto &&rax = keep[TYPE<A>::expr] (deref) ;
 		rax.~A () ;
 		mStorage = r1x ;
 	}
@@ -1206,21 +1206,21 @@ public:
 		return thiz ;
 	}
 
-	VREF<Pointer> self_m () const leftvalue {
+	VREF<Pointer> deref_m () const leftvalue {
 		return Pointer::from (mStorage) ;
 	}
 
 	forceinline operator VREF<Pointer> () const leftvalue {
-		return self ;
+		return deref ;
 	}
 
 	void get (VREF<A> item) const {
-		auto &&rax = keep[TYPE<A>::expr] (self) ;
+		auto &&rax = keep[TYPE<A>::expr] (deref) ;
 		item = move (rax) ;
 	}
 
 	void set (VREF<A> item) const {
-		auto &&rax = keep[TYPE<A>::expr] (self) ;
+		auto &&rax = keep[TYPE<A>::expr] (deref) ;
 		rax = move (item) ;
 	}
 } ;
@@ -1261,8 +1261,8 @@ struct RefHolder implement Interface {
 	virtual void destroy () = 0 ;
 	virtual BOOL exist () const = 0 ;
 	virtual Unknown unknown () const = 0 ;
-	virtual VREF<Pointer> self_m () leftvalue = 0 ;
-	virtual CREF<Pointer> self_m () const leftvalue = 0 ;
+	virtual VREF<Pointer> deref_m () leftvalue = 0 ;
+	virtual CREF<Pointer> deref_m () const leftvalue = 0 ;
 	virtual BOOL exclusive () const = 0 ;
 } ;
 
@@ -1353,20 +1353,20 @@ public:
 		return RefHolder::hold (thiz)->unknown () ;
 	}
 
-	VREF<A> self_m () leftvalue {
-		return RefHolder::hold (thiz)->self ;
+	VREF<A> deref_m () leftvalue {
+		return RefHolder::hold (thiz)->deref ;
 	}
 
 	forceinline PTR<VREF<A>> operator-> () leftvalue {
-		return (&self) ;
+		return (&deref) ;
 	}
 
-	CREF<A> self_m () const leftvalue {
-		return RefHolder::hold (thiz)->self ;
+	CREF<A> deref_m () const leftvalue {
+		return RefHolder::hold (thiz)->deref ;
 	}
 
 	forceinline PTR<CREF<A>> operator-> () const leftvalue {
-		return (&self) ;
+		return (&deref) ;
 	}
 
 	BOOL exclusive () const {
@@ -1528,7 +1528,7 @@ public:
 	}
 
 	BOOL equal (CREF<Key> that) const {
-		return inline_equal (address (thiz.self) ,address (that.self)) ;
+		return inline_equal (address (thiz.deref) ,address (that.deref)) ;
 	}
 
 	forceinline BOOL operator== (CREF<Key> that) const {
@@ -1540,7 +1540,7 @@ public:
 	}
 
 	FLAG compr (CREF<Key> that) const {
-		return inline_compr (address (thiz.self) ,address (that.self)) ;
+		return inline_compr (address (thiz.deref) ,address (that.deref)) ;
 	}
 
 	forceinline BOOL operator< (CREF<Key> that) const {
@@ -1561,16 +1561,16 @@ public:
 
 	void visit (VREF<VisitorBinder> visitor) const {
 		visitor.enter () ;
-		inline_visit (visitor ,address (thiz.self)) ;
+		inline_visit (visitor ,address (thiz.deref)) ;
 		visitor.leave () ;
 	}
 
-	VREF<A> self_m () const leftvalue {
+	VREF<A> deref_m () const leftvalue {
 		return KeyBaseHolder::hold (node ())->lock (mCheck) ;
 	}
 
 	forceinline PTR<VREF<A>> operator-> () const leftvalue {
-		return (&self) ;
+		return (&deref) ;
 	}
 
 private:
@@ -1769,100 +1769,63 @@ public:
 		return move (mThis) ;
 	}
 
-	using VREF_ITEM = VREF<typeof (nullof (A).self)> ;
-	using CREF_ITEM = decltype (keep[TYPE<CREF<A>>::expr] (nullof (A)).self) ;
+	using VREF_ITEM = VREF<typeof (nullof (A).deref)> ;
+	using CREF_ITEM = decltype (keep[TYPE<CREF<A>>::expr] (nullof (A)).deref) ;
 
-	XREF<VREF_ITEM> self_m () leftvalue {
-		return Pointer::make (address (mThis.self)) ;
+	XREF<VREF_ITEM> deref_m () leftvalue {
+		return Pointer::make (address (mThis.deref)) ;
 	}
 
 	forceinline operator XREF<VREF_ITEM> () leftvalue {
-		return self ;
+		return deref ;
 	}
 
-	XREF<CREF_ITEM> self_m () const leftvalue {
-		return mThis.self ;
+	XREF<CREF_ITEM> deref_m () const leftvalue {
+		return mThis.deref ;
 	}
 
 	forceinline operator XREF<CREF_ITEM> () const leftvalue {
-		return self ;
-	}
-} ;
-
-template <class...>
-trait UNWARP_SELF_HELP ;
-
-template <class A ,class OTHERWISE>
-trait UNWARP_SELF_HELP<A ,OTHERWISE> {
-	using RET = A ;
-} ;
-
-template <class A>
-trait UNWARP_SELF_HELP<A ,REQUIRE<KILL<ENUM_TRUE ,typeof (nullof (A).self)>>> {
-	using RET = typeof (nullof (A).self) ;
-} ;
-
-template <class A>
-using UNWARP_SELF = typename UNWARP_SELF_HELP<A ,ALWAYS>::RET ;
-
-struct FriendExternal implement Interface {
-	virtual void create (VREF<Pointer> a) const = 0 ;
-} ;
-
-template <class A>
-class FriendExternalBinder implement Fat<FriendExternal ,A> {
-public:
-	void create (VREF<Pointer> a) const override {
-		using R1X = typeof (A::mThis) ;
-		auto &&rax = keep[TYPE<A>::expr] (a) ;
-		rax.mThis = R1X::make () ;
+		return deref ;
 	}
 } ;
 
 struct ExternalLayout {
-	Pin<FatLayout> mImplHolder ;
-	Pin<FatLayout> mImplLayout ;
+	Pin<FatLayout> mExtHolder ;
+	Pin<FatLayout> mExtLayout ;
 } ;
 
-template <class A ,class B ,class C = UNWARP_SELF<B>>
+template <class A ,class B>
 class External implement ExternalLayout {
 public:
 	implicit External () = default ;
 
 	template <class ARG1>
-	explicit External (CREF<ARG1> holder) :External (holder ,FriendExternalBinder<B> ()) {}
+	explicit External (CREF<ARG1> holder) :External (holder ,holder) {}
 
 	template <class ARG1 ,class ARG2>
 	explicit External (CREF<ARG1> holder ,CREF<ARG2> layout) {
-		require (IS_EXTEND<Fat<A ,C> ,ARG1>) ;
+		require (IS_EXTEND<Fat<A ,B> ,ARG1>) ;
 		require (ENUM_EQUAL<SIZE_OF<ARG1> ,SIZE_OF<FatLayout>>) ;
 		require (ENUM_EQUAL<ALIGN_OF<ARG1> ,ALIGN_OF<FatLayout>>) ;
-		require (IS_EXTEND<Fat<FriendExternal ,B> ,ARG2>) ;
+		require (IS_EXTEND<Fat<A ,B> ,ARG2>) ;
 		require (ENUM_EQUAL<SIZE_OF<ARG2> ,SIZE_OF<FatLayout>>) ;
 		require (ENUM_EQUAL<ALIGN_OF<ARG2> ,ALIGN_OF<FatLayout>>) ;
-		inline_memcpy (instance ().mImplHolder ,Pointer::from (holder) ,SIZE_OF<FatLayout>::expr) ;
-		inline_memcpy (instance ().mImplLayout ,Pointer::from (layout) ,SIZE_OF<FatLayout>::expr) ;
+		inline_memcpy (instance ().mExtHolder ,Pointer::from (holder) ,SIZE_OF<FatLayout>::expr) ;
+		inline_memcpy (instance ().mExtLayout ,Pointer::from (layout) ,SIZE_OF<FatLayout>::expr) ;
 	}
 
-	static CREF<Fat<A ,C>> declare () {
-		return instance ().mImplHolder.self ;
-	}
-
-	static B create () {
-		B ret ;
-		auto &&rax = VFat<FriendExternal> (instance ().mImplLayout.self) ;
-		rax->create (Pointer::from (ret)) ;
-		return move (ret) ;
+	static CREF<Fat<A ,B>> declare () {
+		return instance ().mExtHolder.deref ;
 	}
 
 private:
 	static CREF<External> instance () ;
 } ;
 
-template <class A ,class B ,class C>
-inline CREF<External<A ,B ,C>> External<A ,B ,C>::instance () {
+template <class A ,class B>
+inline CREF<External<A ,B>> External<A ,B>::instance () {
 	return memorize ([&] () {
-		return External<A ,B ,C> () ;
+		return External<A ,B> () ;
 	}) ;
 }
 
@@ -1965,10 +1928,10 @@ public:
 	}
 } ;
 
-struct ClazzImplLayout ;
+struct ClazzTree ;
 
 struct ClazzLayout {
-	Ref<ClazzImplLayout> mThis ;
+	Ref<ClazzTree> mThis ;
 } ;
 
 struct ClazzHolder implement Interface {

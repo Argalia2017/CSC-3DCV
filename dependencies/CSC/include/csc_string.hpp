@@ -13,13 +13,12 @@
 #include "csc_stream.hpp"
 
 namespace CSC {
-struct StringProcImplLayout ;
-struct StringProcLayout implement OfThis<UniqueRef<StringProcImplLayout>> {} ;
+struct StringProcLayout ;
 
 struct StringProcHolder implement Interface {
-	imports CREF<StringProcLayout> instance () ;
-	imports VFat<StringProcHolder> hold (VREF<StringProcImplLayout> that) ;
-	imports CFat<StringProcHolder> hold (CREF<StringProcImplLayout> that) ;
+	imports CREF<OfThis<UniqueRef<StringProcLayout>>> instance () ;
+	imports VFat<StringProcHolder> hold (VREF<StringProcLayout> that) ;
+	imports CFat<StringProcHolder> hold (CREF<StringProcLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual String<STRA> stra_from_strw (CREF<String<STRW>> a) const = 0 ;
@@ -58,7 +57,7 @@ struct StringProcHolder implement Interface {
 	virtual String<STRU32> stru32_from_strs (CREF<String<STRW>> a) const = 0 ;
 } ;
 
-class StringProc implement StringProcLayout {
+class StringProc implement OfThis<UniqueRef<StringProcLayout>> {
 public:
 	static CREF<StringProc> instance () {
 		return keep[TYPE<StringProc>::expr] (StringProcHolder::instance ()) ;
@@ -201,10 +200,10 @@ public:
 	}
 } ;
 
-struct XmlParserImplLayout ;
+struct XmlParserTree ;
 
 struct XmlParserLayout {
-	Ref<XmlParserImplLayout> mThis ;
+	Ref<XmlParserTree> mThis ;
 	INDEX mIndex ;
 } ;
 
@@ -405,10 +404,10 @@ public:
 	}
 } ;
 
-struct JsonParserImplLayout ;
+struct JsonParserTree ;
 
 struct JsonParserLayout {
-	Ref<JsonParserImplLayout> mThis ;
+	Ref<JsonParserTree> mThis ;
 	INDEX mIndex ;
 } ;
 
@@ -609,7 +608,7 @@ public:
 	}
 } ;
 
-struct PlyParserImplLayout ;
+struct PlyParserTree ;
 
 struct PlyParserGuide {
 	INDEX mElement ;
@@ -623,7 +622,7 @@ struct PlyParserGuide {
 } ;
 
 struct PlyParserLayout {
-	Ref<PlyParserImplLayout> mThis ;
+	Ref<PlyParserTree> mThis ;
 	PlyParserGuide mGuide ;
 } ;
 

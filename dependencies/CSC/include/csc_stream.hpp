@@ -12,13 +12,12 @@
 #include "csc_array.hpp"
 
 namespace CSC {
-struct StreamProcImplLayout ;
-struct StreamProcLayout implement OfThis<UniqueRef<StreamProcImplLayout>> {} ;
+struct StreamProcLayout ;
 
 struct StreamProcHolder implement Interface {
-	imports CREF<StreamProcLayout> instance () ;
-	imports VFat<StreamProcHolder> hold (VREF<StreamProcImplLayout> that) ;
-	imports CFat<StreamProcHolder> hold (CREF<StreamProcImplLayout> that) ;
+	imports CREF<OfThis<UniqueRef<StreamProcLayout>>> instance () ;
+	imports VFat<StreamProcHolder> hold (VREF<StreamProcLayout> that) ;
+	imports CFat<StreamProcHolder> hold (CREF<StreamProcLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual BOOL big_endian () const = 0 ;
@@ -40,7 +39,7 @@ struct StreamProcHolder implement Interface {
 	virtual STRU32 ctrl_from_word (CREF<STRU32> str) const = 0 ;
 } ;
 
-class StreamProc implement StreamProcLayout {
+class StreamProc implement OfThis<UniqueRef<StreamProcLayout>> {
 public:
 	static CREF<StreamProc> instance () {
 		return keep[TYPE<StreamProc>::expr] (StreamProcHolder::instance ()) ;
@@ -183,99 +182,99 @@ public:
 	}
 
 	void reset () override {
-		return thiz.fake.reset () ;
+		return thiz.self.reset () ;
 	}
 
 	void reset (CREF<StreamShape> shape) override {
-		return thiz.fake.reset (shape) ;
+		return thiz.self.reset (shape) ;
 	}
 
 	StreamShape backup () const override {
-		return thiz.fake.backup () ;
+		return thiz.self.backup () ;
 	}
 
 	BOOL good () const override {
-		return thiz.fake.good () ;
+		return thiz.self.good () ;
 	}
 
 	void read (VREF<BOOL> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (VREF<VAL32> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (VREF<VAL64> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (VREF<FLT32> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (VREF<FLT64> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (VREF<BYTE> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (VREF<WORD> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (VREF<CHAR> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (VREF<QUAD> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (VREF<STRU32> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (CREF<Slice> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (VREF<String<STRA>> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (VREF<String<STRW>> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (VREF<String<STRU8>> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (VREF<String<STRU16>> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (VREF<String<STRU32>> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (CREF<typeof (CLS)> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (CREF<typeof (BOM)> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (CREF<typeof (GAP)> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 
 	void read (CREF<typeof (EOS)> item) override {
-		return thiz.fake.read (item) ;
+		return thiz.self.read (item) ;
 	}
 } ;
 
@@ -554,7 +553,7 @@ public:
 	template <class ARG1 ,class = REQUIRE<HAS_FRIEND_READ<ARG1>>>
 	void read (VREF<ARG1> item) {
 		const auto r1x = FriendReaderBinder<ByteReader>::hold (thiz) ;
-		item.friend_read (r1x.self) ;
+		item.friend_read (r1x.deref) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<HAS_FRIEND_READ<ARG1>>>
@@ -839,7 +838,7 @@ public:
 	template <class ARG1 ,class = REQUIRE<HAS_FRIEND_READ<ARG1>>>
 	void read (VREF<ARG1> item) {
 		const auto r1x = FriendReaderBinder<TextReader>::hold (thiz) ;
-		item.friend_read (r1x.self) ;
+		item.friend_read (r1x.deref) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<HAS_FRIEND_READ<ARG1>>>
@@ -907,99 +906,99 @@ public:
 	}
 
 	void reset () override {
-		return thiz.fake.reset () ;
+		return thiz.self.reset () ;
 	}
 
 	void reset (CREF<StreamShape> shape) override {
-		return thiz.fake.reset (shape) ;
+		return thiz.self.reset (shape) ;
 	}
 
 	StreamShape backup () const override {
-		return thiz.fake.backup () ;
+		return thiz.self.backup () ;
 	}
 
 	BOOL good () const override {
-		return thiz.fake.good () ;
+		return thiz.self.good () ;
 	}
 
 	void write (CREF<BOOL> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<VAL32> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<VAL64> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<FLT32> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<FLT64> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<BYTE> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<WORD> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<CHAR> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<QUAD> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<STRU32> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<Slice> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<String<STRA>> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<String<STRW>> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<String<STRU8>> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<String<STRU16>> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<String<STRU32>> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<typeof (BOM)> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<typeof (CLS)> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<typeof (GAP)> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 
 	void write (CREF<typeof (EOS)> item) override {
-		return thiz.fake.write (item) ;
+		return thiz.self.write (item) ;
 	}
 } ;
 
@@ -1271,7 +1270,7 @@ public:
 	template <class ARG1 ,class = REQUIRE<HAS_FRIEND_WRITE<ARG1>>>
 	void write (CREF<ARG1> item) {
 		const auto r1x = FriendWriterBinder<ByteWriter>::hold (thiz) ;
-		item.friend_write (r1x.self) ;
+		item.friend_write (r1x.deref) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<HAS_FRIEND_WRITE<ARG1>>>
@@ -1549,7 +1548,7 @@ public:
 	template <class ARG1 ,class = REQUIRE<HAS_FRIEND_WRITE<ARG1>>>
 	void write (CREF<ARG1> item) {
 		const auto r1x = FriendWriterBinder<TextWriter>::hold (thiz) ;
-		item.friend_write (r1x.self) ;
+		item.friend_write (r1x.deref) ;
 	}
 
 	template <class ARG1 ,class = REQUIRE<HAS_FRIEND_WRITE<ARG1>>>
@@ -1611,7 +1610,7 @@ public:
 	}
 
 	void friend_write (VREF<WriterBinder> writer) const override {
-		writer.write (thiz.fake) ;
+		writer.write (thiz.self) ;
 	}
 } ;
 
@@ -1685,13 +1684,12 @@ inline Format PrintFormat (CREF<ARG1>...params) {
 	return move (ret) ;
 }
 
-struct StreamTextProcImplLayout ;
-struct StreamTextProcLayout implement OfThis<UniqueRef<StreamTextProcImplLayout>> {} ;
+struct StreamTextProcLayout ;
 
 struct StreamTextProcHolder implement Interface {
-	imports CREF<StreamTextProcLayout> instance () ;
-	imports VFat<StreamTextProcHolder> hold (VREF<StreamTextProcImplLayout> that) ;
-	imports CFat<StreamTextProcHolder> hold (CREF<StreamTextProcImplLayout> that) ;
+	imports CREF<OfThis<UniqueRef<StreamTextProcLayout>>> instance () ;
+	imports VFat<StreamTextProcHolder> hold (VREF<StreamTextProcLayout> that) ;
+	imports CFat<StreamTextProcHolder> hold (CREF<StreamTextProcLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual void read_keyword (VREF<ReaderBinder> reader ,VREF<String<STRU8>> item) const = 0 ;
@@ -1703,7 +1701,7 @@ struct StreamTextProcHolder implement Interface {
 	virtual void write_aligned (VREF<WriterBinder> writer ,CREF<VAL64> number ,CREF<LENGTH> align) const = 0 ;
 } ;
 
-class StreamTextProc implement StreamTextProcLayout {
+class StreamTextProc implement OfThis<UniqueRef<StreamTextProcLayout>> {
 public:
 	static CREF<StreamTextProc> instance () {
 		return keep[TYPE<StreamTextProc>::expr] (StreamTextProcHolder::instance ()) ;
@@ -1750,7 +1748,7 @@ public:
 	template <class ARG1>
 	void friend_read (VREF<ARG1> reader) {
 		const auto r1x = FriendReaderBinder<ARG1>::hold (reader) ;
-		return StreamTextProc::read_keyword (r1x.self ,mThat) ;
+		return StreamTextProc::read_keyword (r1x.deref ,mThat) ;
 	}
 } ;
 
@@ -1766,7 +1764,7 @@ public:
 	template <class ARG1>
 	void friend_read (VREF<ARG1> reader) {
 		const auto r1x = FriendReaderBinder<ARG1>::hold (reader) ;
-		return StreamTextProc::read_scalar (r1x.self ,mThat) ;
+		return StreamTextProc::read_scalar (r1x.deref ,mThat) ;
 	}
 } ;
 
@@ -1788,13 +1786,13 @@ public:
 	template <class ARG1>
 	void friend_read (VREF<ARG1> reader) {
 		const auto r1x = FriendReaderBinder<ARG1>::hold (reader) ;
-		return StreamTextProc::read_escape (r1x.self ,mThat) ;
+		return StreamTextProc::read_escape (r1x.deref ,mThat) ;
 	}
 
 	template <class ARG1>
 	void friend_write (VREF<ARG1> writer) const {
 		const auto r1x = FriendWriterBinder<ARG1>::hold (writer) ;
-		return StreamTextProc::write_escape (r1x.self ,mThat) ;
+		return StreamTextProc::write_escape (r1x.deref ,mThat) ;
 	}
 } ;
 
@@ -1810,7 +1808,7 @@ public:
 	template <class ARG1>
 	void friend_read (VREF<ARG1> reader) {
 		const auto r1x = FriendReaderBinder<ARG1>::hold (reader) ;
-		return StreamTextProc::read_blank (r1x.self ,mThat) ;
+		return StreamTextProc::read_blank (r1x.deref ,mThat) ;
 	}
 } ;
 
@@ -1826,7 +1824,7 @@ public:
 	template <class ARG1>
 	void friend_read (VREF<ARG1> reader) {
 		const auto r1x = FriendReaderBinder<ARG1>::hold (reader) ;
-		return StreamTextProc::read_endline (r1x.self ,mThat) ;
+		return StreamTextProc::read_endline (r1x.deref ,mThat) ;
 	}
 } ;
 
@@ -1846,17 +1844,16 @@ public:
 	template <class ARG1>
 	void friend_write (VREF<ARG1> writer) const {
 		const auto r1x = FriendWriterBinder<ARG1>::hold (writer) ;
-		return StreamTextProc::write_aligned (r1x.self ,mNumber ,mAlign) ;
+		return StreamTextProc::write_aligned (r1x.deref ,mNumber ,mAlign) ;
 	}
 } ;
 
-struct CommaImplLayout ;
-struct CommaLayout implement OfThis<SharedRef<CommaImplLayout>> {} ;
+struct CommaLayout ;
 
 struct CommaHolder implement Interface {
-	imports CommaLayout create () ;
-	imports VFat<CommaHolder> hold (VREF<CommaImplLayout> that) ;
-	imports CFat<CommaHolder> hold (CREF<CommaImplLayout> that) ;
+	imports OfThis<SharedRef<CommaLayout>> create () ;
+	imports VFat<CommaHolder> hold (VREF<CommaLayout> that) ;
+	imports CFat<CommaHolder> hold (CREF<CommaLayout> that) ;
 
 	virtual void initialize (CREF<Slice> indent ,CREF<Slice> comma ,CREF<Slice> endline) = 0 ;
 	virtual void friend_write (VREF<WriterBinder> writer) = 0 ;
@@ -1865,7 +1862,7 @@ struct CommaHolder implement Interface {
 	virtual void tight () = 0 ;
 } ;
 
-class Comma implement CommaLayout {
+class Comma implement OfThis<SharedRef<CommaLayout>> {
 public:
 	implicit Comma () = default ;
 
@@ -1899,20 +1896,19 @@ public:
 	}
 } ;
 
-struct RegexImplLayout ;
-struct RegexLayout implement OfThis<AutoRef<RegexImplLayout>> {} ;
+struct RegexLayout ;
 
 struct RegexHolder implement Interface {
-	imports RegexLayout create () ;
-	imports VFat<RegexHolder> hold (VREF<RegexImplLayout> that) ;
-	imports CFat<RegexHolder> hold (CREF<RegexImplLayout> that) ;
+	imports OfThis<AutoRef<RegexLayout>> create () ;
+	imports VFat<RegexHolder> hold (VREF<RegexLayout> that) ;
+	imports CFat<RegexHolder> hold (CREF<RegexLayout> that) ;
 
 	virtual void initialize (CREF<String<STR>> format) = 0 ;
 	virtual INDEX search (RREF<Ref<String<STR>>> text ,CREF<INDEX> offset) = 0 ;
 	virtual Slice match (CREF<INDEX> index) const = 0 ;
 } ;
 
-class Regex implement RegexLayout {
+class Regex implement OfThis<AutoRef<RegexLayout>> {
 public:
 	implicit Regex () = default ;
 

@@ -115,24 +115,28 @@ using KDTreeDistance = nanoflann::L2_Simple_Adaptor<FLT32 ,KDTreePointCloudAdapt
 using KDTree = nanoflann::KDTreeSingleIndexAdaptor<KDTreeDistance ,KDTreePointCloudAdaptor ,3 ,INDEX> ;
 } ;
 
-struct PointCloudKDTreeImplLayout {
+struct PointCloudKDTreeLayout {
 	KDTreePointCloudAdaptor mAdaptor ;
 	Box<KDTree> mKDTree ;
 } ;
 
-class PointCloudKDTreeImplHolder final implement Fat<PointCloudKDTreeHolder ,PointCloudKDTreeImplLayout> {
+class PointCloudKDTreeImplHolder final implement Fat<PointCloudKDTreeHolder ,PointCloudKDTreeLayout> {
 public:
+	void create (VREF<AutoRef<PointCloudKDTreeLayout>> that) const override {
+		that = AutoRef<PointCloudKDTreeLayout>::make () ;
+	}
+
 	void initialize (CREF<Array<Pointer>> pointcloud) override {
 		const auto r1x = address (pointcloud[0]) ;
 		const auto r2x = pointcloud.step () / SIZE_OF<FLT32>::expr ;
 		assume (inline_between (r2x ,1 ,4)) ;
 		const auto r3x = pointcloud.size () * r2x ;
-		fake.mAdaptor.mPointCloud = RefBuffer<FLT32>::reference (r1x ,r3x) ;
-		fake.mAdaptor.mDimension = r2x ;
-		fake.mAdaptor.mSize = pointcloud.length () ;
+		self.mAdaptor.mPointCloud = RefBuffer<FLT32>::reference (r1x ,r3x) ;
+		self.mAdaptor.mDimension = r2x ;
+		self.mAdaptor.mSize = pointcloud.length () ;
 		const auto r4x = nanoflann::KDTreeSingleIndexAdaptorParams () ;
-		fake.mKDTree = Box<KDTree>::make (VAL32 (r2x) ,fake.mAdaptor ,r4x) ;
-		fake.mKDTree->buildIndex () ;
+		self.mKDTree = Box<KDTree>::make (VAL32 (r2x) ,self.mAdaptor ,r4x) ;
+		self.mKDTree->buildIndex () ;
 	}
 
 	Array<INDEX> search (CREF<Vector> center ,CREF<LENGTH> neighbor) const override {
@@ -140,7 +144,7 @@ public:
 		const auto r1x = Point3F (center.xyz ()) ;
 		const auto r2x = nanoflann::SearchParameters (0 ,false) ;
 		auto rax = KDTreeResultAdaptor (neighbor ,infinity) ;
-		fake.mKDTree->findNeighbors (rax ,(&r1x.mX) ,r2x) ;
+		self.mKDTree->findNeighbors (rax ,(&r1x.mX) ,r2x) ;
 		const auto r3x = inline_min (rax.mResult.length () ,neighbor) ;
 		Array<INDEX> ret = Array<INDEX> (r3x) ;
 		for (auto &&i : iter (0 ,r3x)) {
@@ -156,7 +160,7 @@ public:
 		const auto r1x = Point3F (center.xyz ()) ;
 		const auto r2x = nanoflann::SearchParameters (0 ,false) ;
 		auto rax = KDTreeResultAdaptor (neighbor ,FLT32 (MathProc::square (radius))) ;
-		fake.mKDTree->radiusSearchCustomCallback ((&r1x.mX) ,rax ,r2x) ;
+		self.mKDTree->radiusSearchCustomCallback ((&r1x.mX) ,rax ,r2x) ;
 		const auto r3x = inline_min (rax.mResult.length () ,neighbor) ;
 		Array<INDEX> ret = Array<INDEX> (r3x) ;
 		for (auto &&i : iter (0 ,r3x)) {

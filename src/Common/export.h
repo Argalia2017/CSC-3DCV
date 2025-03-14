@@ -1,11 +1,10 @@
 ﻿#include "../util.h"
 
 namespace CSC3DCV {
-struct ToolProcImplLayout ;
-struct ToolProcLayout implement OfThis<SharedRef<ToolProcImplLayout>> {} ;
+struct ToolProcLayout ;
 
 struct ToolProcHolder implement Interface {
-	imports CREF<ToolProcLayout> instance () ;
+	imports CREF<OfThis<SharedRef<ToolProcLayout>>> instance () ;
 	imports VFat<ToolProcHolder> hold (VREF<ToolProcLayout> that) ;
 	imports CFat<ToolProcHolder> hold (CREF<ToolProcLayout> that) ;
 
@@ -15,7 +14,7 @@ struct ToolProcHolder implement Interface {
 	virtual Array<FLT64> flatten (CREF<Matrix> matrix) const = 0 ;
 } ;
 
-class ToolProc implement ToolProcLayout {
+class ToolProc implement OfThis<SharedRef<ToolProcLayout>> {
 public:
 	static CREF<ToolProc> instance () {
 		return keep[TYPE<ToolProc>::expr] (ToolProcHolder::instance ()) ;
@@ -34,19 +33,18 @@ public:
 	}
 } ;
 
-struct ConfigProcImplLayout ;
-struct ConfigProcLayout implement OfThis<SharedRef<ConfigProcImplLayout>> {} ;
+struct ConfigProcLayout ;
 
 struct ConfigProcHolder implement Interface {
-	imports CREF<ConfigProcLayout> instance () ;
+	imports CREF<OfThis<SharedRef<ConfigProcLayout>>> instance () ;
 	imports VFat<ConfigProcHolder> hold (VREF<ConfigProcLayout> that) ;
 	imports CFat<ConfigProcHolder> hold (CREF<ConfigProcLayout> that) ;
 
 	virtual void initialize () = 0 ;
-	virtual void set_data_dire (CREF<String<STR>> path) const = 0 ;
+	virtual void set_data_dire (CREF<String<STR>> path) = 0 ;
 } ;
 
-class ConfigProc implement ConfigProcLayout {
+class ConfigProc implement OfThis<SharedRef<ConfigProcLayout>> {
 public:
 	static CREF<ConfigProc> instance () {
 		return keep[TYPE<ConfigProc>::expr] (ConfigProcHolder::instance ()) ;

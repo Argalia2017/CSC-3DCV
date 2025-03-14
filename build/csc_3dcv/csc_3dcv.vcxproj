@@ -89,8 +89,8 @@
     <ClCompile Include="..\..\src\Detection\Board.cpp" />
     <ClCompile Include="..\..\src\Detection\Feature.cpp" />
     <ClCompile Include="..\..\src\Detection\Phase.cpp" />
-    <ClCompile Include="..\..\src\Esimation\DepthEstimation.cpp" />
-    <ClCompile Include="..\..\src\Esimation\Solver.cpp" />
+    <ClCompile Include="..\..\src\Estimation\DepthEstimation.cpp" />
+    <ClCompile Include="..\..\src\Estimation\SolverProc.cpp" />
     <ClCompile Include="..\..\src\inl.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\Mapping\MarchingCube.cpp" />
@@ -105,7 +105,7 @@
     <ClInclude Include="..\..\src\Calibration\export.h" />
     <ClInclude Include="..\..\src\Common\export.h" />
     <ClInclude Include="..\..\src\Detection\export.h" />
-    <ClInclude Include="..\..\src\Esimation\export.h" />
+    <ClInclude Include="..\..\src\Estimation\export.h" />
     <ClInclude Include="..\..\src\Mapping\export.h" />
     <ClInclude Include="..\..\src\Registration\export.h" />
     <ClInclude Include="..\..\src\Rendering\export.h" />

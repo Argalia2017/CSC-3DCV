@@ -1,7 +1,7 @@
 ﻿#include "export.h"
 
 namespace CSC3DCV {
-struct ToolProcImplLayout {} ;
+struct ToolProcLayout {} ;
 
 class ToolProcImplHolder final implement Fat<ToolProcHolder ,ToolProcLayout> {
 public:
@@ -35,9 +35,9 @@ public:
 	}
 } ;
 
-exports CREF<ToolProcLayout> ToolProcHolder::instance () {
+exports CREF<OfThis<SharedRef<ToolProcLayout>>> ToolProcHolder::instance () {
 	return memorize ([&] () {
-		ToolProcLayout ret ;
+		OfThis<SharedRef<ToolProcLayout>> ret ;
 		ToolProcHolder::hold (ret)->initialize () ;
 		return move (ret) ;
 	}) ;

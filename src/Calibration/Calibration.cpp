@@ -2,14 +2,13 @@
 
 #include "../Common/export.h"
 #include "../Detection/export.h"
+#include "../Estimation/export.h"
 
 namespace CSC3DCV {
-struct CalibrationImplLayout {
+struct CalibrationLayout {
 	Path mDataPath ;
 	Random mRandom ;
 	WorkThread mWorkThread ;
-	INDEX mFrame1View ;
-	INDEX mFrame2View ;
 	ArrayList<CameraView> mView ;
 	Set<String<STR>> mViewNameSet ;
 	ArrayList<CameraPose> mPose ;
@@ -20,16 +19,16 @@ struct CalibrationImplLayout {
 	Board mBoard ;
 } ;
 
-class CalibrationImplHolder final implement Fat<CalibrationHolder ,CalibrationImplLayout> {
+class CalibrationImplHolder final implement Fat<CalibrationHolder ,CalibrationLayout> {
 public:
 	void initialize () override {
-		fake.mDataPath = Global<Path> (slice ("mDataPath")).fetch () ;
-		fake.mRandom = CurrentRandom () ;
-		fake.mWorkThread = WorkThread (NULL) ;
-		fake.mBoard = Board (NULL) ;
-		fake.mBoard.set_board_width (ImageShape (0 ,0 ,15 ,5 ,0)) ;
-		fake.mBoard.set_board_type (BoardType::CIRCLE) ;
-		fake.mBoard.set_board_baseline (37.6 ,37.6) ;
+		self.mDataPath = Global<Path> (slice ("mDataPath")).fetch () ;
+		self.mRandom = CurrentRandom () ;
+		self.mWorkThread = WorkThread (NULL) ;
+		self.mBoard = Board (NULL) ;
+		self.mBoard.set_board_width (ImageShape (0 ,0 ,15 ,5 ,0)) ;
+		self.mBoard.set_board_type (BoardType::CIRCLE) ;
+		self.mBoard.set_board_baseline (37.6 ,37.6) ;
 	}
 
 	void execute () override {
@@ -44,10 +43,10 @@ public:
 	}
 
 	void load_data_json () {
-		fake.mView = ArrayList<CameraView> () ;
-		fake.mPose = ArrayList<CameraPose> () ;
-		fake.mFrame = ArrayList<CameraFrame> () ;
-		const auto r1x = fake.mDataPath.child (slice ("data.json")) ;
+		self.mView = ArrayList<CameraView> () ;
+		self.mPose = ArrayList<CameraPose> () ;
+		self.mFrame = ArrayList<CameraFrame> () ;
+		const auto r1x = self.mDataPath.child (slice ("data.json")) ;
 		auto act = TRUE ;
 		if ifdo (act) {
 			if (!r1x.is_file ())
@@ -55,11 +54,11 @@ public:
 			const auto r2x = JsonParser (FileProc::load_file (r1x)) ;
 			load_data_json_view (r2x) ;
 			load_data_json_pose (r2x) ;
-			fake.mView.remap () ;
-			fake.mPose.remap () ;
+			self.mView.remap () ;
+			self.mPose.remap () ;
 		}
 		if ifdo (act) {
-			const auto r3x = fake.mDataPath.child (slice ("image")).list () ;
+			const auto r3x = self.mDataPath.child (slice ("image")).list () ;
 			auto rax = Regex (slice ("(\\w+)_(\\w+)")) ;
 			for (auto &&i : r3x) {
 				if (i.extension () != slice (".bmp"))
@@ -72,135 +71,133 @@ public:
 				const auto r7x = String<STR> (rax.match (2)) ;
 				INDEX ix = insert_new_pose (r6x ,slice ("image")) ;
 				INDEX iy = insert_new_view (r7x ,slice ("image")) ;
-				fake.mPose[ix].mUseView.add (iy) ;
-				fake.mView[iy].mUsePose.add (ix) ;
+				self.mPose[ix].mUseView.add (iy) ;
+				self.mView[iy].mUsePose.add (ix) ;
 			}
-			fake.mView.remap () ;
-			fake.mPose.remap () ;
+			self.mView.remap () ;
+			self.mPose.remap () ;
 		}
 		if ifdo (TRUE) {
-			const auto r8x = Array<INDEX>::make (fake.mViewNameSet.range ()) ;
+			const auto r8x = Array<INDEX>::make (self.mViewNameSet.range ()) ;
 			assume (r8x.length () >= 2) ;
-			fake.mFrame1View = r8x[0] ;
-			fake.mFrame2View = r8x[1] ;
-			for (auto &&i : fake.mPose.range ()) {
-				for (auto &&j : fake.mPose[i].mUseView) {
+			for (auto &&i : self.mPose.range ()) {
+				for (auto &&j : self.mPose[i].mUseView) {
 					INDEX ix = insert_new_frame (i ,j) ;
 					if ifdo (TRUE) {
-						if (j != fake.mFrame1View)
+						if (j != r8x[0])
 							discard ;
-						fake.mPose[i].mFrame1 = ix ;
+						self.mPose[i].mFrame1 = ix ;
 					}
 					if ifdo (TRUE) {
-						if (j != fake.mFrame2View)
+						if (j != r8x[1])
 							discard ;
-						fake.mPose[i].mFrame2 = ix ;
+						self.mPose[i].mFrame2 = ix ;
 					}
 				}
 			}
-			fake.mFrame.remap () ;
+			self.mFrame.remap () ;
 		}
 	}
 
 	void load_data_json_view (CREF<JsonParser> parser) {
 		const auto r1x = parser.child (slice ("mView")).list () ;
-		for (auto &&i : fake.mView.range ()) {
-			fake.mView[i].mName = r1x[i].child (slice ("mName")).parse (String<STR> ()) ;
-			fake.mView[i].mGroup = r1x[i].child (slice ("mGroup")).parse (String<STR> ()) ;
-			fake.mView[i].mUsePose = Set<INDEX> () ;
+		for (auto &&i : self.mView.range ()) {
+			self.mView[i].mName = r1x[i].child (slice ("mName")).parse (String<STR> ()) ;
+			self.mView[i].mGroup = r1x[i].child (slice ("mGroup")).parse (String<STR> ()) ;
+			self.mView[i].mUsePose = Set<INDEX> () ;
 			const auto r2x = r1x[i].child (slice ("mShape")) ;
-			fake.mView[i].mShape.mCX = r2x.child (0).parse (ZERO) ;
-			fake.mView[i].mShape.mCY = r2x.child (1).parse (ZERO) ;
+			self.mView[i].mShape.mCX = r2x.child (0).parse (ZERO) ;
+			self.mView[i].mShape.mCY = r2x.child (1).parse (ZERO) ;
 			const auto r3x = r1x[i].child (slice ("mMatK")).parse (FLT64 (0) ,4) ;
-			fake.mView[i].mMatK = PerspectiveMatrix (r3x[0] ,r3x[1] ,r3x[3] ,r3x[4]) ;
-			fake.mView[i].mConstMatK = TRUE ;
-			fake.mView[i].mDist = r1x[i].child (slice ("mDist")).parse (FLT64 (0) ,5) ;
-			fake.mView[i].mConstMatV = TRUE ;
-			fake.mView[i].mBaseLine = r1x[i].child (slice ("mBaseLine")).parse (FLT64 (0)) ;
-			fake.mView[i].mRelative = r1x[i].child (slice ("mRelative")).parse (FLT64 (0)) ;
+			self.mView[i].mMatK = PerspectiveMatrix (r3x[0] ,r3x[1] ,r3x[3] ,r3x[4]) ;
+			self.mView[i].mConstMatK = TRUE ;
+			self.mView[i].mDist = r1x[i].child (slice ("mDist")).parse (FLT64 (0) ,5) ;
+			self.mView[i].mConstMatV = TRUE ;
+			self.mView[i].mBaseLine = r1x[i].child (slice ("mBaseLine")).parse (FLT64 (0)) ;
+			self.mView[i].mRelative = r1x[i].child (slice ("mRelative")).parse (FLT64 (0)) ;
 		}
 	}
 
 	void load_data_json_pose (CREF<JsonParser> parser) {
 		const auto r1x = parser.child (slice ("mPose")).list () ;
-		for (auto &&i : fake.mPose.range ()) {
-			fake.mPose[i].mName = r1x[i].child (slice ("mName")).parse (String<STR> ()) ;
-			fake.mPose[i].mGroup = r1x[i].child (slice ("mGroup")).parse (String<STR> ()) ;
+		for (auto &&i : self.mPose.range ()) {
+			self.mPose[i].mName = r1x[i].child (slice ("mName")).parse (String<STR> ()) ;
+			self.mPose[i].mGroup = r1x[i].child (slice ("mGroup")).parse (String<STR> ()) ;
 			const auto r2x = r1x[i].child (slice ("mColor")).parse (String<STR> ()) ;
-			fake.mPose[i].mColor = StringParse<Color3B>::make (r2x) ;
-			fake.mPose[i].mUseView = Set<INDEX> () ;
-			fake.mPose[i].mFrame1 = NONE ;
-			fake.mPose[i].mFrame2 = NONE ;
+			self.mPose[i].mColor = StringParse<Color3B>::make (r2x) ;
+			self.mPose[i].mUseView = Set<INDEX> () ;
+			self.mPose[i].mFrame1 = NONE ;
+			self.mPose[i].mFrame2 = NONE ;
 			const auto r3x = r1x[i].child (slice ("mMatV")).parse (FLT64 (0) ,16) ;
-			fake.mPose[i].mMatV = AffineMatrix (r3x) ;
-			fake.mPose[i].mUsingMatV = TRUE ;
-			fake.mPose[i].mWeight = 1 ;
+			self.mPose[i].mMatV = AffineMatrix (r3x) ;
+			self.mPose[i].mUsingMatV = TRUE ;
+			self.mPose[i].mWeight = 1 ;
 			const auto r4x = r1x[i].child (slice ("mMatH")).parse (FLT64 (0) ,16) ;
-			fake.mPose[i].mMatH = AffineMatrix (r4x) ;
-			fake.mPose[i].mUsingMatH = TRUE ;
+			self.mPose[i].mMatH = AffineMatrix (r4x) ;
+			self.mPose[i].mUsingMatH = TRUE ;
 			const auto r5x = r1x[i].child (slice ("mError")) ;
-			fake.mPose[i].mError.mMaxError = r5x.child (0).parse (FLT64 (0)) ;
-			fake.mPose[i].mError.mAvgError = r5x.child (1).parse (FLT64 (0)) ;
-			fake.mPose[i].mError.mStdError = r5x.child (2).parse (FLT64 (0)) ;
+			self.mPose[i].mError.mMaxError = r5x.child (0).parse (FLT64 (0)) ;
+			self.mPose[i].mError.mAvgError = r5x.child (1).parse (FLT64 (0)) ;
+			self.mPose[i].mError.mStdError = r5x.child (2).parse (FLT64 (0)) ;
 		}
 	}
 
 	INDEX insert_new_view (CREF<String<STR>> name ,CREF<String<STR>> group) {
-		INDEX ret = fake.mViewNameSet.map (name) ;
+		INDEX ret = self.mViewNameSet.map (name) ;
 		if ifdo (TRUE) {
 			if (ret != NONE)
 				discard ;
-			ret = fake.mView.insert () ;
-			fake.mView[ret].mName = name ;
-			fake.mView[ret].mGroup = group ;
-			fake.mView[ret].mUsePose = Set<INDEX> () ;
-			fake.mView[ret].mShape.mCX = ZERO ;
-			fake.mView[ret].mShape.mCY = ZERO ;
-			fake.mView[ret].mConstMatK = FALSE ;
-			fake.mView[ret].mConstMatV = FALSE ;
-			fake.mView[ret].mBaseLine = 1 ;
-			fake.mView[ret].mRelative = 1 ;
+			ret = self.mView.insert () ;
+			self.mView[ret].mName = name ;
+			self.mView[ret].mGroup = group ;
+			self.mView[ret].mUsePose = Set<INDEX> () ;
+			self.mView[ret].mShape.mCX = ZERO ;
+			self.mView[ret].mShape.mCY = ZERO ;
+			self.mView[ret].mConstMatK = FALSE ;
+			self.mView[ret].mConstMatV = FALSE ;
+			self.mView[ret].mBaseLine = 1 ;
+			self.mView[ret].mRelative = 1 ;
 		}
 		return move (ret) ;
 	}
 
 	INDEX insert_new_pose (CREF<String<STR>> name ,CREF<String<STR>> group) {
-		INDEX ret = fake.mPoseNameSet.map (name) ;
+		INDEX ret = self.mPoseNameSet.map (name) ;
 		if ifdo (TRUE) {
 			if (ret != NONE)
 				discard ;
-			ret = fake.mPose.insert () ;
-			fake.mPose[ret].mName = name ;
-			fake.mPose[ret].mGroup = group ;
-			fake.mPose[ret].mColor = ToolProc::random_color (fake.mRandom) ;
-			fake.mPose[ret].mUseView = Set<INDEX> () ;
-			fake.mPose[ret].mFrame1 = NONE ;
-			fake.mPose[ret].mFrame2 = NONE ;
-			fake.mPose[ret].mUsingMatV = FALSE ;
-			fake.mPose[ret].mWeight = 1 ;
-			fake.mPose[ret].mUsingMatH = FALSE ;
+			ret = self.mPose.insert () ;
+			self.mPose[ret].mName = name ;
+			self.mPose[ret].mGroup = group ;
+			self.mPose[ret].mColor = ToolProc::random_color (self.mRandom) ;
+			self.mPose[ret].mUseView = Set<INDEX> () ;
+			self.mPose[ret].mFrame1 = NONE ;
+			self.mPose[ret].mFrame2 = NONE ;
+			self.mPose[ret].mUsingMatV = FALSE ;
+			self.mPose[ret].mWeight = 1 ;
+			self.mPose[ret].mUsingMatH = FALSE ;
 		}
 		return move (ret) ;
 	}
 
 	INDEX insert_new_frame (CREF<INDEX> pose1 ,CREF<INDEX> view1) {
 		const auto r1x = Pixel ({pose1 ,view1}) ;
-		INDEX ret = fake.mFramePixelSet.map (r1x) ;
+		INDEX ret = self.mFramePixelSet.map (r1x) ;
 		if ifdo (TRUE) {
 			if (ret != NONE)
 				discard ;
-			ret = fake.mFrame.insert () ;
-			fake.mFrame[ret].mPose1 = pose1 ;
-			fake.mFrame[ret].mView1 = view1 ;
-			fake.mFrame[ret].mTime1 = 0 ;
+			ret = self.mFrame.insert () ;
+			self.mFrame[ret].mPose1 = pose1 ;
+			self.mFrame[ret].mView1 = view1 ;
+			self.mFrame[ret].mTime1 = 0 ;
 			const auto r2x = Format (slice ("$1_$2.bmp")) ;
-			const auto r3x = fake.mDataPath.child (r2x (fake.mPose[pose1].mName ,fake.mView[view1].mName)) ;
-			fake.mFrame[ret].mImageFile = r3x ;
-			fake.mFrame[ret].mImage = Image<Color3B> () ;
-			fake.mFrame[ret].mDepth = Image<FLT32> () ;
-			fake.mFrame[ret].mUndistortion = FALSE ;
-			fake.mFrame[ret].mOriginPoint = Array<Point2F> () ;
-			fake.mFrame[ret].mUndistPoint = Array<Point2F> () ;
+			const auto r3x = self.mDataPath.child (r2x (self.mPose[pose1].mName ,self.mView[view1].mName)) ;
+			self.mFrame[ret].mImageFile = r3x ;
+			self.mFrame[ret].mImage = Image<Color3B> () ;
+			self.mFrame[ret].mDepth = Image<FLT32> () ;
+			self.mFrame[ret].mUndistortion = FALSE ;
+			self.mFrame[ret].mOriginPoint = Array<Point2F> () ;
+			self.mFrame[ret].mUndistPoint = Array<Point2F> () ;
 		}
 		return move (ret) ;
 	}
@@ -209,44 +206,72 @@ public:
 		Singleton<Console>::instance ().info () ;
 		Singleton<Console>::instance ().info (slice ("work_board_detection")) ;
 		if ifdo (TRUE) {
-			fake.mBlock = ArrayList<CameraBlock> () ;
-			INDEX ix = fake.mBlock.insert () ;
-			fake.mBlock[ix].mTime1 = ix ;
-			for (auto &&i : fake.mFrame.range ()) {
-				fake.mBlock[ix].mUseFrame.add (i) ;
+			self.mBlock = ArrayList<CameraBlock> () ;
+			INDEX ix = self.mBlock.insert () ;
+			self.mBlock[ix].mTime1 = ix ;
+			for (auto &&i : self.mFrame.range ()) {
+				self.mBlock[ix].mUseFrame.add (i) ;
 			}
-			fake.mBlock[ix].mPoint = fake.mBoard.extract () ;
-			fake.mBlock.remap () ;
+			self.mBlock[ix].mPoint = self.mBoard.extract () ;
+			self.mBlock.remap () ;
 		}
-		for (auto &&i : fake.mFrame.range ()) {
-			fake.mFrame[i].mImage = ImageProc::load_image (fake.mFrame[i].mImageFile) ;
-			fake.mFrame[i].mOriginPoint = fake.mBoard.detect (fake.mFrame[i].mImage) ;
-			fake.mFrame[i].mImage = Image<Color3B> () ;
+		for (auto &&i : self.mFrame.range ()) {
+			self.mFrame[i].mImage = ImageProc::load_image (self.mFrame[i].mImageFile) ;
+			self.mFrame[i].mOriginPoint = self.mBoard.detect (self.mFrame[i].mImage) ;
+			self.mFrame[i].mImage = Image<Color3B> () ;
 		}
 	}
 
 	void work_sfm_view_mat_k () {
 		Singleton<Console>::instance ().info () ;
 		Singleton<Console>::instance ().info (slice ("work_sfm_view_mat_k")) ;
-		for (auto &&i : fake.mView.range ()) {
-			const auto r1x = Array<INDEX>::make (fake.mView[i].mUsePose) ;
+		assume (self.mView.length () > 0) ;
+		auto rax = self.mView[0].sfm_view_mat_k_problem () ;
+		for (auto &&i : self.mView.range ()) {
+			if (self.mView[i].mConstMatK)
+				continue ;
+			const auto r1x = Array<INDEX>::make (self.mView[i].mUsePose) ;
 			assume (r1x.length () >= 2) ;
-			INDEX ix = fake.mFramePixelSet.map (Pixel ({r1x[0] ,i})) ;
-			INDEX iy = fake.mFramePixelSet.map (Pixel ({r1x[1] ,i})) ;
+			INDEX ix = self.mFramePixelSet.map (Pixel ({r1x[0] ,i})) ;
+			INDEX iy = self.mFramePixelSet.map (Pixel ({r1x[1] ,i})) ;
 			assume (ix != NONE) ;
 			assume (iy != NONE) ;
-			fake.mView[i].sfm_view_mat_k (fake.mFrame[ix] ,fake.mFrame[iy]) ;
+			self.mView[i].sfm_view_mat_k (self.mFrame[ix] ,self.mFrame[iy] ,rax) ;
 		}
 	}
 
 	void work_sfm_view_mat_v () {
 		Singleton<Console>::instance ().info () ;
 		Singleton<Console>::instance ().info (slice ("work_sfm_view_mat_v")) ;
+		for (auto &&i : self.mPose.range ()) {
+			INDEX jx = self.mFrame[self.mPose[i].mFrame1].mView1 ;
+			if ifdo (TRUE) {
+				if (self.mView[jx].mConstMatV)
+					discard ;
+				self.mView[i].mMatV = Matrix::identity () ;
+			}
+			INDEX ix = self.mFramePixelSet.map (Pixel ({i ,jx})) ;
+			assume (ix != NONE) ;
+			for (auto &&j : self.mPose[i].mUseView) {
+				if (self.mView[j].mConstMatV)
+					continue ;
+				if (j == jx)
+					continue ;
+				INDEX iy = self.mFramePixelSet.map (Pixel ({i ,j})) ;
+				assume (iy != NONE) ;
+				self.mView[i].sfm_view_mat_v (self.mFrame[ix] ,self.mFrame[iy]) ;
+			}
+		}
 	}
 
 	void work_sfm_pose_mat_v () {
 		Singleton<Console>::instance ().info () ;
 		Singleton<Console>::instance ().info (slice ("work_sfm_pose_mat_v")) ;
+		assume (self.mPose.length () > 0) ;
+		for (auto &&i : self.mPose.range ()) {
+			INDEX ix = self.mPose[i].mFrame1 ;
+			self.mPose[i].sfm_pose_mat_v (self.mFrame[ix]) ;
+		}
 	}
 
 	void work_bundle_adjustment () {
@@ -260,191 +285,197 @@ public:
 	}
 
 	void save_data_json () {
-		const auto r1x = fake.mDataPath.child (slice ("data.json")) ;
+		const auto r1x = self.mDataPath.child (slice ("data.json")) ;
 		auto mWriter = StreamFileTextWriter (r1x) ;
 		auto mComma = Comma (slice ("\t") ,slice (",") ,slice ("\r\n")) ;
-		mWriter.self << slice ("{") ;
+		mWriter.deref << slice ("{") ;
 		mComma++ ;
 		if ifdo (TRUE) {
-			mWriter.self << mComma ;
-			mWriter.self << slice ("\"mView\":[") ;
+			mWriter.deref << mComma ;
+			mWriter.deref << slice ("\"mView\":[") ;
 			mComma++ ;
-			for (auto &&i : fake.mView.range ()) {
-				mWriter.self << mComma ;
-				mWriter.self << slice ("{") ;
+			for (auto &&i : self.mView.range ()) {
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("{") ;
 				mComma++ ;
 				if ifdo (TRUE) {
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"id\":") << i ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mName\":") << slice ("\"") << fake.mView[i].mName << slice ("\"") ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mGroup\":") << slice ("\"") << fake.mView[i].mGroup << slice ("\"") ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mShape\":[") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"id\":") << i ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mName\":") << slice ("\"") << self.mView[i].mName << slice ("\"") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mGroup\":") << slice ("\"") << self.mView[i].mGroup << slice ("\"") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mShape\":[") ;
 					mComma++ ;
 					mComma.tight () ;
-					mWriter.self << mComma ;
-					mWriter.self << fake.mView[i].mShape.mCX ;
-					mWriter.self << mComma ;
-					mWriter.self << fake.mView[i].mShape.mCY ;
+					mWriter.deref << mComma ;
+					mWriter.deref << self.mView[i].mShape.mCX ;
+					mWriter.deref << mComma ;
+					mWriter.deref << self.mView[i].mShape.mCY ;
 					mComma-- ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("]") ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mMatK\":[") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("]") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mMatK\":[") ;
 					mComma++ ;
 					mComma.tight () ;
-					const auto r2x = ToolProc::flatten (fake.mView[i].mMatK[0]) ;
+					const auto r2x = ToolProc::flatten (self.mView[i].mMatK[0]) ;
 					for (auto &&j : r2x.range ()) {
-						mWriter.self << mComma ;
-						mWriter.self << r2x[j] ;
+						mWriter.deref << mComma ;
+						mWriter.deref << r2x[j] ;
 					}
 					mComma-- ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("]") ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mConstMatK\":") << fake.mView[i].mConstMatK ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mDist\":[") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("]") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mConstMatK\":") << self.mView[i].mConstMatK ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mDist\":[") ;
 					mComma++ ;
 					mComma.tight () ;
-					for (auto &&j : fake.mView[i].mDist) {
-						mWriter.self << mComma ;
-						mWriter.self << j ;
+					for (auto &&j : self.mView[i].mDist) {
+						mWriter.deref << mComma ;
+						mWriter.deref << j ;
 					}
 					mComma-- ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("]") ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mConstDist\":") << fake.mView[i].mConstDist ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mMatV\":[") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("]") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mConstDist\":") << self.mView[i].mConstDist ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mMatV\":[") ;
 					mComma++ ;
 					mComma.tight () ;
-					const auto r3x = ToolProc::flatten (fake.mView[i].mMatV[0]) ;
+					const auto r3x = ToolProc::flatten (self.mView[i].mMatV[0]) ;
 					for (auto &&j : r3x.range ()) {
-						mWriter.self << mComma ;
-						mWriter.self << r3x[j] ;
+						mWriter.deref << mComma ;
+						mWriter.deref << r3x[j] ;
 					}
 					mComma-- ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("]") ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mConstMatV\":") << fake.mView[i].mConstMatV ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mBaseLine\":") << fake.mView[i].mBaseLine ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mRelative\":") << fake.mView[i].mRelative ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("]") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mConstMatV\":") << self.mView[i].mConstMatV ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mBaseLine\":") << self.mView[i].mBaseLine ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mRelative\":") << self.mView[i].mRelative ;
 				}
 				mComma-- ;
-				mWriter.self << mComma ;
-				mWriter.self << slice ("}") ;
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("}") ;
 			}
 			mComma-- ;
-			mWriter.self << mComma ;
-			mWriter.self << slice ("]") ;
-			mWriter.self << mComma ;
-			mWriter.self << slice ("\"mPose\":[") ;
+			mWriter.deref << mComma ;
+			mWriter.deref << slice ("]") ;
+			mWriter.deref << mComma ;
+			mWriter.deref << slice ("\"mPose\":[") ;
 			mComma++ ;
-			for (auto &&i : fake.mPose.range ()) {
-				mWriter.self << mComma ;
-				mWriter.self << slice ("{") ;
+			for (auto &&i : self.mPose.range ()) {
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("{") ;
 				mComma++ ;
 				if ifdo (TRUE) {
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"id\":") << i ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mName\":") << slice ("\"") << fake.mPose[i].mName << slice ("\"") ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mGroup\":") << slice ("\"") << fake.mPose[i].mGroup << slice ("\"") ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mColor\":[") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"id\":") << i ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mName\":") << slice ("\"") << self.mPose[i].mName << slice ("\"") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mGroup\":") << slice ("\"") << self.mPose[i].mGroup << slice ("\"") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mColor\":[") ;
 					mComma++ ;
 					mComma.tight () ;
-					mWriter.self << mComma ;
-					mWriter.self << VAL32 (fake.mPose[i].mColor.mR) ;
-					mWriter.self << mComma ;
-					mWriter.self << VAL32 (fake.mPose[i].mColor.mG) ;
-					mWriter.self << mComma ;
-					mWriter.self << VAL32 (fake.mPose[i].mColor.mB) ;
+					mWriter.deref << mComma ;
+					mWriter.deref << VAL32 (self.mPose[i].mColor.mR) ;
+					mWriter.deref << mComma ;
+					mWriter.deref << VAL32 (self.mPose[i].mColor.mG) ;
+					mWriter.deref << mComma ;
+					mWriter.deref << VAL32 (self.mPose[i].mColor.mB) ;
 					mComma-- ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("]") ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mUseView\":[") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("]") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mUseView\":[") ;
 					mComma++ ;
 					mComma.tight () ;
-					for (auto &&j : fake.mPose[i].mUseView) {
-						mWriter.self << mComma ;
-						mWriter.self << j ;
+					for (auto &&j : self.mPose[i].mUseView) {
+						mWriter.deref << mComma ;
+						mWriter.deref << j ;
 					}
 					mComma-- ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("]") ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mMatV\":[") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("]") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mMatV\":[") ;
 					mComma++ ;
 					mComma.tight () ;
-					const auto r4x = ToolProc::flatten (fake.mPose[i].mMatV[0]) ;
+					const auto r4x = ToolProc::flatten (self.mPose[i].mMatV[0]) ;
 					for (auto &&j : r4x.range ()) {
-						mWriter.self << mComma ;
-						mWriter.self << r4x[j] ;
+						mWriter.deref << mComma ;
+						mWriter.deref << r4x[j] ;
 					}
 					mComma-- ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("]") ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mUsingMatV\":") << fake.mPose[i].mUsingMatV ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mWeight\":") << fake.mPose[i].mWeight ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mMatH\":[") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("]") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mUsingMatV\":") << self.mPose[i].mUsingMatV ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mWeight\":") << self.mPose[i].mWeight ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mMatH\":[") ;
 					mComma++ ;
 					mComma.tight () ;
-					const auto r5x = ToolProc::flatten (fake.mPose[i].mMatH) ;
+					const auto r5x = ToolProc::flatten (self.mPose[i].mMatH) ;
 					for (auto &&j : r5x.range ()) {
-						mWriter.self << mComma ;
-						mWriter.self << r5x[j] ;
+						mWriter.deref << mComma ;
+						mWriter.deref << r5x[j] ;
 					}
 					mComma-- ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("]") ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mUsingMatH\":") << fake.mPose[i].mUsingMatH ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("\"mError\":[") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("]") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mUsingMatH\":") << self.mPose[i].mUsingMatH ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("\"mError\":[") ;
 					mComma++ ;
 					mComma.tight () ;
-					mWriter.self << fake.mPose[i].mError.mMaxError ;
-					mWriter.self << mComma ;
-					mWriter.self << fake.mPose[i].mError.mAvgError ;
-					mWriter.self << mComma ;
-					mWriter.self << fake.mPose[i].mError.mStdError ;
+					mWriter.deref << self.mPose[i].mError.mMaxError ;
+					mWriter.deref << mComma ;
+					mWriter.deref << self.mPose[i].mError.mAvgError ;
+					mWriter.deref << mComma ;
+					mWriter.deref << self.mPose[i].mError.mStdError ;
 					mComma-- ;
-					mWriter.self << mComma ;
-					mWriter.self << slice ("]") ;
+					mWriter.deref << mComma ;
+					mWriter.deref << slice ("]") ;
 				}
 				mComma-- ;
-				mWriter.self << mComma ;
-				mWriter.self << slice ("}") ;
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("}") ;
 			}
 			mComma-- ;
-			mWriter.self << mComma ;
-			mWriter.self << slice ("]") ;
+			mWriter.deref << mComma ;
+			mWriter.deref << slice ("]") ;
 		}
 		mComma-- ;
-		mWriter.self << mComma ;
-		mWriter.self << slice ("}") ;
+		mWriter.deref << mComma ;
+		mWriter.deref << slice ("}") ;
 		mWriter.flush () ;
 	}
 } ;
 
+exports OfThis<AutoRef<CalibrationLayout>> CalibrationHolder::create () {
+	OfThis<AutoRef<CalibrationLayout>> ret ;
+	ret.mThis = AutoRef<CalibrationLayout>::make () ;
+	return move (ret) ;
+}
+
 exports VFat<CalibrationHolder> CalibrationHolder::hold (VREF<CalibrationLayout> that) {
-	return VFat<CalibrationHolder> (CalibrationImplHolder () ,that.mThis.self) ;
+	return VFat<CalibrationHolder> (CalibrationImplHolder () ,that) ;
 }
 
 exports CFat<CalibrationHolder> CalibrationHolder::hold (CREF<CalibrationLayout> that) {
-	return CFat<CalibrationHolder> (CalibrationImplHolder () ,that.mThis.self) ;
+	return CFat<CalibrationHolder> (CalibrationImplHolder () ,that) ;
 }
 } ;

@@ -18,7 +18,7 @@ public:
 		const auto r2x = r1x->type_size () ;
 		noop (r2x) ;
 		assume (r2x == that.mImage.step ()) ;
-		fake = move (that) ;
+		self = move (that) ;
 	}
 
 	void initialize (CREF<Unknown> holder ,CREF<LENGTH> cx_ ,CREF<LENGTH> cy_ ,CREF<LENGTH> step_) override {
@@ -28,12 +28,12 @@ public:
 		const auto r2x = r1x->type_size () ;
 		const auto r3x = cx_ * cy_ * step_ ;
 		const auto r4x = inline_alignas (r3x ,r2x) / r2x ;
-		auto &&rax = keep[TYPE<RefBufferLayout>::expr] (fake.mImage) ;
+		auto &&rax = keep[TYPE<RefBufferLayout>::expr] (self.mImage) ;
 		RefBufferHolder::hold (rax)->initialize (holder ,r4x) ;
 		rax.mSize = cx_ * cy_ ;
 		rax.mStep = step_ ;
-		fake.mWidth = cx_ ;
-		fake.mStride = cx_ ;
+		self.mWidth = cx_ ;
+		self.mStride = cx_ ;
 		reset () ;
 	}
 
@@ -46,21 +46,21 @@ public:
 	}
 
 	BOOL fixed () const override {
-		return fake.mImage.fixed () ;
+		return self.mImage.fixed () ;
 	}
 
 	LENGTH size () const override {
-		return fake.mImage.size () ;
+		return self.mImage.size () ;
 	}
 
 	LENGTH step () const override {
-		return fake.mImage.step () ;
+		return self.mImage.step () ;
 	}
 
 	LENGTH stride () const override {
-		if (!fake.mImage.exist ())
+		if (!self.mImage.exist ())
 			return 0 ;
-		return fake.mStride ;
+		return self.mStride ;
 	}
 
 	BOOL continous () const override {
@@ -74,27 +74,27 @@ public:
 	}
 
 	LENGTH bx () const override {
-		if (!fake.mImage.exist ())
+		if (!self.mImage.exist ())
 			return 0 ;
-		return fake.mBX ;
+		return self.mBX ;
 	}
 
 	LENGTH by () const override {
-		if (!fake.mImage.exist ())
+		if (!self.mImage.exist ())
 			return 0 ;
-		return fake.mBY ;
+		return self.mBY ;
 	}
 
 	LENGTH cx () const override {
-		if (!fake.mImage.exist ())
+		if (!self.mImage.exist ())
 			return 0 ;
-		return fake.mCX ;
+		return self.mCX ;
 	}
 
 	LENGTH cy () const override {
-		if (!fake.mImage.exist ())
+		if (!self.mImage.exist ())
 			return 0 ;
-		return fake.mCY ;
+		return self.mCY ;
 	}
 
 	ImageShape shape () const override {
@@ -108,53 +108,53 @@ public:
 	}
 
 	void reset () override {
-		fake.mBX = 0 ;
-		fake.mBY = 0 ;
-		fake.mCX = 0 ;
-		fake.mCY = 0 ;
-		if (fake.mImage.size () == 0)
+		self.mBX = 0 ;
+		self.mBY = 0 ;
+		self.mCX = 0 ;
+		self.mCY = 0 ;
+		if (self.mImage.size () == 0)
 			return ;
-		const auto r1x = inline_max (fake.mStride ,1) ;
-		const auto r2x = fake.mImage.size () / r1x ;
-		reset (0 ,0 ,fake.mWidth ,r2x) ;
+		const auto r1x = inline_max (self.mStride ,1) ;
+		const auto r2x = self.mImage.size () / r1x ;
+		reset (0 ,0 ,self.mWidth ,r2x) ;
 	}
 
 	void reset (CREF<LENGTH> bx_ ,CREF<LENGTH> by_ ,CREF<LENGTH> cx_ ,CREF<LENGTH> cy_) override {
-		assert (fake.mImage.size () > 0) ;
+		assert (self.mImage.size () > 0) ;
 		assert (cx_ > 0) ;
 		assert (cy_ > 0) ;
 		const auto r1x = bx_ + cx_ - 1 ;
 		const auto r2x = by_ + cy_ - 1 ;
-		assert (r1x < fake.mStride) ;
-		const auto r3x = r1x + r2x * fake.mStride ;
+		assert (r1x < self.mStride) ;
+		const auto r3x = r1x + r2x * self.mStride ;
 		noop (r3x) ;
-		assert (r3x < fake.mImage.size ()) ;
-		fake.mBX = bx_ ;
-		fake.mBY = by_ ;
-		fake.mCX = cx_ ;
-		fake.mCY = cy_ ;
+		assert (r3x < self.mImage.size ()) ;
+		self.mBX = bx_ ;
+		self.mBY = by_ ;
+		self.mCX = cx_ ;
+		self.mCY = cy_ ;
 	}
 
 	VREF<BoxLayout> raw () leftvalue override {
-		return RefBufferHolder::hold (fake.mImage)->raw () ;
+		return RefBufferHolder::hold (self.mImage)->raw () ;
 	}
 
 	CREF<BoxLayout> raw () const leftvalue override {
-		return RefBufferHolder::hold (fake.mImage)->raw () ;
+		return RefBufferHolder::hold (self.mImage)->raw () ;
 	}
 
 	VREF<Pointer> at (CREF<INDEX> x ,CREF<INDEX> y) leftvalue override {
 		assert (inline_between (x ,0 ,cx ())) ;
 		assert (inline_between (y ,0 ,cy ())) ;
-		INDEX ix = (x + fake.mBX) + (y + fake.mBY) * fake.mStride ;
-		return fake.mImage.at (ix) ;
+		INDEX ix = (x + self.mBX) + (y + self.mBY) * self.mStride ;
+		return self.mImage.at (ix) ;
 	}
 
 	CREF<Pointer> at (CREF<INDEX> x ,CREF<INDEX> y) const leftvalue override {
 		assert (inline_between (x ,0 ,cx ())) ;
 		assert (inline_between (y ,0 ,cy ())) ;
-		INDEX ix = (x + fake.mBX) + (y + fake.mBY) * fake.mStride ;
-		return fake.mImage.at (ix) ;
+		INDEX ix = (x + self.mBX) + (y + self.mBY) * self.mStride ;
+		return self.mImage.at (ix) ;
 	}
 
 	void fill (CREF<Pointer> item) override {
@@ -204,20 +204,20 @@ exports CFat<ImageHolder> ImageHolder::hold (CREF<ImageLayout> that) {
 
 template class External<ImageProcHolder ,ImageProcLayout> ;
 
-exports CREF<ImageProcLayout> ImageProcHolder::instance () {
+exports CREF<OfThis<UniqueRef<ImageProcLayout>>> ImageProcHolder::instance () {
 	return memorize ([&] () {
-		ImageProcLayout ret ;
-		ret.mThis = External<ImageProcHolder ,ImageProcLayout>::create () ;
+		OfThis<UniqueRef<ImageProcLayout>> ret ;
+		External<ImageProcHolder ,ImageProcLayout>::declare ().create (ret.mThis) ;
 		ImageProcHolder::hold (ret)->initialize () ;
 		return move (ret) ;
 	}) ;
 }
 
-exports VFat<ImageProcHolder> ImageProcHolder::hold (VREF<ImageProcImplLayout> that) {
+exports VFat<ImageProcHolder> ImageProcHolder::hold (VREF<ImageProcLayout> that) {
 	return VFat<ImageProcHolder> (External<ImageProcHolder ,ImageProcLayout>::declare () ,that) ;
 }
 
-exports CFat<ImageProcHolder> ImageProcHolder::hold (CREF<ImageProcImplLayout> that) {
+exports CFat<ImageProcHolder> ImageProcHolder::hold (CREF<ImageProcLayout> that) {
 	return CFat<ImageProcHolder> (External<ImageProcHolder ,ImageProcLayout>::declare () ,that) ;
 }
 
@@ -292,11 +292,11 @@ public:
 		const auto r1x = size_of_tensor_type (type_) ;
 		const auto r2x = size_ * r1x ;
 		const auto r3x = inline_alignas (r2x ,SIZE_OF<QUAD>::expr) ;
-		fake.mTensor = RefBuffer<BYTE> (r3x) ;
-		const auto r4x = address (fake.mTensor[0]) ;
-		fake.mOffset = inline_alignas (r4x ,8) - r4x ;
-		fake.mWidth = size_ ;
-		fake.mType = type_ ;
+		self.mTensor = RefBuffer<BYTE> (r3x) ;
+		const auto r4x = address (self.mTensor[0]) ;
+		self.mOffset = inline_alignas (r4x ,8) - r4x ;
+		self.mWidth = size_ ;
+		self.mType = type_ ;
 		reset () ;
 	}
 
@@ -313,54 +313,54 @@ public:
 	}
 
 	LENGTH size () const override {
-		if (!fake.mTensor.exist ())
+		if (!self.mTensor.exist ())
 			return 0 ;
-		return fake.mWidth ;
+		return self.mWidth ;
 	}
 
 	Just<TensorDataType> type () const override {
-		if (!fake.mTensor.exist ())
+		if (!self.mTensor.exist ())
 			return TensorDataType::ETC ;
-		return fake.mType ;
+		return self.mType ;
 	}
 
 	LENGTH cx () const override {
-		if (!fake.mTensor.exist ())
+		if (!self.mTensor.exist ())
 			return 0 ;
-		return fake.mCX ;
+		return self.mCX ;
 	}
 
 	LENGTH cy () const override {
-		if (!fake.mTensor.exist ())
+		if (!self.mTensor.exist ())
 			return 0 ;
-		return fake.mCY ;
+		return self.mCY ;
 	}
 
 	LENGTH cz () const override {
-		if (!fake.mTensor.exist ())
+		if (!self.mTensor.exist ())
 			return 0 ;
-		return fake.mCZ ;
+		return self.mCZ ;
 	}
 
 	LENGTH cw () const override {
-		if (!fake.mTensor.exist ())
+		if (!self.mTensor.exist ())
 			return 0 ;
-		return fake.mCW ;
+		return self.mCW ;
 	}
 
 	TensorLayout recast (CREF<Just<TensorDataType>> type_) override {
 		if (type () == type_)
-			return move (fake) ;
+			return move (self) ;
 		TensorLayout ret ;
 		const auto r1x = size () ;
 		TensorHolder::hold (ret)->initialize (r1x ,type_) ;
 		const auto r2x = choose_tensor_copy (type_ ,type ()) ;
 		const auto r3x = RFat<ReflectTensorCopy> (r2x) ;
 		const auto r4x = address (ret.mTensor[ret.mOffset]) ;
-		const auto r5x = address (fake.mTensor[fake.mOffset]) ;
+		const auto r5x = address (self.mTensor[self.mOffset]) ;
 		for (auto &&i : iter (0 ,r1x)) {
 			const auto r6x = r4x + i * ret.mSX ;
-			const auto r7x = r5x + i * fake.mSX ;
+			const auto r7x = r5x + i * self.mSX ;
 			r3x->xcopy (Pointer::make (r6x) ,Pointer::make (r7x)) ;
 		}
 		return move (ret) ;
@@ -422,21 +422,21 @@ public:
 	}
 
 	void reset () override {
-		fake.mSX = 0 ;
-		fake.mSY = 0 ;
-		fake.mSZ = 0 ;
-		fake.mSW = 0 ;
-		fake.mCX = 0 ;
-		fake.mCY = 0 ;
-		fake.mCZ = 0 ;
-		fake.mCW = 0 ;
-		if (fake.mTensor.size () == 0)
+		self.mSX = 0 ;
+		self.mSY = 0 ;
+		self.mSZ = 0 ;
+		self.mSW = 0 ;
+		self.mCX = 0 ;
+		self.mCY = 0 ;
+		self.mCZ = 0 ;
+		self.mCW = 0 ;
+		if (self.mTensor.size () == 0)
 			return ;
 		reset (size () ,1 ,1 ,1) ;
 	}
 
 	void reset (CREF<LENGTH> cx_ ,CREF<LENGTH> cy_ ,CREF<LENGTH> cz_ ,CREF<LENGTH> cw_) override {
-		assert (fake.mTensor.size () > 0) ;
+		assert (self.mTensor.size () > 0) ;
 		assert (cx_ > 0) ;
 		assert (cy_ > 0) ;
 		assert (cz_ > 0) ;
@@ -444,30 +444,30 @@ public:
 		const auto r1x = cx_ * cy_ * cz_ * cw_ ;
 		noop (r1x) ;
 		assert (r1x == size ()) ;
-		fake.mCX = cx_ ;
-		fake.mCY = cy_ ;
-		fake.mCZ = cz_ ;
-		fake.mCW = cz_ ;
-		fake.mSX = size_of_tensor_type (type ()) ;
-		fake.mSY = fake.mSX * fake.mCX ;
-		fake.mSZ = fake.mSY * fake.mCY ;
-		fake.mSW = fake.mSZ * fake.mCZ ;
+		self.mCX = cx_ ;
+		self.mCY = cy_ ;
+		self.mCZ = cz_ ;
+		self.mCW = cz_ ;
+		self.mSX = size_of_tensor_type (type ()) ;
+		self.mSY = self.mSX * self.mCX ;
+		self.mSZ = self.mSY * self.mCY ;
+		self.mSW = self.mSZ * self.mCZ ;
 	}
 
-	VREF<Pointer> self_m () leftvalue override {
-		return RefBufferHolder::hold (fake.mTensor)->self ;
+	VREF<Pointer> deref_m () leftvalue override {
+		return RefBufferHolder::hold (self.mTensor)->deref ;
 	}
 
-	CREF<Pointer> self_m () const leftvalue override {
-		return RefBufferHolder::hold (fake.mTensor)->self ;
+	CREF<Pointer> deref_m () const leftvalue override {
+		return RefBufferHolder::hold (self.mTensor)->deref ;
 	}
 
 	Ref<RefBuffer<BYTE>> borrow () leftvalue override {
-		return Ref<RefBuffer<BYTE>>::reference (fake.mTensor) ;
+		return Ref<RefBuffer<BYTE>>::reference (self.mTensor) ;
 	}
 
 	Ref<RefBuffer<BYTE>> borrow () const leftvalue override {
-		return Ref<RefBuffer<BYTE>>::reference (fake.mTensor) ;
+		return Ref<RefBuffer<BYTE>>::reference (self.mTensor) ;
 	}
 } ;
 
@@ -482,12 +482,12 @@ exports CFat<TensorHolder> TensorHolder::hold (CREF<TensorLayout> that) {
 class DisjointImplHolder final implement Fat<DisjointHolder ,DisjointLayout> {
 public:
 	void initialize (CREF<LENGTH> size_) override {
-		fake.mTable = Array<INDEX> (size_) ;
-		fake.mTable.fill (NONE) ;
+		self.mTable = Array<INDEX> (size_) ;
+		self.mTable.fill (NONE) ;
 	}
 
 	LENGTH size () const override {
-		return fake.mTable.size () ;
+		return self.mTable.size () ;
 	}
 
 	INDEX lead (CREF<INDEX> from_) override {
@@ -507,7 +507,7 @@ public:
 				if (ix == NONE)
 					break ;
 				iy = parent (ix) ;
-				fake.mTable[ix] = ret ;
+				self.mTable[ix] = ret ;
 				ix = iy ;
 			}
 		}
@@ -515,16 +515,16 @@ public:
 	}
 
 	INDEX parent (CREF<INDEX> curr) const {
-		if (curr == fake.mTable[curr])
+		if (curr == self.mTable[curr])
 			return NONE ;
-		return fake.mTable[curr] ;
+		return self.mTable[curr] ;
 	}
 
 	void joint (CREF<INDEX> from_ ,CREF<INDEX> to_) override {
 		INDEX ix = lead (from_) ;
 		INDEX iy = lead (to_) ;
-		fake.mTable[ix] = ix ;
-		fake.mTable[iy] = ix ;
+		self.mTable[ix] = ix ;
+		self.mTable[iy] = ix ;
 	}
 
 	BOOL edge (CREF<INDEX> from_ ,CREF<INDEX> to_) override {
@@ -558,9 +558,9 @@ public:
 	}
 
 	Array<INDEX> jump (CREF<INDEX> from_) override {
-		Array<INDEX> ret = Array<INDEX> (fake.mTable.size ()) ;
+		Array<INDEX> ret = Array<INDEX> (self.mTable.size ()) ;
 		ret.fill (NONE) ;
-		for (auto &&i : iter (0 ,fake.mTable.size ())) {
+		for (auto &&i : iter (0 ,self.mTable.size ())) {
 			INDEX ix = lead (i) ;
 			if (ix == NONE)
 				continue ;
@@ -582,76 +582,76 @@ exports CFat<DisjointHolder> DisjointHolder::hold (CREF<DisjointLayout> that) {
 class KMMatchImplHolder final implement Fat<KMMatchHolder ,KMMatchLayout> {
 public:
 	void initialize (CREF<LENGTH> size_) override {
-		fake.mSize = size_ ;
-		fake.mThreshold = FLT32 (0.1) ;
-		fake.mUser = Array<FLT32> (fake.mSize) ;
-		fake.mWork = Array<FLT32> (fake.mSize) ;
-		fake.mUserVisit = BitSet (fake.mSize) ;
-		fake.mWorkVisit = BitSet (fake.mSize) ;
-		fake.mMatch = Array<INDEX> (fake.mSize) ;
-		fake.mLack = Array<FLT32> (fake.mSize) ;
+		self.mSize = size_ ;
+		self.mThreshold = FLT32 (0.1) ;
+		self.mUser = Array<FLT32> (self.mSize) ;
+		self.mWork = Array<FLT32> (self.mSize) ;
+		self.mUserVisit = BitSet (self.mSize) ;
+		self.mWorkVisit = BitSet (self.mSize) ;
+		self.mMatch = Array<INDEX> (self.mSize) ;
+		self.mLack = Array<FLT32> (self.mSize) ;
 	}
 
 	void set_threshold (CREF<FLT64> threshold) override {
-		fake.mThreshold = FLT32 (threshold) ;
+		self.mThreshold = FLT32 (threshold) ;
 	}
 
 	LENGTH size () const override {
-		return fake.mSize ;
+		return self.mSize ;
 	}
 
 	Array<INDEX> sort (RREF<Array<FLT32>> love) override {
-		assert (fake.mMatch.size () > 0) ;
-		assert (love.size () == MathProc::square (fake.mSize)) ;
-		fake.mLove = move (love) ;
-		fake.mUser.fill (0) ;
-		fake.mWork.fill (0) ;
-		fake.mUserVisit.clear () ;
-		fake.mWorkVisit.clear () ;
-		fake.mMatch.fill (NONE) ;
-		fake.mLack.fill (0) ;
+		assert (self.mMatch.size () > 0) ;
+		assert (love.size () == MathProc::square (self.mSize)) ;
+		self.mLove = move (love) ;
+		self.mUser.fill (0) ;
+		self.mWork.fill (0) ;
+		self.mUserVisit.clear () ;
+		self.mWorkVisit.clear () ;
+		self.mMatch.fill (NONE) ;
+		self.mLack.fill (0) ;
 		solve () ;
-		return fake.mMatch ;
+		return self.mMatch ;
 	}
 
 	void solve () {
-		for (auto &&i : iter (0 ,fake.mSize)) {
-			fake.mUser[i] = -infinity ;
-			for (auto &&j : iter (0 ,fake.mSize)) {
-				fake.mUser[i] = MathProc::max_of (fake.mUser[i] ,fake.mLove[i * fake.mSize + j]) ;
+		for (auto &&i : iter (0 ,self.mSize)) {
+			self.mUser[i] = -infinity ;
+			for (auto &&j : iter (0 ,self.mSize)) {
+				self.mUser[i] = MathProc::max_of (self.mUser[i] ,self.mLove[i * self.mSize + j]) ;
 			}
 		}
-		for (auto &&i : iter (0 ,fake.mSize)) {
-			fake.mLack.fill (infinity) ;
+		for (auto &&i : iter (0 ,self.mSize)) {
+			self.mLack.fill (infinity) ;
 			while (TRUE) {
-				fake.mUserVisit.clear () ;
-				fake.mWorkVisit.clear () ;
+				self.mUserVisit.clear () ;
+				self.mWorkVisit.clear () ;
 				if (dfs (i))
 					break ;
 				const auto r1x = invoke ([&] () {
 					FLT32 ret = infinity ;
-					for (auto &&j : iter (0 ,fake.mSize)) {
-						if (fake.mWorkVisit[j])
+					for (auto &&j : iter (0 ,self.mSize)) {
+						if (self.mWorkVisit[j])
 							continue ;
-						ret = MathProc::min_of (ret ,fake.mLack[j]) ;
+						ret = MathProc::min_of (ret ,self.mLack[j]) ;
 					}
 					return move (ret) ;
 				}) ;
-				for (auto &&j : iter (0 ,fake.mSize)) {
+				for (auto &&j : iter (0 ,self.mSize)) {
 					if ifdo (TRUE) {
-						if (!fake.mUserVisit[j])
+						if (!self.mUserVisit[j])
 							discard ;
-						fake.mUser[j] -= r1x ;
+						self.mUser[j] -= r1x ;
 					}
 					if ifdo (TRUE) {
-						if (!fake.mWorkVisit[j])
+						if (!self.mWorkVisit[j])
 							discard ;
-						fake.mWork[j] += r1x ;
+						self.mWork[j] += r1x ;
 					}
 					if ifdo (TRUE) {
-						if (fake.mWorkVisit[j])
+						if (self.mWorkVisit[j])
 							discard ;
-						fake.mLack[j] -= r1x ;
+						self.mLack[j] -= r1x ;
 					}
 				}
 			}
@@ -659,30 +659,30 @@ public:
 	}
 
 	BOOL dfs (CREF<INDEX> user) {
-		fake.mUserVisit[user] = TRUE ;
-		for (auto &&i : iter (0 ,fake.mSize)) {
-			if (fake.mWorkVisit[i])
+		self.mUserVisit[user] = TRUE ;
+		for (auto &&i : iter (0 ,self.mSize)) {
+			if (self.mWorkVisit[i])
 				continue ;
-			const auto r1x = fake.mUser[user] + fake.mWork[i] - fake.mLove[user * fake.mSize + i] ;
+			const auto r1x = self.mUser[user] + self.mWork[i] - self.mLove[user * self.mSize + i] ;
 			if ifdo (TRUE) {
-				if (r1x < fake.mThreshold)
+				if (r1x < self.mThreshold)
 					discard ;
-				fake.mLack[i] = MathProc::min_of (fake.mLack[i] ,r1x) ;
+				self.mLack[i] = MathProc::min_of (self.mLack[i] ,r1x) ;
 			}
-			if (r1x >= fake.mThreshold)
+			if (r1x >= self.mThreshold)
 				continue ;
-			fake.mWorkVisit[i] = TRUE ;
-			const auto r2x = fake.mMatch[i] ;
+			self.mWorkVisit[i] = TRUE ;
+			const auto r2x = self.mMatch[i] ;
 			if ifdo (TRUE) {
 				if (r2x != NONE)
 					discard ;
-				fake.mMatch[i] = user ;
+				self.mMatch[i] = user ;
 				return TRUE ;
 			}
 			if ifdo (TRUE) {
 				if (!dfs (r2x))
 					discard ;
-				fake.mMatch[i] = user ;
+				self.mMatch[i] = user ;
 				return TRUE ;
 			}
 		}

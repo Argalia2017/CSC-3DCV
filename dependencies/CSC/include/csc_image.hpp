@@ -314,14 +314,14 @@ public:
 	}
 } ;
 
-struct ImageProcImplLayout ;
-struct ImageProcLayout implement OfThis<UniqueRef<ImageProcImplLayout>> {} ;
+struct ImageProcLayout ;
 
 struct ImageProcHolder implement Interface {
-	imports CREF<ImageProcLayout> instance () ;
-	imports VFat<ImageProcHolder> hold (VREF<ImageProcImplLayout> that) ;
-	imports CFat<ImageProcHolder> hold (CREF<ImageProcImplLayout> that) ;
+	imports CREF<OfThis<UniqueRef<ImageProcLayout>>> instance () ;
+	imports VFat<ImageProcHolder> hold (VREF<ImageProcLayout> that) ;
+	imports CFat<ImageProcHolder> hold (CREF<ImageProcLayout> that) ;
 
+	virtual void create (VREF<UniqueRef<ImageProcLayout>> that) const = 0 ;
 	virtual void initialize () = 0 ;
 	virtual ImageLayout make_image (RREF<BoxLayout> image) const = 0 ;
 	virtual ImageLayout make_image (CREF<ImageShape> shape) const = 0 ;
@@ -338,7 +338,7 @@ struct ImageProcHolder implement Interface {
 	virtual FLT64 sampler (CREF<Image<FLT64>> image ,CREF<FLT64> x ,CREF<FLT64> y) const = 0 ;
 } ;
 
-class ImageProc implement ImageProcLayout {
+class ImageProc implement OfThis<UniqueRef<ImageProcLayout>> {
 public:
 	static CREF<ImageProc> instance () {
 		return keep[TYPE<ImageProc>::expr] (ImageProcHolder::instance ()) ;
@@ -419,8 +419,8 @@ struct TensorHolder implement Interface {
 	virtual TensorLayout recast (CREF<Just<TensorDataType>> type_) = 0 ;
 	virtual void reset () = 0 ;
 	virtual void reset (CREF<LENGTH> cx_ ,CREF<LENGTH> cy_ ,CREF<LENGTH> cz_ ,CREF<LENGTH> cw_) = 0 ;
-	virtual VREF<Pointer> self_m () leftvalue = 0 ;
-	virtual CREF<Pointer> self_m () const leftvalue = 0 ;
+	virtual VREF<Pointer> deref_m () leftvalue = 0 ;
+	virtual CREF<Pointer> deref_m () const leftvalue = 0 ;
 	virtual Ref<RefBuffer<BYTE>> borrow () leftvalue = 0 ;
 	virtual Ref<RefBuffer<BYTE>> borrow () const leftvalue = 0 ;
 } ;
@@ -484,12 +484,12 @@ public:
 		return TensorHolder::hold (thiz)->reset (cx_ ,cy_ ,cz_ ,cw_) ;
 	}
 
-	VREF<ARR<STRA>> self_m () leftvalue {
-		return TensorHolder::hold (thiz)->self ;
+	VREF<ARR<STRA>> deref_m () leftvalue {
+		return TensorHolder::hold (thiz)->deref ;
 	}
 
-	CREF<ARR<STRA>> self_m () const leftvalue {
-		return TensorHolder::hold (thiz)->self ;
+	CREF<ARR<STRA>> deref_m () const leftvalue {
+		return TensorHolder::hold (thiz)->deref ;
 	}
 
 	Ref<RefBuffer<BYTE>> borrow () leftvalue {

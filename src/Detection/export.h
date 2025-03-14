@@ -11,10 +11,10 @@ struct BoardType {
 	} ;
 } ;
 
-struct BoardImplLayout ;
-struct BoardLayout implement OfThis<AutoRef<BoardImplLayout>> {} ;
+struct BoardLayout ;
 
 struct BoardHolder implement Interface {
+	imports OfThis<AutoRef<BoardLayout>> create () ;
 	imports VFat<BoardHolder> hold (VREF<BoardLayout> that) ;
 	imports CFat<BoardHolder> hold (CREF<BoardLayout> that) ;
 
@@ -26,11 +26,12 @@ struct BoardHolder implement Interface {
 	virtual Optional<Array<Point2F>> detect (CREF<Image<Color3B>> image) = 0 ;
 } ;
 
-class Board implement BoardLayout {
+class Board implement OfThis<AutoRef<BoardLayout>> {
 public:
 	implicit Board () = default ;
 
 	explicit Board (CREF<typeof (NULL)>) {
+		mThis = BoardHolder::create () ;
 		BoardHolder::hold (thiz)->initialize () ;
 	}
 
@@ -55,10 +56,10 @@ public:
 	}
 } ;
 
-struct FeatureImplLayout ;
-struct FeatureLayout implement OfThis<AutoRef<FeatureImplLayout>> {} ;
+struct FeatureLayout ;
 
 struct FeatureHolder implement Interface {
+	imports OfThis<AutoRef<FeatureLayout>> create () ;
 	imports VFat<FeatureHolder> hold (VREF<FeatureLayout> that) ;
 	imports CFat<FeatureHolder> hold (CREF<FeatureLayout> that) ;
 
@@ -66,11 +67,12 @@ struct FeatureHolder implement Interface {
 	virtual void execute () = 0 ;
 } ;
 
-class Feature implement FeatureLayout {
+class Feature implement OfThis<AutoRef<FeatureLayout>> {
 public:
 	implicit Feature () = default ;
 
 	explicit Feature (CREF<typeof (NULL)>) {
+		mThis = FeatureHolder::create () ;
 		FeatureHolder::hold (thiz)->initialize () ;
 	}
 

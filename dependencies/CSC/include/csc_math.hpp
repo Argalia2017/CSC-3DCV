@@ -18,13 +18,12 @@ static constexpr auto MATH_R = MATH_PI / FLT64 (180) ;
 static constexpr auto MATH_LN2 = FLT64 (0.693147180559945309417) ;
 static constexpr auto MATH_LN10 = FLT64 (2.30258509299404568402) ;
 
-struct MathProcImplLayout ;
-struct MathProcLayout implement OfThis<UniqueRef<MathProcImplLayout>> {} ;
+struct MathProcLayout ;
 
 struct MathProcHolder implement Interface {
-	imports CREF<MathProcLayout> instance () ;
-	imports VFat<MathProcHolder> hold (VREF<MathProcImplLayout> that) ;
-	imports CFat<MathProcHolder> hold (CREF<MathProcImplLayout> that) ;
+	imports CREF<OfThis<UniqueRef<MathProcLayout>>> instance () ;
+	imports VFat<MathProcHolder> hold (VREF<MathProcLayout> that) ;
+	imports CFat<MathProcHolder> hold (CREF<MathProcLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual BOOL is_inf (CREF<FLT32> a) const = 0 ;
@@ -105,7 +104,7 @@ struct MathProcHolder implement Interface {
 	virtual FLT64 min_of (CREF<FLT64> a ,CREF<WrapperLayout> b) const = 0 ;
 } ;
 
-class MathProc implement MathProcLayout {
+class MathProc implement OfThis<UniqueRef<MathProcLayout>> {
 public:
 	static CREF<MathProc> instance () {
 		return keep[TYPE<MathProc>::expr] (MathProcHolder::instance ()) ;
@@ -311,19 +310,19 @@ struct Notation {
 	VAL64 mExponent ;
 } ;
 
-struct FEXP2CacheImplLayout ;
-struct FEXP2CacheLayout implement OfThis<UniqueRef<FEXP2CacheImplLayout>> {} ;
+struct FEXP2CacheLayout ;
 
 struct FEXP2CacheHolder implement Interface {
-	imports CREF<FEXP2CacheLayout> instance () ;
-	imports VFat<FEXP2CacheHolder> hold (VREF<FEXP2CacheImplLayout> that) ;
-	imports CFat<FEXP2CacheHolder> hold (CREF<FEXP2CacheImplLayout> that) ;
+	imports CREF<OfThis<UniqueRef<FEXP2CacheLayout>>> instance () ;
+	imports VFat<FEXP2CacheHolder> hold (VREF<FEXP2CacheLayout> that) ;
+	imports CFat<FEXP2CacheHolder> hold (CREF<FEXP2CacheLayout> that) ;
 
+	virtual void create (VREF<UniqueRef<FEXP2CacheLayout>> that) const = 0 ;
 	virtual void initialize () = 0 ;
 	virtual void get (CREF<VAL64> index ,VREF<Notation> item) const = 0 ;
 } ;
 
-class FEXP2Cache implement FEXP2CacheLayout {
+class FEXP2Cache implement OfThis<UniqueRef<FEXP2CacheLayout>> {
 public:
 	static CREF<FEXP2Cache> instance () {
 		return keep[TYPE<FEXP2Cache>::expr] (FEXP2CacheHolder::instance ()) ;
@@ -336,19 +335,19 @@ public:
 	}
 } ;
 
-struct FEXP10CacheImplLayout ;
-struct FEXP10CacheLayout implement OfThis<UniqueRef<FEXP10CacheImplLayout>> {} ;
+struct FEXP10CacheLayout ;
 
 struct FEXP10CacheHolder implement Interface {
-	imports CREF<FEXP10CacheLayout> instance () ;
-	imports VFat<FEXP10CacheHolder> hold (VREF<FEXP10CacheImplLayout> that) ;
-	imports CFat<FEXP10CacheHolder> hold (CREF<FEXP10CacheImplLayout> that) ;
+	imports CREF<OfThis<UniqueRef<FEXP10CacheLayout>>> instance () ;
+	imports VFat<FEXP10CacheHolder> hold (VREF<FEXP10CacheLayout> that) ;
+	imports CFat<FEXP10CacheHolder> hold (CREF<FEXP10CacheLayout> that) ;
 
+	virtual void create (VREF<UniqueRef<FEXP10CacheLayout>> that) const = 0 ;
 	virtual void initialize () = 0 ;
 	virtual void get (CREF<VAL64> index ,VREF<Notation> item) const = 0 ;
 } ;
 
-class FEXP10Cache implement FEXP10CacheLayout {
+class FEXP10Cache implement OfThis<UniqueRef<FEXP10CacheLayout>> {
 public:
 	static CREF<FEXP10Cache> instance () {
 		return keep[TYPE<FEXP10Cache>::expr] (FEXP10CacheHolder::instance ()) ;
@@ -361,13 +360,12 @@ public:
 	}
 } ;
 
-struct FloatProcImplLayout ;
-struct FloatProcLayout implement OfThis<UniqueRef<FloatProcImplLayout>> {} ;
+struct FloatProcLayout ;
 
 struct FloatProcHolder implement Interface {
-	imports CREF<FloatProcLayout> instance () ;
-	imports VFat<FloatProcHolder> hold (VREF<FloatProcImplLayout> that) ;
-	imports CFat<FloatProcHolder> hold (CREF<FloatProcImplLayout> that) ;
+	imports CREF<OfThis<UniqueRef<FloatProcLayout>>> instance () ;
+	imports VFat<FloatProcHolder> hold (VREF<FloatProcLayout> that) ;
+	imports CFat<FloatProcHolder> hold (CREF<FloatProcLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual LENGTH value_precision () const = 0 ;
@@ -378,7 +376,7 @@ struct FloatProcHolder implement Interface {
 	virtual Notation fexp10_from_fexp2 (CREF<Notation> fexp2) const = 0 ;
 } ;
 
-class FloatProc implement FloatProcLayout {
+class FloatProc implement OfThis<UniqueRef<FloatProcLayout>> {
 public:
 	static CREF<FloatProc> instance () {
 		return keep[TYPE<FloatProc>::expr] (FloatProcHolder::instance ()) ;
@@ -409,13 +407,12 @@ public:
 	}
 } ;
 
-struct ByteProcImplLayout ;
-struct ByteProcLayout implement OfThis<UniqueRef<ByteProcImplLayout>> {} ;
+struct ByteProcLayout ;
 
 struct ByteProcHolder implement Interface {
-	imports CREF<ByteProcLayout> instance () ;
-	imports VFat<ByteProcHolder> hold (VREF<ByteProcImplLayout> that) ;
-	imports CFat<ByteProcHolder> hold (CREF<ByteProcImplLayout> that) ;
+	imports CREF<OfThis<UniqueRef<ByteProcLayout>>> instance () ;
+	imports VFat<ByteProcHolder> hold (VREF<ByteProcLayout> that) ;
+	imports CFat<ByteProcHolder> hold (CREF<ByteProcLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual BYTE split_low (CREF<WORD> a) const = 0 ;
@@ -448,7 +445,7 @@ struct ByteProcHolder implement Interface {
 	virtual LENGTH lowcount (CREF<BYTE> a) const = 0 ;
 } ;
 
-class ByteProc implement ByteProcLayout {
+class ByteProc implement OfThis<UniqueRef<ByteProcLayout>> {
 public:
 	static CREF<ByteProc> instance () {
 		return keep[TYPE<ByteProc>::expr] (ByteProcHolder::instance ()) ;
@@ -977,13 +974,12 @@ public:
 	}
 } ;
 
-struct HashProcImplLayout ;
-struct HashProcLayout implement OfThis<UniqueRef<HashProcImplLayout>> {} ;
+struct HashProcLayout ;
 
 struct HashProcHolder implement Interface {
-	imports CREF<HashProcLayout> instance () ;
-	imports VFat<HashProcHolder> hold (VREF<HashProcImplLayout> that) ;
-	imports CFat<HashProcHolder> hold (CREF<HashProcImplLayout> that) ;
+	imports CREF<OfThis<UniqueRef<HashProcLayout>>> instance () ;
+	imports VFat<HashProcHolder> hold (VREF<HashProcLayout> that) ;
+	imports CFat<HashProcHolder> hold (CREF<HashProcLayout> that) ;
 
 	virtual void initialize () = 0 ;
 	virtual CHAR fnvhash32 (CREF<Pointer> src ,CREF<LENGTH> size_) const = 0 ;
@@ -996,7 +992,7 @@ struct HashProcHolder implement Interface {
 	virtual WORD crchash16 (CREF<Pointer> src ,CREF<LENGTH> size_ ,CREF<WORD> val) const = 0 ;
 } ;
 
-class HashProc implement HashProcLayout {
+class HashProc implement OfThis<UniqueRef<HashProcLayout>> {
 public:
 	static CREF<HashProc> instance () {
 		return keep[TYPE<HashProc>::expr] (HashProcHolder::instance ()) ;

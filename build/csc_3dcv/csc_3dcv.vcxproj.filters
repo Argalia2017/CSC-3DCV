@@ -21,9 +21,6 @@
     <ClCompile Include="..\..\src\Registration\GaussionSplatting.cpp">
       <Filter>Registration</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\Esimation\DepthEstimation.cpp">
-      <Filter>Estimation</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\test.cpp" />
     <ClCompile Include="..\..\src\Calibration\Calibration.cpp">
       <Filter>Calibration</Filter>
@@ -58,7 +55,10 @@
     <ClCompile Include="..\..\src\Mapping\VoxelMatrix.cpp">
       <Filter>Mapping</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\Esimation\Solver.cpp">
+    <ClCompile Include="..\..\src\Estimation\DepthEstimation.cpp">
+      <Filter>Estimation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Estimation\SolverProc.cpp">
       <Filter>Estimation</Filter>
     </ClCompile>
   </ItemGroup>
@@ -76,14 +76,14 @@
     <ClInclude Include="..\..\src\Registration\export.h">
       <Filter>Registration</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Esimation\export.h">
-      <Filter>Estimation</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\Calibration\export.h">
       <Filter>Calibration</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\Mapping\export.h">
       <Filter>Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Estimation\export.h">
+      <Filter>Estimation</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

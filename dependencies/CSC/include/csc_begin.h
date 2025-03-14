@@ -18,8 +18,8 @@
 #undef leftvalue
 #undef rightvalue
 #undef thiz
+#undef deref
 #undef self
-#undef fake
 #undef expr
 #undef trait
 #undef implement
@@ -41,8 +41,8 @@
 #define leftvalue &
 #define rightvalue &&
 #define thiz (*this)
+#define deref deref_m ()
 #define self self_m ()
-#define fake fake_m ()
 #define expr expr_m ()
 #define trait struct
 #define implement :public

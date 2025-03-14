@@ -21,10 +21,14 @@
 #include "csc_begin.h"
 
 namespace CSC {
-struct MatrixProcImplLayout {} ;
+struct MatrixProcLayout {} ;
 
-class MatrixProcImplHolder final implement Fat<MatrixProcHolder ,MatrixProcImplLayout> {
+class MatrixProcImplHolder final implement Fat<MatrixProcHolder ,MatrixProcLayout> {
 public:
+	void create (VREF<UniqueRef<MatrixProcLayout>> that) const override {
+		that = UniqueRef<MatrixProcLayout>::make () ;
+	}
+
 	void initialize () override {
 		noop () ;
 	}
@@ -140,10 +144,14 @@ public:
 
 static const auto mMatrixProcExternal = External<MatrixProcHolder ,MatrixProcLayout> (MatrixProcImplHolder ()) ;
 
-struct LinearProcImplLayout {} ;
+struct LinearProcLayout {} ;
 
-class LinearProcImplHolder final implement Fat<LinearProcHolder ,LinearProcImplLayout> {
+class LinearProcImplHolder final implement Fat<LinearProcHolder ,LinearProcLayout> {
 public:
+	void create (VREF<UniqueRef<LinearProcLayout>> that) const override {
+		that = UniqueRef<LinearProcLayout>::make () ;
+	}
+
 	void initialize () override {
 		noop () ;
 	}

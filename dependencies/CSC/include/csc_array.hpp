@@ -141,8 +141,8 @@ struct ArrayHolder implement Interface {
 	virtual LENGTH size () const = 0 ;
 	virtual LENGTH step () const = 0 ;
 	virtual LENGTH length () const = 0 ;
-	virtual VREF<Pointer> self_m () leftvalue = 0 ;
-	virtual CREF<Pointer> self_m () const leftvalue = 0 ;
+	virtual VREF<Pointer> deref_m () leftvalue = 0 ;
+	virtual CREF<Pointer> deref_m () const leftvalue = 0 ;
 	virtual VREF<Pointer> at (CREF<INDEX> index) leftvalue = 0 ;
 	virtual CREF<Pointer> at (CREF<INDEX> index) const leftvalue = 0 ;
 	virtual INDEX ibegin () const = 0 ;
@@ -245,20 +245,20 @@ public:
 		return ArrayHolder::hold (thiz)->length () ;
 	}
 
-	VREF<ARR<A>> self_m () leftvalue {
-		return ArrayHolder::hold (thiz)->self ;
+	VREF<ARR<A>> deref_m () leftvalue {
+		return ArrayHolder::hold (thiz)->deref ;
 	}
 
 	forceinline operator VREF<ARR<A>> () leftvalue {
-		return self ;
+		return deref ;
 	}
 
-	CREF<ARR<A>> self_m () const leftvalue {
-		return ArrayHolder::hold (thiz)->self ;
+	CREF<ARR<A>> deref_m () const leftvalue {
+		return ArrayHolder::hold (thiz)->deref ;
 	}
 
 	forceinline operator CREF<ARR<A>> () const leftvalue {
-		return self ;
+		return deref ;
 	}
 
 	VREF<A> at (CREF<INDEX> index) leftvalue {
@@ -369,8 +369,8 @@ struct StringHolder implement Interface {
 	virtual LENGTH size () const = 0 ;
 	virtual LENGTH step () const = 0 ;
 	virtual LENGTH length () const = 0 ;
-	virtual VREF<Pointer> self_m () leftvalue = 0 ;
-	virtual CREF<Pointer> self_m () const leftvalue = 0 ;
+	virtual VREF<Pointer> deref_m () leftvalue = 0 ;
+	virtual CREF<Pointer> deref_m () const leftvalue = 0 ;
 	virtual Ref<RefBuffer<BYTE>> borrow () leftvalue = 0 ;
 	virtual Ref<RefBuffer<BYTE>> borrow () const leftvalue = 0 ;
 	virtual void get (CREF<INDEX> index ,VREF<STRU32> item) const = 0 ;
@@ -467,20 +467,20 @@ public:
 		return StringHolder::hold (thiz)->length () ;
 	}
 
-	VREF<ARR<A>> self_m () leftvalue {
-		return StringHolder::hold (thiz)->self ;
+	VREF<ARR<A>> deref_m () leftvalue {
+		return StringHolder::hold (thiz)->deref ;
 	}
 
 	forceinline operator VREF<ARR<A>> () leftvalue {
-		return self ;
+		return deref ;
 	}
 
-	CREF<ARR<A>> self_m () const leftvalue {
-		return StringHolder::hold (thiz)->self ;
+	CREF<ARR<A>> deref_m () const leftvalue {
+		return StringHolder::hold (thiz)->deref ;
 	}
 
 	forceinline operator CREF<ARR<A>> () const leftvalue {
-		return self ;
+		return deref ;
 	}
 
 	Ref<RefBuffer<BYTE>> borrow () leftvalue {
