@@ -52,7 +52,6 @@ struct CameraBlock {
 	Set<INDEX> mUseFrame ;
 	Array<Point3F> mPoint3D ;
 	Array<FLT32> mRadius ;
-	BOOL mConstPoint ;
 	INDEX mParam5 ;
 } ;
 
