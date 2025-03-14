@@ -11,7 +11,6 @@ struct ToolProcHolder implement Interface {
 	virtual void initialize () = 0 ;
 	virtual Color3B random_color (CREF<Random> random) const = 0 ;
 	virtual String<STR> format_time (CREF<Time> time) const = 0 ;
-	virtual Array<FLT64> flatten (CREF<Matrix> matrix) const = 0 ;
 } ;
 
 class ToolProc implement OfThis<SharedRef<ToolProcLayout>> {
@@ -26,10 +25,6 @@ public:
 
 	static String<STR> format_time (CREF<Time> time) {
 		return ToolProcHolder::hold (instance ())->format_time (time) ;
-	}
-
-	static Array<FLT64> flatten (CREF<Matrix> matrix) {
-		return ToolProcHolder::hold (instance ())->flatten (matrix) ;
 	}
 } ;
 

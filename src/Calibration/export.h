@@ -41,9 +41,8 @@ struct CameraFrame {
 	INDEX mTime1 ;
 	String<STR> mImageFile ;
 	Image<Color3B> mImage ;
-	Image<FLT32> mDepth ;
-	Array<FLT32> mKeypoint ;
 	Array<Point2F> mPoint2D ;
+	Array<FLT32> mPointDepth ;
 	Array<Point3F> mPointRay ;
 	BOOL mUsingPointRay ;
 } ;

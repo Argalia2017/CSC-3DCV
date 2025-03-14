@@ -24,15 +24,6 @@ public:
 		const auto r4x = AlignedText (r1x % 1000 ,3) ;
 		return String<STR>::make (r2x ,slice ("m") ,r3x ,slice (".") ,r4x ,slice ("s")) ;
 	}
-
-	Array<FLT64> flatten (CREF<Matrix> matrix) const override {
-		Array<FLT64> ret = Array<FLT64> (16) ;
-		for (auto &&i : iter (0 ,4 ,0 ,4)) {
-			INDEX ix = i.mX + i.mY * 4 ;
-			ret[ix] = matrix[i] ;
-		}
-		return move (ret) ;
-	}
 } ;
 
 exports CREF<OfThis<SharedRef<ToolProcLayout>>> ToolProcHolder::instance () {

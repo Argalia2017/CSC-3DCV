@@ -29,6 +29,25 @@ public:
 		return r2x.matrix () ;
 	}
 
+	Array<FLT64> encode_matrix (CREF<Matrix> mat_a) const override {
+		Array<FLT64> ret = Array<FLT64> (16) ;
+		for (auto &&i : iter (0 ,4 ,0 ,4)) {
+			INDEX ix = i.mX + i.mY * 4 ;
+			ret[ix] = mat_a[i] ;
+		}
+		return move (ret) ;
+	}
+
+	Matrix decode_matrix (CREF<Array<FLT64>> mat_a) const override {
+		assume (mat_a.size () == 16) ;
+		Matrix ret ;
+		for (auto &&i : iter (0 ,4 ,0 ,4)) {
+			INDEX ix = i.mY * 4 + i.mX ;
+			ret[i] = mat_a[ix] ;
+		}
+		return move (ret) ;
+	}
+
 	Matrix solve_pnp (CREF<Array<Point2F>> point_2d ,CREF<Array<Point3F>> point_3d ,CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist) const override {
 		const auto r1x = invoke ([&] () {
 			std::vector<cv::Point2d> ret = std::vector<cv::Point2d> (point_2d.size ()) ;

@@ -464,9 +464,15 @@ public:
 
 	void build_dire (CREF<String<STR>> dire) const override {
 		const auto r1x = Path (dire).decouple () ;
-		auto rax = Path () ;
+		if (r1x.length () == 0)
+			return ;
+		auto rax = Path (r1x[0]) ;
 		for (auto &&i : r1x.range ()) {
-			rax = rax.child (r1x[i]) ;
+			if ifdo (TRUE) {
+				if (i == 0)
+					discard ;
+				rax = rax.child (r1x[i]) ;
+			}
 			const auto r2x = rax.fetch () ;
 			CreateDirectory (r2x ,NULL) ;
 		}

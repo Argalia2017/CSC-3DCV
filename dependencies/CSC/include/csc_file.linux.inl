@@ -525,10 +525,17 @@ public:
 
 	void build_dire (CREF<String<STR>> dire) const override {
 		const auto r1x = Path (dire).decouple () ;
+		const auto r1x = Path (dire).decouple () ;
+		if (r1x.length () == 0)
+			return ;
+		auto rax = Path (r1x[0]) ;
 		const auto r2x = csc_enum_t (S_IRWXU | S_IRWXG | S_IRWXO) ;
-		auto rax = Path () ;
 		for (auto &&i : r1x.range ()) {
-			rax = rax.child (r1x[i]) ;
+			if ifdo (TRUE) {
+				if (i == 0)
+					discard ;
+				rax = rax.child (r1x[i]) ;
+			}
 			const auto r3x = rax.fetch () ;
 			mkdir (r3x ,r2x) ;
 		}
