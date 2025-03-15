@@ -78,8 +78,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\Calibration\Calibration.cpp" />
-    <ClCompile Include="..\..\src\Calibration\PoseGraph.cpp" />
     <ClCompile Include="..\..\src\Common\ConfigProc.cpp" />
     <ClCompile Include="..\..\src\Common\ToolProc.cpp" />
     <ClCompile Include="..\..\src\Detection\Aruco.cpp" />
@@ -89,6 +87,8 @@
     <ClCompile Include="..\..\src\Estimation\DepthEstimation.cpp" />
     <ClCompile Include="..\..\src\Estimation\SolverProc.cpp" />
     <ClCompile Include="..\..\src\inl.cpp" />
+    <ClCompile Include="..\..\src\Localization\Calibration.cpp" />
+    <ClCompile Include="..\..\src\Localization\PoseGraph.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\Mapping\MarchingCube.cpp" />
     <ClCompile Include="..\..\src\Mapping\Polyfit.cpp" />
@@ -99,10 +99,10 @@
     <ClCompile Include="..\..\src\test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\Calibration\export.h" />
     <ClInclude Include="..\..\src\Common\export.h" />
     <ClInclude Include="..\..\src\Detection\export.h" />
     <ClInclude Include="..\..\src\Estimation\export.h" />
+    <ClInclude Include="..\..\src\Localization\export.h" />
     <ClInclude Include="..\..\src\Mapping\export.h" />
     <ClInclude Include="..\..\src\Registration\export.h" />
     <ClInclude Include="..\..\src\Rendering\export.h" />

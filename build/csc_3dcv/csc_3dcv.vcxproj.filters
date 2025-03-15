@@ -22,9 +22,6 @@
       <Filter>Registration</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\test.cpp" />
-    <ClCompile Include="..\..\src\Calibration\Calibration.cpp">
-      <Filter>Calibration</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\Mapping\MarchingCube.cpp">
       <Filter>Mapping</Filter>
     </ClCompile>
@@ -49,8 +46,11 @@
     <ClCompile Include="..\..\src\Estimation\SolverProc.cpp">
       <Filter>Estimation</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\Calibration\PoseGraph.cpp">
-      <Filter>Calibration</Filter>
+    <ClCompile Include="..\..\src\Localization\Calibration.cpp">
+      <Filter>Localization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Localization\PoseGraph.cpp">
+      <Filter>Localization</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -67,14 +67,14 @@
     <ClInclude Include="..\..\src\Registration\export.h">
       <Filter>Registration</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Calibration\export.h">
-      <Filter>Calibration</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\Mapping\export.h">
       <Filter>Mapping</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\Estimation\export.h">
       <Filter>Estimation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Localization\export.h">
+      <Filter>Localization</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -96,7 +96,7 @@
     <Filter Include="Mapping">
       <UniqueIdentifier>{7e210b6e-c793-49db-8e94-81a6a2ee6530}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Calibration">
+    <Filter Include="Localization">
       <UniqueIdentifier>{debce96d-abb6-48ae-863b-17be77cd760e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
