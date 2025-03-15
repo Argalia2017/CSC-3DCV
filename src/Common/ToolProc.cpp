@@ -22,7 +22,11 @@ public:
 		const auto r2x = r1x / 60000 ;
 		const auto r3x = r1x % 60000 / 1000 ;
 		const auto r4x = AlignedText (r1x % 1000 ,3) ;
-		return String<STR>::make (r2x ,slice ("m") ,r3x ,slice (".") ,r4x ,slice ("s")) ;
+		if (r2x == 0)
+			return String<STR>::make (r3x ,slice (".") ,r4x ,slice ("s")) ;
+		const auto r5x = r1x % 60000 / 60 ;
+		const auto r6x = AlignedText (r5x ,3) ;
+		return String<STR>::make (r2x ,slice (".") ,r6x ,slice ("m")) ;
 	}
 } ;
 

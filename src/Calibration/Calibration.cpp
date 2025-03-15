@@ -51,6 +51,9 @@ public:
 	}
 
 	void execute () override {
+		Singleton<Console>::instance ().info () ;
+		Singleton<Console>::instance ().info (slice ("Calibration::execute")) ;
+		self.mBeginTime = CurrentTime () ;
 		load_data_json () ;
 		work_build_frame () ;
 		work_board_detection () ;
@@ -60,11 +63,14 @@ public:
 		work_sfm_global_ba (TRUE ,FALSE ,TRUE ,TRUE ,FALSE) ;
 		work_sfm_global_ba (FALSE ,TRUE ,TRUE ,TRUE ,FALSE) ;
 		work_mapping_world () ;
-		work_sfm_global_ba (FALSE ,FALSE ,FALSE ,FALSE ,TRUE) ;
-		work_undistortion () ;
+		work_sfm_global_ba (FALSE ,FALSE ,FALSE ,TRUE ,TRUE) ;
+		work_compute_weight () ;
 		save_data_json () ;
 		save_pointcloud_ply () ;
 		save_camera_ply () ;
+		self.mEndTime = CurrentTime () ;
+		const auto r1x = ToolProc::format_time (self.mEndTime - self.mBeginTime) ;
+		Singleton<Console>::instance ().warn (slice ("time_cost = ") ,r1x) ;
 	}
 
 	void load_data_json () {
@@ -143,6 +149,9 @@ public:
 			self.mView[ix].mMatK = SolverProc::decode_matrix (r6x) ;
 			self.mView[ix].mConstMatK = TRUE ;
 			self.mView[ix].mDist = r1x[i].child (slice ("mDist")).parse (FLT64 (0) ,5) ;
+			self.mView[ix].mConstDist = TRUE ;
+			const auto r7x = r1x[i].child (slice ("mMatV")).parse (FLT64 (0) ,16) ;
+			self.mView[ix].mMatV = SolverProc::decode_matrix (r7x) ;
 			self.mView[ix].mConstMatV = TRUE ;
 			self.mView[ix].mBaseline = r1x[i].child (slice ("mBaseline")).parse (FLT64 (0)) ;
 			self.mView[ix].mRelative = r1x[i].child (slice ("mRelative")).parse (FLT64 (0)) ;
@@ -184,7 +193,7 @@ public:
 	}
 
 	void work_build_frame () {
-		const auto r1x = Array<INDEX>::make (self.mViewNameSet.range ()) ;
+		const auto r1x = Array<INDEX>::make (self.mView.range ()) ;
 		assume (r1x.length () >= 2) ;
 		for (auto &&i : self.mPose.range ()) {
 			for (auto &&j : self.mPose[i].mUseView) {
@@ -277,8 +286,8 @@ public:
 	}
 
 	void work_board_detection () {
-		Singleton<Console>::instance ().info () ;
-		Singleton<Console>::instance ().info (slice ("work_board_detection")) ;
+		Singleton<Console>::instance ().trace () ;
+		Singleton<Console>::instance ().trace (slice ("work_board_detection")) ;
 		self.mBoard.set_board_shape (self.mBoardShape) ;
 		self.mBoard.set_board_type (BoardType::CIRCLE) ;
 		self.mBoard.set_board_baseline (self.mBoardBaseline) ;
@@ -305,8 +314,8 @@ public:
 	}
 
 	void work_sfm_view_mat_k () {
-		Singleton<Console>::instance ().info () ;
-		Singleton<Console>::instance ().info (slice ("work_sfm_view_mat_k")) ;
+		Singleton<Console>::instance ().trace () ;
+		Singleton<Console>::instance ().trace (slice ("work_sfm_view_mat_k")) ;
 		assume (self.mView.length () > 0) ;
 		for (auto &&i : self.mView.range ()) {
 			if (self.mView[i].mConstMatK)
@@ -390,8 +399,8 @@ public:
 	}
 
 	void work_sfm_view_mat_v () {
-		Singleton<Console>::instance ().info () ;
-		Singleton<Console>::instance ().info (slice ("work_sfm_view_mat_v")) ;
+		Singleton<Console>::instance ().trace () ;
+		Singleton<Console>::instance ().trace (slice ("work_sfm_view_mat_v")) ;
 		assume (self.mView.length () > 0) ;
 		for (auto &&i : self.mPose.range ()) {
 			INDEX jx = self.mFrame[self.mPose[i].mFrame1].mView1 ;
@@ -401,14 +410,12 @@ public:
 				self.mView[jx].mMatV = Matrix::identity () ;
 			}
 			INDEX ix = self.mPose[i].mUseView.map (jx) ;
-			assume (ix != NONE) ;
 			for (auto &&j : self.mPose[i].mUseView) {
 				if (self.mView[j].mConstMatV)
 					continue ;
 				if (j == jx)
 					continue ;
 				INDEX iy = self.mPose[i].mUseView.map (j) ;
-				assume (iy != NONE) ;
 				work_sfm_view_mat_v (ix ,iy) ;
 				self.mView[j].mMatV = self.mView[jx].mMatV[0] * self.mView[j].mMatV[0] ;
 			}
@@ -545,8 +552,8 @@ public:
 	}
 
 	void work_sfm_pose_mat_v () {
-		Singleton<Console>::instance ().info () ;
-		Singleton<Console>::instance ().info (slice ("work_sfm_pose_mat_v")) ;
+		Singleton<Console>::instance ().trace () ;
+		Singleton<Console>::instance ().trace (slice ("work_sfm_pose_mat_v")) ;
 		assume (self.mPose.length () > 0) ;
 		for (auto &&i : self.mPose.range ()) {
 			INDEX ix = self.mPose[i].mFrame1 ;
@@ -580,63 +587,107 @@ public:
 	void check_epipolar_error (CREF<INDEX> frame1 ,CREF<INDEX> frame2) {
 		auto &&view1 = self.mView[self.mFrame[frame1].mView1] ;
 		auto &&view2 = self.mView[self.mFrame[frame2].mView1] ;
-		Singleton<Console>::instance ().info () ;
-		Singleton<Console>::instance ().info (Format (slice ("epipolar_error[$1][$2]")) (view1.mName ,view2.mName)) ;
-		const auto r1x = invoke ([&] () {
-			NormalError ret ;
-			const auto r2x = view1.mMatV[1] * view2.mMatV[0] ;
-			const auto r3x = r2x.homogenize () + Matrix::axis_w () ;
-			const auto r4x = r2x * Vector::axis_w () ;
-			const auto r5x = r4x.homogenize ().normalize () ;
-			const auto r6x = CrossProductMatrix (r5x) * r3x ;
-			for (auto &&j : self.mFrame[frame1].mPoint2D.range ()) {
-				const auto r7x = Vector (self.mFrame[frame1].mPoint2D[j]) ;
-				const auto r8x = Vector (self.mFrame[frame2].mPoint2D[j]) ;
-				const auto r9x = (view1.mMatK[1] * r7x).normalize () ;
-				const auto r10x = (view2.mMatK[1] * r8x).normalize () ;
-				const auto r11x = r9x * r6x * r10x ;
-				const auto r12x = abs (r11x) ;
-				ret += r12x ;
-			}
-			return move (ret) ;
-		}) ;
-		Singleton<Console>::instance ().debug (slice ("mMaxError = ") ,r1x.mMaxError) ;
-		Singleton<Console>::instance ().debug (slice ("mAvgError = ") ,r1x.mAvgError) ;
-		Singleton<Console>::instance ().debug (slice ("mStdError = ") ,r1x.mStdError) ;
+		Singleton<Console>::instance ().trace () ;
+		Singleton<Console>::instance ().trace (Format (slice ("epipolar_error[$1][$2]")) (view1.mName ,view2.mName)) ;
+		auto rax = NormalError () ;
+		const auto r1x = view1.mMatV[1] * view2.mMatV[0] ;
+		const auto r2x = r1x.homogenize () + Matrix::axis_w () ;
+		const auto r3x = r1x * Vector::axis_w () ;
+		const auto r4x = r3x.homogenize ().normalize () ;
+		const auto r5x = CrossProductMatrix (r4x) * r2x ;
+		for (auto &&j : self.mFrame[frame1].mPoint2D.range ()) {
+			const auto r6x = Vector (self.mFrame[frame1].mPoint2D[j]) ;
+			const auto r7x = Vector (self.mFrame[frame2].mPoint2D[j]) ;
+			const auto r8x = (view1.mMatK[1] * r6x).normalize () ;
+			const auto r9x = (view2.mMatK[1] * r7x).normalize () ;
+			const auto r10x = r8x * r5x * r9x ;
+			const auto r11x = abs (r10x) ;
+			rax += r11x ;
+		}
+		Singleton<Console>::instance ().debug (slice ("mMaxError = ") ,rax.mMaxError) ;
+		Singleton<Console>::instance ().debug (slice ("mAvgError = ") ,rax.mAvgError) ;
+		Singleton<Console>::instance ().debug (slice ("mStdError = ") ,rax.mStdError) ;
 	}
 
 	void check_projection_error (CREF<INDEX> frame1) {
 		auto &&pose1 = self.mPose[self.mFrame[frame1].mPose1] ;
 		auto &&view1 = self.mView[self.mFrame[frame1].mView1] ;
-		Singleton<Console>::instance ().info () ;
-		Singleton<Console>::instance ().info (Format (slice ("projection_error[$1]")) (pose1.mName)) ;
-		const auto r1x = Array<INDEX>::make (self.mBlock.range ()) ;
-		assume (r1x.length () > 0) ;
-		const auto r2x = invoke ([&] () {
-			NormalError ret ;
-			for (auto &&i : self.mBlock[r1x[0]].mPoint3D.range ()) {
-				const auto r3x = Vector (self.mBlock[r1x[0]].mPoint3D[i]) ;
-				const auto r4x = Vector (self.mFrame[frame1].mPoint2D[i]) ;
-				const auto r5x = pose1.mMatV[1] * r3x ;
-				const auto r6x = view1.mMatV[1] * r5x ;
-				const auto r7x = (view1.mMatK[0] * r6x).projection () ;
-				const auto r8x = (r7x - r4x).magnitude () ;
-				ret += r8x ;
+		Singleton<Console>::instance ().trace () ;
+		Singleton<Console>::instance ().trace (Format (slice ("projection_error[$1]")) (pose1.mName)) ;
+		auto rax = NormalError () ;
+		for (auto &&i : self.mFrame[frame1].mUseBlock) {
+			for (auto &&j : self.mBlock[i].mPoint3D.range ()) {
+				const auto r1x = Vector (self.mBlock[i].mPoint3D[j]) ;
+				const auto r2x = Vector (self.mFrame[frame1].mPoint2D[j]) ;
+				const auto r3x = pose1.mMatV[1] * r1x ;
+				const auto r4x = view1.mMatV[1] * r3x ;
+				const auto r5x = (view1.mMatK[0] * r4x).projection () ;
+				const auto r6x = (r5x - r2x).magnitude () ;
+				rax += r6x ;
 			}
-			return move (ret) ;
-		}) ;
-		Singleton<Console>::instance ().debug (slice ("mMaxError = ") ,r2x.mMaxError) ;
-		Singleton<Console>::instance ().debug (slice ("mAvgError = ") ,r2x.mAvgError) ;
-		Singleton<Console>::instance ().debug (slice ("mStdError = ") ,r2x.mStdError) ;
+		}
+		Singleton<Console>::instance ().debug (slice ("mMaxError = ") ,rax.mMaxError) ;
+		Singleton<Console>::instance ().debug (slice ("mAvgError = ") ,rax.mAvgError) ;
+		Singleton<Console>::instance ().debug (slice ("mStdError = ") ,rax.mStdError) ;
+	}
+
+	void check_homography_error (CREF<INDEX> view1 ,CREF<INDEX> view2) {
+		Singleton<Console>::instance ().trace () ;
+		Singleton<Console>::instance ().trace (Format (slice ("homography_error[$1][$2]")) (self.mView[view1].mName ,self.mView[view2].mName)) ;
+		auto rax = NormalError () ;
+		for (auto &&i : self.mPose.range ()) {
+			if (!self.mPose[i].mUsingMatH)
+				continue ;
+			if (!self.mPose[i].mUseView.contain (view1))
+				continue ;
+			if (!self.mPose[i].mUseView.contain (view2))
+				continue ;
+			auto rbx = NormalError () ;
+			INDEX ix = self.mPose[i].mUseView.map (view1) ;
+			INDEX iy = self.mPose[i].mUseView.map (view2) ;
+			for (auto &&j : self.mFrame[ix].mPointRay.range ()) {
+				const auto r1x = Vector (self.mFrame[ix].mPointRay[j]) ;
+				const auto r2x = Vector (self.mFrame[iy].mPointRay[j]) ;
+				const auto r3x = (self.mView[view1].mMatK[0] * r1x).projection () ;
+				const auto r4x = (self.mView[view2].mMatK[0] * r2x).projection () ;
+				const auto r5x = (self.mPose[i].mMatH * r4x).projection () ;
+				const auto r6x = (r5x - r3x).magnitude () ;
+				rax += r6x ;
+				rbx += r6x ;
+			}
+			self.mPose[i].mError = rbx ;
+		}
+		Singleton<Console>::instance ().debug (slice ("mMaxError = ") ,rax.mMaxError) ;
+		Singleton<Console>::instance ().debug (slice ("mAvgError = ") ,rax.mAvgError) ;
+		Singleton<Console>::instance ().debug (slice ("mStdError = ") ,rax.mStdError) ;
 	}
 
 	void work_mapping_world () {
-
+		Singleton<Console>::instance ().trace () ;
+		Singleton<Console>::instance ().trace (slice ("work_mapping_world")) ;
+		INDEX ix = 0 ;
+		const auto r1x = self.mView[ix].mMatV ;
+		auto rax = Set<INDEX> () ;
+		for (auto &&i : self.mPose.range ()) {
+			if (!self.mPose[i].mUsingMatV)
+				continue ;
+			if (!self.mPose[i].mUseView.contain (ix))
+				continue ;
+			const auto r2x = self.mPose[i].mMatV[0] * r1x[0] ;
+			self.mPose[i].mMatV = r2x ;
+			for (auto &&j : self.mPose[i].mUseView) {
+				rax.add (j) ;
+			}
+		}
+		for (auto &&i : rax) {
+			const auto r3x = r1x[1] * self.mView[i].mMatV[0] ;
+			self.mView[i].mMatV = r3x ;
+		}
 	}
 
 	void work_sfm_global_ba (CREF<BOOL> opt_view_mat_k ,CREF<BOOL> opt_view_dist ,CREF<BOOL> opt_view_mat_v ,CREF<BOOL> opt_pose_mat_v ,CREF<BOOL> opt_point_3d) {
-		Singleton<Console>::instance ().info () ;
-		Singleton<Console>::instance ().info (slice ("work_sfm_global_ba")) ;
+		Singleton<Console>::instance ().trace () ;
+		Singleton<Console>::instance ().trace (slice ("work_sfm_global_ba")) ;
 		if ifdo (TRUE) {
 			self.mProblem = Box<ceres::Problem>::make () ;
 			INDEX ix = 0 ;
@@ -817,10 +868,10 @@ public:
 			INDEX ix = self.mFrame[self.mPose[i].mFrame1].mView1 ;
 			INDEX iy = self.mFrame[self.mPose[i].mFrame2].mView1 ;
 			const auto r15x = self.mPose[i].mMatV[1] * Vector::axis_z () ;
-			const auto r16x = r15x * self.mPose[i].mMatV[1] * Vector::axis_w () ;
+			const auto r16x = -(r15x * self.mPose[i].mMatV[1] * Vector::axis_w ()) ;
 			const auto r17x = self.mView[ix].mMatV[0] * Vector::axis_w () ;
 			const auto r18x = self.mView[iy].mMatV[0] * Vector::axis_w () ;
-			const auto r19x = MathProc::abs (r15x * r18x - r16x) ;
+			const auto r19x = -(r15x * r18x + r16x) ;
 			const auto r20x = DiagMatrix (r19x ,r19x ,r19x ,0) + SymmetryMatrix (r18x - r17x ,r15x) ;
 			const auto r21x = self.mView[ix].mMatV[1] * r20x * self.mView[iy].mMatV[0] ;
 			const auto r22x = r21x.homogenize () + Matrix::axis_w () ;
@@ -858,11 +909,20 @@ public:
 		}
 	}
 
-	void work_undistortion () {
-		Singleton<Console>::instance ().info () ;
-		Singleton<Console>::instance ().info (slice ("work_undistortion")) ;
-		for (auto &&i : self.mFrame.range ()) {
-
+	void work_compute_weight () {
+		Singleton<Console>::instance ().trace () ;
+		Singleton<Console>::instance ().trace (slice ("work_compute_weight")) ;
+		const auto r1x = Array<INDEX>::make (self.mView.range ()) ;
+		assume (r1x.length () >= 2) ;
+		check_homography_error (r1x[0] ,r1x[1]) ;
+		const auto r2x = MathProc::inverse (FLT64 (2.0)) ;
+		for (auto &&i : self.mPose.range ()) {
+			const auto r3x = self.mPose[i].mError ;
+			const auto r4x = (r3x.mAvgError + r3x.mStdError) * r2x ;
+			const auto r5x = MathProc::max_of (r4x ,FLT64 (1)) ;
+			const auto r6x = MathProc::log (r5x) ;
+			const auto r7x = MathProc::exp (-r6x) ;
+			self.mPose[i].mWeight = r7x ;
 		}
 	}
 
@@ -1145,7 +1205,6 @@ public:
 		for (auto &&i : self.mPose.range ()) {
 			for (auto &&j : self.mPose[i].mUseView) {
 				INDEX ix = self.mPose[i].mUseView.map (j) ;
-				assume (ix != NONE) ;
 				const auto r2x = r1x.child (Format (slice ("$1_$2.ply")) (self.mPose[i].mName ,self.mView[j].mName)) ;
 				auto mWriter = StreamFileTextWriter (r2x) ;
 				mWriter.deref << slice ("ply") << GAP ;

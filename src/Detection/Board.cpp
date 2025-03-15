@@ -42,8 +42,10 @@ public:
 		const auto r1x = DiagMatrix (self.mBoardBaseline[0] ,self.mBoardBaseline[1] ,self.mBoardBaseline[2] ,1) ;
 		for (auto &&i : iter (0 ,self.mBoardShape.mCX ,0 ,self.mBoardShape.mCY)) {
 			INDEX ix = i.mX + i.mY * self.mBoardShape.mCX ;
-			const auto r2x = r1x * Vector (i) ;
-			ret[ix] = r2x.xyz () ;
+			const auto r2x = FLT64 (i.mX) - FLT64 (self.mBoardShape.mCX - 1) / 2 ;
+			const auto r3x = FLT64 (i.mY) - FLT64 (self.mBoardShape.mCY - 1) / 2 ;
+			const auto r4x = r1x * Vector (r2x ,r3x ,0 ,1) ;
+			ret[ix] = r4x.xyz () ;
 		}
 		return move (ret) ;
 	}
