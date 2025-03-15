@@ -14,6 +14,8 @@ struct SolverProcHolder implement Interface {
 	virtual Array<FLT64> encode_matrix (CREF<Matrix> mat_a) const = 0 ;
 	virtual Matrix decode_matrix (CREF<Array<FLT64>> mat_a) const = 0 ;
 	virtual Matrix solve_pnp (CREF<Array<Point2F>> point_2d ,CREF<Array<Point3F>> point_3d ,CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist) const = 0 ;
+	virtual Vector redistortion (CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist ,CREF<Vector> point) const = 0 ;
+	virtual Vector undistortion (CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist ,CREF<Vector> point) const = 0 ;
 } ;
 
 class SolverProc implement OfThis<SharedRef<SolverProcLayout>> {
@@ -40,6 +42,14 @@ public:
 
 	static Matrix solve_pnp (CREF<Array<Point2F>> point_2d ,CREF<Array<Point3F>> point_3d ,CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist) {
 		return SolverProcHolder::hold (instance ())->solve_pnp (point_2d ,point_3d ,mat_k ,dist) ;
+	}
+
+	static Vector redistortion (CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist ,CREF<Vector> point) {
+		return SolverProcHolder::hold (instance ())->redistortion (mat_k ,dist ,point) ;
+	}
+
+	static Vector undistortion (CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist ,CREF<Vector> point) {
+		return SolverProcHolder::hold (instance ())->undistortion (mat_k ,dist ,point) ;
 	}
 } ;
 } ;

@@ -58,7 +58,7 @@ public:
 		work_sfm_view_mat_v () ;
 		work_sfm_pose_mat_v () ;
 		work_sfm_global_ba (TRUE ,FALSE ,TRUE ,TRUE ,FALSE) ;
-		//work_sfm_global_ba (FALSE ,TRUE ,TRUE ,TRUE ,FALSE) ;
+		work_sfm_global_ba (FALSE ,TRUE ,TRUE ,TRUE ,FALSE) ;
 		work_mapping_world () ;
 		work_sfm_global_ba (FALSE ,FALSE ,FALSE ,FALSE ,TRUE) ;
 		work_undistortion () ;
@@ -263,13 +263,14 @@ public:
 			self.mFrame[ret].mPose1 = pose1 ;
 			self.mFrame[ret].mView1 = view1 ;
 			self.mFrame[ret].mTime1 = 0 ;
+			self.mFrame[ret].mUseBlock = Set<INDEX> () ;
 			const auto r2x = Format (slice ("$1_$2$3")) ;
 			const auto r3x = self.mDataPath.child (self.mPose[pose1].mGroup).child (r2x (self.mPose[pose1].mName ,self.mView[view1].mName ,self.mImageExtension)) ;
 			self.mFrame[ret].mImageFile = r3x ;
 			self.mFrame[ret].mImage = Image<Color3B> () ;
 			self.mFrame[ret].mPoint2D = Array<Point2F> () ;
 			self.mFrame[ret].mPointDepth = Array<FLT32> () ;
-			self.mFrame[ret].mPointRay = Array<Point3F> () ;
+			self.mFrame[ret].mPointRay = Array<Vector> () ;
 			self.mFrame[ret].mUsingPointRay = FALSE ;
 		}
 		return move (ret) ;
@@ -287,6 +288,8 @@ public:
 			self.mBlock[ix].mTime1 = ix ;
 			self.mBlock[ix].mUseFrame = Set<INDEX> () ;
 			self.mBlock[ix].mPoint3D = self.mBoard.extract () ;
+			self.mBlock[ix].mNormal = Vector::axis_z () ;
+			self.mBlock[ix].mCenter = Vector::axis_w () ;
 			self.mBlock.remap () ;
 		}
 		for (auto &&i : self.mFrame.range ()) {
@@ -296,6 +299,7 @@ public:
 			assume (self.mFrame[i].mImage.shape () == r1x) ;
 			self.mFrame[i].mPoint2D = self.mBoard.detect (self.mFrame[i].mImage) ;
 			self.mFrame[i].mPointDepth = Array<FLT32> (self.mFrame[i].mPoint2D.size ()) ;
+			self.mFrame[i].mPointRay = Array<Vector> (self.mFrame[i].mPoint2D.size ()) ;
 			self.mFrame[i].mImage = Image<Color3B> () ;
 		}
 	}
@@ -515,7 +519,7 @@ public:
 			const auto r7x = r5x * DiagMatrix (r6x ,r6x ,r6x) ;
 			const auto r8x = invoke ([&] () {
 				FLT64 ret = 0 ;
-				for (auto &&i : iter (0 ,point1.size ())) {
+				for (auto &&i : point1.range ()) {
 					const auto r9x = Vector (point1[i]).homogenize () ;
 					const auto r10x = Vector (point2[i]).homogenize () ;
 					const auto r11x = -(r7x * r10x).normalize () ;
@@ -549,6 +553,7 @@ public:
 			for (auto &&j : self.mBlock.range ()) {
 				work_sfm_pose_mat_v (ix ,j) ;
 				self.mBlock[j].mUseFrame.add (ix) ;
+				self.mFrame[ix].mUseBlock.add (j) ;
 			}
 			check_projection_error (ix) ;
 			work_sfm_global_ba (FALSE ,FALSE ,FALSE ,TRUE ,FALSE) ;
@@ -556,6 +561,7 @@ public:
 				for (auto &&k : self.mPose[i].mUseView) {
 					INDEX kx = self.mPose[i].mUseView.map (k) ;
 					self.mBlock[j].mUseFrame.add (kx) ;
+					self.mFrame[kx].mUseBlock.add (j) ;
 				}
 			}
 			work_sfm_global_ba (FALSE ,FALSE ,TRUE ,TRUE ,FALSE) ;
@@ -839,6 +845,16 @@ public:
 					self.mFrame[k].mPointDepth[j] = FLT32 (r27x) ;
 				}
 			}
+		}
+		for (auto &&i : self.mFrame.range ()) {
+			INDEX ix = self.mFrame[i].mView1 ;
+			for (auto &&j : self.mFrame[i].mPoint2D.range ()) {
+				const auto r28x = Vector (self.mFrame[i].mPoint2D[j]) ;
+				const auto r29x = SolverProc::undistortion (self.mView[ix].mMatK ,self.mView[ix].mDist ,r28x) ;
+				const auto r30x = (self.mView[ix].mMatK[1] * r29x).normalize () ;
+				self.mFrame[i].mPointRay[j] = r30x ;
+			}
+			self.mFrame[i].mUsingPointRay = TRUE ;
 		}
 	}
 
@@ -1146,23 +1162,23 @@ public:
 				mWriter.deref << slice ("property int vertex2") << GAP ;
 				mWriter.deref << slice ("end_header") << GAP ;
 				const auto r3x = self.mPose[i].mMatV[0] * self.mView[j].mMatV[0] ;
-				const auto r4x = Vector (0 ,0 ,0 ,MathProc::inverse (self.mView[j].mRelative)) ;
 				if ifdo (TRUE) {
-					const auto r5x = r3x * Vector::axis_w () ;
-					mWriter.deref << r5x[0] << slice (" ") ;
-					mWriter.deref << r5x[1] << slice (" ") ;
-					mWriter.deref << r5x[2] << GAP ;
+					const auto r4x = r3x * Vector::axis_w () ;
+					mWriter.deref << r4x[0] << slice (" ") ;
+					mWriter.deref << r4x[1] << slice (" ") ;
+					mWriter.deref << r4x[2] << GAP ;
 					mWriter.deref << VAL32 (self.mPose[i].mColor.mR) << slice (" ") ;
 					mWriter.deref << VAL32 (self.mPose[i].mColor.mG) << slice (" ") ;
 					mWriter.deref << VAL32 (self.mPose[i].mColor.mB) << GAP ;
-					const auto r6x = Vector (0 ,0 ,0 ,1) ;
-					const auto r7x = Vector (FLT64 (self.mView[j].mShape.mCX) ,0 ,0 ,1) ;
-					const auto r8x = Vector (FLT64 (self.mView[j].mShape.mCX) ,FLT64 (self.mView[j].mShape.mCY) ,0 ,1) ;
-					const auto r9x = Vector (0 ,FLT64 (self.mView[j].mShape.mCY) ,0 ,1) ;
-					const auto r10x = Buffer4<Vector> ({r6x ,r7x ,r8x ,r9x}) ;
-					for (auto &&k : iter (0 ,r10x.size ())) {
-						const auto r11x = self.mView[j].mMatK[1] * r10x[k] ;
-						const auto r12x = (r11x + r4x).projection () ;
+					const auto r5x = Vector (0 ,0 ,0 ,1) ;
+					const auto r6x = Vector (FLT64 (self.mView[j].mShape.mCX) ,0 ,0 ,1) ;
+					const auto r7x = Vector (FLT64 (self.mView[j].mShape.mCX) ,FLT64 (self.mView[j].mShape.mCY) ,0 ,1) ;
+					const auto r8x = Vector (0 ,FLT64 (self.mView[j].mShape.mCY) ,0 ,1) ;
+					const auto r9x = Buffer4<Vector> ({r5x ,r6x ,r7x ,r8x}) ;
+					for (auto &&k : iter (0 ,r9x.size ())) {
+						const auto r10x = self.mView[j].mMatK[1] * r9x[k] ;
+						const auto r11x = self.mView[j].mRelative * MathProc::inverse (r10x[2]) ;
+						const auto r12x = r10x * r11x + Vector::axis_w () ;
 						const auto r13x = r3x * r12x ;
 						mWriter.deref << r13x[0] << slice (" ") ;
 						mWriter.deref << r13x[1] << slice (" ") ;
@@ -1174,13 +1190,12 @@ public:
 				}
 				if ifdo (TRUE) {
 					for (auto &&k : self.mFrame[ix].mPoint2D.range ()) {
-						const auto r14x = Vector (self.mFrame[ix].mPoint2D[k]) ;
-						const auto r15x = (self.mView[j].mMatK[1] * r14x).normalize () ;
-						const auto r16x = r15x * self.mFrame[ix].mPointDepth[k] + Vector::axis_w () ;
-						const auto r17x = r3x * r16x ;
-						mWriter.deref << r17x[0] << slice (" ") ;
-						mWriter.deref << r17x[1] << slice (" ") ;
-						mWriter.deref << r17x[2] << GAP ;
+						const auto r14x = self.mFrame[ix].mPointRay[k] ;
+						const auto r15x = r14x * self.mFrame[ix].mPointDepth[k] + Vector::axis_w () ;
+						const auto r16x = r3x * r15x ;
+						mWriter.deref << r16x[0] << slice (" ") ;
+						mWriter.deref << r16x[1] << slice (" ") ;
+						mWriter.deref << r16x[2] << GAP ;
 						mWriter.deref << VAL32 (self.mPose[i].mColor.mR) << slice (" ") ;
 						mWriter.deref << VAL32 (self.mPose[i].mColor.mG) << slice (" ") ;
 						mWriter.deref << VAL32 (self.mPose[i].mColor.mB) << GAP ;
@@ -1188,13 +1203,13 @@ public:
 				}
 				if ifdo (FALSE) {
 					for (auto &&k : self.mFrame[ix].mPoint2D.range ()) {
-						const auto r18x = Vector (self.mFrame[ix].mPoint2D[k]) ;
-						const auto r19x = self.mView[j].mMatK[1] * r18x ;
-						const auto r20x = (r19x + r4x).projection () ;
-						const auto r21x = r3x * r20x ;
-						mWriter.deref << r21x[0] << slice (" ") ;
-						mWriter.deref << r21x[1] << slice (" ") ;
-						mWriter.deref << r21x[2] << GAP ;
+						const auto r17x = self.mFrame[ix].mPointRay[k] ;
+						const auto r18x = self.mView[j].mRelative * MathProc::inverse (r17x[2]) ;
+						const auto r19x = r17x * r18x + Vector::axis_w () ;
+						const auto r20x = r3x * r19x ;
+						mWriter.deref << r20x[0] << slice (" ") ;
+						mWriter.deref << r20x[1] << slice (" ") ;
+						mWriter.deref << r20x[2] << GAP ;
 						mWriter.deref << slice ("200 200 200") << GAP ;
 					}
 				}
@@ -1210,9 +1225,9 @@ public:
 				}
 				if ifdo (FALSE) {
 					for (auto &&k : self.mFrame[ix].mPoint2D.range ()) {
-						const auto r23x = 5 + k ;
+						const auto r21x = 5 + k ;
 						mWriter.deref << 0 << slice (" ") ;
-						mWriter.deref << r23x << GAP ;
+						mWriter.deref << r21x << GAP ;
 					}
 				}
 				mWriter.flush () ;

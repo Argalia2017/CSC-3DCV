@@ -112,6 +112,60 @@ public:
 		ret = ret.inverse () ;
 		return move (ret) ;
 	}
+
+	Vector redistortion (CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist ,CREF<Vector> point) const override {
+		const auto r1x = (mat_k[1] * point).homogenize () ;
+		const auto r2x = redistortion_ray (dist ,r1x) ;
+		const auto r3x = (mat_k[0] * r2x).projection () ;
+		return r3x ;
+	}
+
+	Vector undistortion (CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist ,CREF<Vector> point) const override {
+		const auto r1x = (mat_k[1] * point).homogenize () ;
+		Vector ret = r1x ;
+		for (auto &&i : iter (0 ,10)) {
+			const auto r2x = redistortion_ray (dist ,ret) ;
+			const auto r3x = r1x - r2x ;
+			if (MathProc::abs (r3x[0]) < FLT64 (1E-5))
+				if (MathProc::abs (r3x[1]) < FLT64 (1E-5))
+					break ;
+			const auto r4x = redistortion_jac (dist ,ret) ;
+			ret += r4x.inverse () * r3x ;
+		}
+		ret = (mat_k[0] * ret).projection () ;
+		return move (ret) ;
+	}
+
+	Vector redistortion_ray (CREF<Array<FLT64>> dist ,CREF<Vector> point) const {
+		const auto r1x = point ;
+		const auto r2x = MathProc::square (r1x[0]) + MathProc::square (r1x[1]) ;
+		const auto r3x = r2x * r2x ;
+		const auto r4x = r3x * r2x ;
+		const auto r5x = 1 + dist[0] * r2x + dist[1] * r3x + dist[4] * r4x ;
+		const auto r6x = 2 * r1x[0] * r1x[1] ;
+		const auto r7x = 2 * MathProc::square (r1x[0]) + r2x ;
+		const auto r8x = 2 * MathProc::square (r1x[1]) + r2x ;
+		const auto r9x = r1x[0] * r5x + dist[2] * r6x + dist[3] * r7x ;
+		const auto r10x = r1x[1] * r5x + dist[2] * r8x + dist[3] * r6x ;
+		return Vector (r9x ,r10x ,r1x[2] ,0) ;
+	}
+
+	Matrix redistortion_jac (CREF<Array<FLT64>> dist ,CREF<Vector> point) const {
+		Matrix ret = Matrix::identity () ;
+		const auto r1x = point ;
+		const auto r2x = MathProc::square (r1x[0]) + MathProc::square (r1x[1]) ;
+		const auto r3x = r2x * r2x ;
+		const auto r4x = r3x * r2x ;
+		const auto r5x = 1 + dist[0] * r2x + dist[1] * r3x + dist[4] * r4x ;
+		const auto r6x = dist[0] + dist[1] * 2 * r2x + dist[4] * 3 * r3x ;
+		const auto r7x = 2 * r1x[0] ;
+		const auto r8x = 2 * r1x[1] ;
+		ret[0][0] = r5x + r1x[0] * r6x * r7x + dist[2] * r8x + dist[3] * r7x * 3 ;
+		ret[0][1] = r1x[0] * r6x * r8x + dist[2] * r7x + dist[3] * r8x ;
+		ret[1][0] = r1x[1] * r6x * r7x + dist[2] * r7x + dist[3] * r8x ;
+		ret[1][1] = r5x + r1x[1] * r6x * r8x + dist[2] * r8x * 3 + dist[3] * r7x ;
+		return move (ret) ;
+	}
 } ;
 
 exports CREF<OfThis<SharedRef<SolverProcLayout>>> SolverProcHolder::instance () {

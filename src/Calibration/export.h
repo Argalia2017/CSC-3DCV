@@ -39,11 +39,12 @@ struct CameraFrame {
 	INDEX mPose1 ;
 	INDEX mView1 ;
 	INDEX mTime1 ;
+	Set<INDEX> mUseBlock ;
 	String<STR> mImageFile ;
 	Image<Color3B> mImage ;
 	Array<Point2F> mPoint2D ;
 	Array<FLT32> mPointDepth ;
-	Array<Point3F> mPointRay ;
+	Array<Vector> mPointRay ;
 	BOOL mUsingPointRay ;
 } ;
 
@@ -51,7 +52,8 @@ struct CameraBlock {
 	INDEX mTime1 ;
 	Set<INDEX> mUseFrame ;
 	Array<Point3F> mPoint3D ;
-	Array<FLT32> mRadius ;
+	Vector mNormal ;
+	Vector mCenter ;
 	INDEX mParam5 ;
 } ;
 
