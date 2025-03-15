@@ -1,0 +1,3 @@
+[submodule "dependencies/CSC"]
+	path = dependencies/CSC
+	url = https://github.com/Argalia2017/CSC.git
