@@ -45,15 +45,15 @@ struct CameraFrame {
 	Array<Point2F> mPoint2D ;
 	Array<FLT32> mPointDepth ;
 	Array<Vector> mPointRay ;
-	BOOL mUsingPointRay ;
 } ;
 
 struct CameraBlock {
 	INDEX mTime1 ;
 	Set<INDEX> mUseFrame ;
 	Array<Point3F> mPoint3D ;
-	Vector mNormal ;
-	Vector mCenter ;
+	DuplexMatrix mMatP ;
+	BOOL mUsingMatP ;
+	Line3F mPlaneBound ;
 	INDEX mParam5 ;
 } ;
 
