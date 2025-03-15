@@ -109,7 +109,7 @@
     <ClInclude Include="..\..\src\util.h" />
   </ItemGroup>
   <ItemGroup>
-    <Natvis Include="..\..\dependencies\CSC\include\cpp.natvis" />
+    <Natvis Include="..\..\ext\CSC\src\csc\cpp.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

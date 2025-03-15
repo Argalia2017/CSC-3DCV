@@ -6,7 +6,7 @@
     <_PropertySheetDisplayName>build.Release.x64</_PropertySheetDisplayName>
     <OutDir>$(SolutionDir)lib\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
-    <IncludePath>D:\Documents\C++\csc_3dcv\dependencies\CSC\include;$(IncludePath)</IncludePath>
+    <IncludePath>D:\Documents\C++\csc_3dcv\ext\CSC\src\csc;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

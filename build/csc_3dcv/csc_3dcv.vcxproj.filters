@@ -101,6 +101,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Natvis Include="..\..\dependencies\CSC\include\cpp.natvis" />
+    <Natvis Include="..\..\ext\CSC\src\csc\cpp.natvis" />
   </ItemGroup>
 </Project>
