@@ -428,76 +428,73 @@ public:
 		auto &&view1 = self.mView[self.mFrame[frame1].mView1] ;
 		auto &&view2 = self.mView[self.mFrame[frame2].mView1] ;
 		const auto r1x = invoke ([&] () {
-			Array<Point3F> ret = Array<Point3F> (self.mFrame[frame1].mPoint2D.size ()) ;
+			Array<Vector> ret = Array<Vector> (self.mFrame[frame1].mPoint2D.size ()) ;
 			for (auto &&i : iter (0 ,ret.size ())) {
 				const auto r2x = Vector (self.mFrame[frame1].mPoint2D[i]) ;
 				const auto r3x = (view1.mMatK[1] * r2x).normalize () ;
-				ret[i] = r3x.xyz () ;
+				ret[i] = r3x ;
 			}
 			return move (ret) ;
 		}) ;
 		const auto r4x = invoke ([&] () {
-			Array<Point3F> ret = Array<Point3F> (self.mFrame[frame2].mPoint2D.size ()) ;
+			Array<Vector> ret = Array<Vector> (self.mFrame[frame2].mPoint2D.size ()) ;
 			for (auto &&i : iter (0 ,ret.size ())) {
 				const auto r5x = Vector (self.mFrame[frame2].mPoint2D[i]) ;
 				const auto r6x = (view2.mMatK[1] * r5x).normalize () ;
-				ret[i] = r6x.xyz () ;
+				ret[i] = r6x ;
 			}
 			return move (ret) ;
 		}) ;
-		//@mark
-		const auto r7x = PointCloud (Ref<Array<Point3F>>::reference (r1x)).svd_matrix () ;
-		const auto r8x = PointCloud (Ref<Array<Point3F>>::reference (r4x)).svd_matrix () ;
-		const auto r9x = DuplexMatrix (Matrix::identity ()) ;
-		const auto r10x = DuplexMatrix (Matrix::identity ()) ;
-		const auto r11x = invoke ([&] () {
+		const auto r7x = DuplexMatrix (Matrix::identity ()) ;
+		const auto r8x = DuplexMatrix (Matrix::identity ()) ;
+		const auto r9x = invoke ([&] () {
 			Image<FLT64> ret = Image<FLT64> (9 ,INDEX (r1x.size ())) ;
 			for (auto &&i : iter (0 ,r1x.size ())) {
-				const auto r12x = r9x[1] * Vector (r1x[i]) ;
-				const auto r13x = r10x[1] * Vector (r4x[i]) ;
+				const auto r10x = r7x[1] * r1x[i] ;
+				const auto r11x = r8x[1] * r4x[i] ;
 				if ifdo (TRUE) {
 					INDEX ix = i ;
-					ret[ix][0] = r12x[0] * r13x[0] ;
-					ret[ix][1] = r12x[0] * r13x[1] ;
-					ret[ix][2] = r12x[0] * r13x[2] ;
-					ret[ix][3] = r12x[1] * r13x[0] ;
-					ret[ix][4] = r12x[1] * r13x[1] ;
-					ret[ix][5] = r12x[1] * r13x[2] ;
-					ret[ix][6] = r12x[2] * r13x[0] ;
-					ret[ix][7] = r12x[2] * r13x[1] ;
-					ret[ix][8] = r12x[2] * r13x[2] ;
+					ret[ix][0] = r10x[0] * r11x[0] ;
+					ret[ix][1] = r10x[0] * r11x[1] ;
+					ret[ix][2] = r10x[0] * r11x[2] ;
+					ret[ix][3] = r10x[1] * r11x[0] ;
+					ret[ix][4] = r10x[1] * r11x[1] ;
+					ret[ix][5] = r10x[1] * r11x[2] ;
+					ret[ix][6] = r10x[2] * r11x[0] ;
+					ret[ix][7] = r10x[2] * r11x[1] ;
+					ret[ix][8] = r10x[2] * r11x[2] ;
 				}
 			}
 			return move (ret) ;
 		}) ;
-		const auto r14x = Image<FLT64> (LinearProc::solve_lsm (r11x)) ;
-		const auto r15x = invoke ([&] () {
+		const auto r12x = Image<FLT64> (LinearProc::solve_lsm (r9x)) ;
+		const auto r13x = invoke ([&] () {
 			Matrix ret = Matrix::zero () ;
-			ret[0][0] = r14x[0][0] ;
-			ret[0][1] = r14x[1][0] ;
-			ret[0][2] = r14x[2][0] ;
-			ret[1][0] = r14x[3][0] ;
-			ret[1][1] = r14x[4][0] ;
-			ret[1][2] = r14x[5][0] ;
-			ret[2][0] = r14x[6][0] ;
-			ret[2][1] = r14x[7][0] ;
-			ret[2][2] = r14x[8][0] ;
+			ret[0][0] = r12x[0][0] ;
+			ret[0][1] = r12x[1][0] ;
+			ret[0][2] = r12x[2][0] ;
+			ret[1][0] = r12x[3][0] ;
+			ret[1][1] = r12x[4][0] ;
+			ret[1][2] = r12x[5][0] ;
+			ret[2][0] = r12x[6][0] ;
+			ret[2][1] = r12x[7][0] ;
+			ret[2][2] = r12x[8][0] ;
 			return move (ret) ;
 		}) ;
-		const auto r16x = r9x[1].transpose () * r15x * r10x[1] ;
-		const auto r17x = r16x ;
-		const auto r18x = decompose_epipolar (r1x ,r4x ,r17x) ;
-		const auto r19x = r18x.mT * Vector::axis_w () ;
-		const auto r20x = r19x.homogenize ().normalize () ;
-		const auto r21x = r20x * view1.mBaseline ;
-		const auto r22x = TranslationMatrix (r21x) ;
-		const auto r23x = r22x * r18x.mR ;
-		view2.mMatV = r23x ;
+		const auto r14x = r7x[1].transpose () * r13x * r8x[1] ;
+		const auto r15x = r14x ;
+		const auto r16x = decompose_epipolar (r1x ,r4x ,r15x) ;
+		const auto r17x = r16x.mT * Vector::axis_w () ;
+		const auto r18x = r17x.homogenize ().normalize () ;
+		const auto r19x = r18x * view1.mBaseline ;
+		const auto r20x = TranslationMatrix (r19x) ;
+		const auto r21x = r20x * r16x.mR.transpose () ;
+		view2.mMatV = r21x ;
 		Singleton<Console>::instance ().debug (Format (slice ("mView[$1].mBaseline = $2")) (view1.mName ,view1.mBaseline)) ;
-		Singleton<Console>::instance ().debug (Format (slice ("mView[$1].mTranslation = [$2 ,$3 ,$4]")) (view2.mName ,r19x[0] ,r19x[1] ,r19x[2])) ;
+		Singleton<Console>::instance ().debug (Format (slice ("mView[$1].mTranslation = [$2 ,$3 ,$4]")) (view2.mName ,r17x[0] ,r17x[1] ,r17x[2])) ;
 	}
 
-	KRTResult decompose_epipolar (CREF<Array<Point3F>> point1 ,CREF<Array<Point3F>> point2 ,CREF<Matrix> mat_e) const {
+	KRTResult decompose_epipolar (CREF<Array<Vector>> point1 ,CREF<Array<Vector>> point2 ,CREF<Matrix> mat_e) const {
 		KRTResult ret ;
 		const auto r1x = invoke ([&] () {
 			Array<Buffer2<FLT64>> ret = Array<Buffer2<FLT64>> (4) ;
@@ -529,8 +526,8 @@ public:
 			const auto r8x = invoke ([&] () {
 				FLT64 ret = 0 ;
 				for (auto &&i : point1.range ()) {
-					const auto r9x = Vector (point1[i]).homogenize () ;
-					const auto r10x = Vector (point2[i]).homogenize () ;
+					const auto r9x = point1[i] ;
+					const auto r10x = point2[i] ;
 					const auto r11x = -(r7x * r10x).normalize () ;
 					const auto r12x = Matrix (r9x ,r11x ,r9x ^ r11x ,Vector::axis_w ()) ;
 					const auto r13x = r12x.inverse () * r4x ;
@@ -589,7 +586,6 @@ public:
 	void check_epipolar_error (CREF<INDEX> frame1 ,CREF<INDEX> frame2) {
 		auto &&view1 = self.mView[self.mFrame[frame1].mView1] ;
 		auto &&view2 = self.mView[self.mFrame[frame2].mView1] ;
-		Singleton<Console>::instance ().trace () ;
 		Singleton<Console>::instance ().trace (Format (slice ("epipolar_error[$1][$2]")) (view1.mName ,view2.mName)) ;
 		auto rax = NormalError () ;
 		const auto r1x = view1.mMatV[1] * view2.mMatV[0] ;
@@ -609,12 +605,12 @@ public:
 		Singleton<Console>::instance ().debug (slice ("mMaxError = ") ,rax.mMaxError) ;
 		Singleton<Console>::instance ().debug (slice ("mAvgError = ") ,rax.mAvgError) ;
 		Singleton<Console>::instance ().debug (slice ("mStdError = ") ,rax.mStdError) ;
+		Singleton<Console>::instance ().trace () ;
 	}
 
 	void check_projection_error (CREF<INDEX> frame1) {
 		auto &&pose1 = self.mPose[self.mFrame[frame1].mPose1] ;
 		auto &&view1 = self.mView[self.mFrame[frame1].mView1] ;
-		Singleton<Console>::instance ().trace () ;
 		Singleton<Console>::instance ().trace (Format (slice ("projection_error[$1]")) (pose1.mName)) ;
 		auto rax = NormalError () ;
 		for (auto &&i : self.mFrame[frame1].mUseBlock) {
@@ -631,10 +627,10 @@ public:
 		Singleton<Console>::instance ().debug (slice ("mMaxError = ") ,rax.mMaxError) ;
 		Singleton<Console>::instance ().debug (slice ("mAvgError = ") ,rax.mAvgError) ;
 		Singleton<Console>::instance ().debug (slice ("mStdError = ") ,rax.mStdError) ;
+		Singleton<Console>::instance ().trace () ;
 	}
 
 	void check_homography_error (CREF<INDEX> view1 ,CREF<INDEX> view2) {
-		Singleton<Console>::instance ().trace () ;
 		Singleton<Console>::instance ().trace (Format (slice ("homography_error[$1][$2]")) (self.mView[view1].mName ,self.mView[view2].mName)) ;
 		auto rax = NormalError () ;
 		for (auto &&i : self.mPose.range ()) {
@@ -662,6 +658,7 @@ public:
 		Singleton<Console>::instance ().debug (slice ("mMaxError = ") ,rax.mMaxError) ;
 		Singleton<Console>::instance ().debug (slice ("mAvgError = ") ,rax.mAvgError) ;
 		Singleton<Console>::instance ().debug (slice ("mStdError = ") ,rax.mStdError) ;
+		Singleton<Console>::instance ().trace () ;
 	}
 
 	void work_mapping_world () {
@@ -1265,6 +1262,8 @@ public:
 		const auto r1x = self.mDataPath.child (slice ("ply")) ;
 		FileProc::build_dire (r1x) ;
 		for (auto &&i : self.mPose.range ()) {
+			if (!self.mPose[i].mUsingMatV)
+				continue ;
 			for (auto &&j : self.mPose[i].mUseView) {
 				INDEX ix = self.mPose[i].mUseView.map (j) ;
 				const auto r2x = r1x.child (Format (slice ("$1_$2.ply")) (self.mPose[i].mName ,self.mView[j].mName)) ;

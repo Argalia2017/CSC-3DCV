@@ -6,6 +6,11 @@
 
 using namespace CSC3DCV ;
 
+/*
+1. work_sfm_view_mat_v degenerate problem
+2. save_pointcloud_ply
+*/
+
 exports int main (int argc ,DEF<char **> argv) {
 	const auto r1x = Singleton<Console>::instance () ;
 	r1x.show () ;
