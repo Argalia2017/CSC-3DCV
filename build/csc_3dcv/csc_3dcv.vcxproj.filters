@@ -76,6 +76,7 @@
     <ClInclude Include="..\..\src\Localization\export.h">
       <Filter>Localization</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\Localization\Calibration.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Common">
