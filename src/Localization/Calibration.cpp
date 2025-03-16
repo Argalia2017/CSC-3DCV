@@ -21,7 +21,7 @@ struct CalibrationLayout {
 	ArrayList<CameraFrame> mFrame ;
 	Set<Pixel> mFramePixelSet ;
 	ArrayList<CameraBlock> mBlock ;
-	Array<Line2F> mMatching ;
+	Array<Line2F> mMapping ;
 	Board mBoard ;
 	ImageShape mBoardShape ;
 	String<STR> mBoardType ;
@@ -57,16 +57,16 @@ public:
 		self.mBeginTime = CurrentTime () ;
 		load_data_json () ;
 		work_build_frame () ;
-		work_detect_block () ;
+		work_build_block () ;
 		work_sfm_view_mat_k () ;
 		work_sfm_view_mat_v () ;
 		work_sfm_pose_mat_v () ;
 		work_sfm_global_ba (TRUE ,FALSE ,TRUE ,TRUE ,FALSE) ;
 		work_sfm_global_ba (FALSE ,TRUE ,TRUE ,TRUE ,FALSE) ;
-		work_mapping_world () ;
+		work_refine_pose () ;
 		work_sfm_global_ba (FALSE ,FALSE ,FALSE ,TRUE ,TRUE) ;
 		work_sfm_pose_weight () ;
-		work_matching_block () ;
+		work_mapping_block () ;
 		save_data_json () ;
 		save_pointcloud_ply () ;
 		save_camera_ply () ;
@@ -286,9 +286,9 @@ public:
 		return move (ret) ;
 	}
 
-	void work_detect_block () {
+	void work_build_block () {
 		Singleton<Console>::instance ().trace () ;
-		Singleton<Console>::instance ().trace (slice ("work_detect_block")) ;
+		Singleton<Console>::instance ().trace (slice ("work_build_block")) ;
 		self.mBoard.set_board_shape (self.mBoardShape) ;
 		self.mBoard.set_board_type (BoardType::CIRCLE) ;
 		self.mBoard.set_board_baseline (self.mBoardBaseline) ;
@@ -417,14 +417,14 @@ public:
 				if (j == jx)
 					continue ;
 				INDEX iy = self.mPose[i].mUseView.map (j) ;
-				work_sfm_essential (ix ,iy) ;
+				work_sfm_homography (ix ,iy) ;
 				self.mView[j].mMatV = self.mView[jx].mMatV[0] * self.mView[j].mMatV[0] ;
 			}
 			check_epipolar_error (self.mPose[i].mFrame1 ,self.mPose[i].mFrame2) ;
 		}
 	}
 
-	void work_sfm_essential (CREF<INDEX> frame1 ,CREF<INDEX> frame2) {
+	void work_sfm_epipolar (CREF<INDEX> frame1 ,CREF<INDEX> frame2) {
 		auto &&view1 = self.mView[self.mFrame[frame1].mView1] ;
 		auto &&view2 = self.mView[self.mFrame[frame2].mView1] ;
 		const auto r1x = invoke ([&] () {
@@ -448,7 +448,7 @@ public:
 		const auto r7x = DuplexMatrix (Matrix::identity ()) ;
 		const auto r8x = DuplexMatrix (Matrix::identity ()) ;
 		const auto r9x = invoke ([&] () {
-			Image<FLT64> ret = Image<FLT64> (9 ,INDEX (r1x.size ())) ;
+			Image<FLT64> ret = Image<FLT64> (9 ,LENGTH (r1x.size ())) ;
 			for (auto &&i : iter (0 ,r1x.size ())) {
 				const auto r10x = r7x[1] * r1x[i] ;
 				const auto r11x = r8x[1] * r4x[i] ;
@@ -516,6 +516,157 @@ public:
 		const auto r30x = view2.mMatV[0] * Vector::axis_z () ;
 		Singleton<Console>::instance ().debug (Format (slice ("mView[$1].mDirection = [$2 ,$3 ,$4]")) (view1.mName ,r30x[0] ,r30x[1] ,r30x[2])) ;
 		Singleton<Console>::instance ().debug (Format (slice ("mView[$1].mTranslation = [$2 ,$3 ,$4]")) (view2.mName ,r25x[0] ,r25x[1] ,r25x[2])) ;
+	}
+
+	void work_sfm_homography (CREF<INDEX> frame1 ,CREF<INDEX> frame2) {
+		auto &&view1 = self.mView[self.mFrame[frame1].mView1] ;
+		auto &&view2 = self.mView[self.mFrame[frame2].mView1] ;
+		const auto r1x = PerspectiveMatrix (1 ,1 ,0 ,0) ;
+		const auto r2x = invoke ([&] () {
+			Array<Vector> ret = Array<Vector> (self.mFrame[frame1].mPoint2D.size ()) ;
+			for (auto &&i : iter (0 ,ret.size ())) {
+				const auto r3x = Vector (self.mFrame[frame1].mPoint2D[i]) ;
+				const auto r4x = view1.mMatK[1] * r3x ;
+				ret[i] = r4x;
+			}
+			return move (ret) ;
+		}) ;
+		const auto r5x = invoke ([&] () {
+			Array<Vector> ret = Array<Vector> (self.mFrame[frame2].mPoint2D.size ()) ;
+			for (auto &&i : iter (0 ,ret.size ())) {
+				const auto r6x = Vector (self.mFrame[frame2].mPoint2D[i]) ;
+				const auto r7x = view2.mMatK[1] * r6x ;
+				ret[i] = r7x ;
+			}
+			return move (ret) ;
+		}) ;
+		const auto r8x = DuplexMatrix (r1x) ;
+		const auto r9x = DuplexMatrix (r1x) ;
+		const auto r10x = invoke ([&] () {
+			Image<FLT64> ret = Image<FLT64> (9 ,LENGTH (r2x.size ()) * 2) ;
+			for (auto &&i : iter (0 ,r2x.size ())) {
+				const auto r11x = r8x[1] * r2x[i] ;
+				const auto r12x = r9x[1] * r5x[i] ;
+				if ifdo (TRUE) {
+					INDEX ix = i * 2 + 0 ;
+					ret[ix][0] = 0 ;
+					ret[ix][1] = 0 ;
+					ret[ix][2] = 0 ;
+					ret[ix][3] = -r11x[3] * r12x[0] ;
+					ret[ix][4] = -r11x[3] * r12x[1] ;
+					ret[ix][5] = -r11x[3] * r12x[3] ;
+					ret[ix][6] = r11x[1] * r12x[0] ;
+					ret[ix][7] = r11x[1] * r12x[1] ;
+					ret[ix][8] = r11x[1] * r12x[3] ;
+				}
+				if ifdo (TRUE) {
+					INDEX ix = i * 2 + 1 ;
+					ret[ix][0] = r11x[3] * r12x[0] ;
+					ret[ix][1] = r11x[3] * r12x[1] ;
+					ret[ix][2] = r11x[3] * r12x[3] ;
+					ret[ix][3] = 0 ;
+					ret[ix][4] = 0 ;
+					ret[ix][5] = 0 ;
+					ret[ix][6] = -r11x[0] * r12x[0] ;
+					ret[ix][7] = -r11x[0] * r12x[1] ;
+					ret[ix][8] = -r11x[0] * r12x[3] ;
+				}
+			}
+			return move (ret) ;
+		}) ;
+		const auto r13x = Image<FLT64> (LinearProc::solve_lsm (r10x)) ;
+		const auto r14x = invoke ([&] () {
+			Matrix ret = Matrix::zero () ;
+			ret[0][0] = r13x[0][0] ;
+			ret[0][1] = r13x[1][0] ;
+			ret[0][3] = r13x[2][0] ;
+			ret[1][0] = r13x[3][0] ;
+			ret[1][1] = r13x[4][0] ;
+			ret[1][3] = r13x[5][0] ;
+			ret[3][0] = r13x[6][0] ;
+			ret[3][1] = r13x[7][0] ;
+			ret[3][3] = r13x[8][0] ;
+			return move (ret) ;
+		}) ;
+		const auto r15x = r8x[0] * r14x * r9x[1] ;
+		const auto r16x = MatrixProc::solve_svd (r15x) ;
+		const auto r17x = (r16x.mU * r16x.mV).det () ;
+		assume (r17x > 0) ;
+		const auto r18x = invoke ([&] () {
+			Array<TRSResult> ret = Array<TRSResult> (4) ;
+			const auto r19x = r16x.mS[0][0] * MathProc::inverse (r16x.mS[1][1]) ;
+			const auto r20x = r16x.mS[2][2] * MathProc::inverse (r16x.mS[1][1]) ;
+			const auto r21x = MathProc::sqrt (MathProc::square (r19x) - 1) ;
+			const auto r22x = MathProc::sqrt (1 - MathProc::square (r20x)) ;
+			const auto r23x = Vector (r21x ,0 ,r22x ,0).normalize () ;
+			for (auto &&i : iter (0 ,ret.size ())) {
+				const auto r24x = MathProc::sign (ByteProc::any_bit (BYTE (i) ,BYTE (0X02))) ;
+				const auto r25x = MathProc::sign (ByteProc::any_bit (BYTE (i) ,BYTE (0X01))) ;
+				const auto r26x = r23x[0] * r24x ;
+				const auto r27x = r23x[2] * r25x ;
+				const auto r28x = Vector (r26x ,0 ,r27x ,0) ;
+				ret[i].mS = TranslationMatrix (r16x.mV * r28x) ;
+				const auto r29x = +(r19x - r20x) * r28x[0] ;
+				const auto r30x = -(r19x - r20x) * r28x[2] ;
+				const auto r31x = Vector (r29x ,0 ,r30x ,0) ;
+				ret[i].mT = TranslationMatrix (r16x.mU * r31x) ;
+				const auto r32x = r19x - r31x[0] * r28x[0] ;
+				const auto r62x = r20x - r31x[2] * r28x[2] ;
+				watch (r32x) ;
+				watch (r62x) ;
+				assume (MathProc::abs (r32x - r62x) < 1E-7) ;
+				const auto r33x = r31x[2] * r28x[0] ;
+				const auto r34x = Vector (r32x ,0 ,r33x ,0).normalize () ;
+				const auto r35x = invoke ([&] () {
+					Matrix ret = Matrix::identity () ;
+					ret[0][0] = r34x[0] ;
+					ret[0][2] = +r34x[2] ;
+					ret[2][0] = -r34x[2] ;
+					ret[2][2] = r34x[0] ;
+					return move (ret) ;
+				}) ;
+				ret[i].mR = r16x.mU * r35x * r16x.mV.transpose () ;
+
+				const auto r36x = SymmetryMatrix (r31x ,r28x) + r35x ;
+				const auto r37x = r36x * r16x.mS[1][1] - r16x.mS ;
+				watch (r35x) ;
+				watch (r35x) ;
+				watch (r31x) ;
+				watch (r28x) ;
+				watch (r16x) ;
+				watch (r36x) ;
+				watch (r37x) ;
+			}
+			return move (ret) ;
+		}) ;
+		auto rax = Array<NormalError> (r18x.size () + 1) ;
+		for (auto &&i : iter (0 ,r18x.size ())) {
+			const auto r38x = (r18x[i].mT * Vector::axis_w ()).homogenize () ;
+			const auto r39x = (r18x[i].mS * Vector::axis_w ()).homogenize () ;
+			const auto r40x = SymmetryMatrix (r38x ,r39x) + r18x[i].mR ;
+			const auto r41x = view1.mMatK[0] ;
+			const auto r42x = r41x * r40x ;
+			for (auto &&j : r5x.range ()) {
+				const auto r43x = (r42x * r5x[j]).projection () ;
+				const auto r44x = (r41x * r2x[j]).projection () ;
+				const auto r45x = (r43x - r44x).magnitude () ;
+				rax[i] += r45x ;
+			}
+		}
+		if ifdo (TRUE) {
+			INDEX ix = r18x.size () ;
+			const auto r46x = view1.mMatK[0] ;
+			const auto r47x = r46x * r15x ;
+			for (auto &&j : r5x.range ()) {
+				const auto r48x = (r47x * r5x[j]).projection () ;
+				const auto r49x = (r46x * r2x[j]).projection () ;
+				const auto r50x = (r48x - r49x).magnitude () ;
+				rax[ix] += r50x ;
+			}
+		}
+		watch (rax) ;
+		watch (rax) ;
+		watch (rax) ;
 	}
 
 	KRTResult triangulate_select (CREF<Array<Vector>> point1 ,CREF<Array<Vector>> point2 ,CREF<Array<KRTResult>> candiate) const {
@@ -660,9 +811,9 @@ public:
 		Singleton<Console>::instance ().trace () ;
 	}
 
-	void work_mapping_world () {
+	void work_refine_pose () {
 		Singleton<Console>::instance ().trace () ;
-		Singleton<Console>::instance ().trace (slice ("work_mapping_world")) ;
+		Singleton<Console>::instance ().trace (slice ("work_refine_pose")) ;
 		INDEX ix = 0 ;
 		const auto r1x = self.mView[ix].mMatV ;
 		auto rax = Set<INDEX> () ;
@@ -923,10 +1074,10 @@ public:
 		}
 	}
 
-	void work_matching_block () {
+	void work_mapping_block () {
 		Singleton<Console>::instance ().trace () ;
-		Singleton<Console>::instance ().trace (slice ("work_matching_block")) ;
-		self.mMatching = Array<Line2F> (self.mBlock.length ()) ;
+		Singleton<Console>::instance ().trace (slice ("work_mapping_block")) ;
+		self.mMapping = Array<Line2F> (self.mBlock.length ()) ;
 		for (auto &&i : self.mBlock.range ()) {
 			const auto r1x = PointCloud (Ref<Array<Point3F>>::reference (self.mBlock[i].mPoint3D)) ;
 			const auto r2x = r1x.svd_matrix () ;
@@ -943,10 +1094,10 @@ public:
 			assume (self.mBlock[i].mUseFrame.contain (r5x)) ;
 			INDEX ix = self.mFrame[r5x].mPose1 ;
 			INDEX jx = self.mFrame[r5x].mView1 ;
-			self.mMatching[i].mMin.mX = +infinity ;
-			self.mMatching[i].mMin.mY = +infinity ;
-			self.mMatching[i].mMax.mX = -infinity ;
-			self.mMatching[i].mMax.mY = -infinity ;
+			self.mMapping[i].mMin.mX = +infinity ;
+			self.mMapping[i].mMin.mY = +infinity ;
+			self.mMapping[i].mMax.mX = -infinity ;
+			self.mMapping[i].mMax.mY = -infinity ;
 			const auto r6x = self.mView[jx].mMatK[0] * self.mView[jx].mMatV[1] ;
 			const auto r7x = self.mPose[ix].mMatV[1] * self.mBlock[i].mMatP[0] ;
 			const auto r8x = r6x * r7x ;
@@ -957,10 +1108,10 @@ public:
 			const auto r13x = Buffer4<Vector> (r9x ,r10x ,r11x ,r12x) ;
 			for (auto &&j : iter (0 ,r13x.size ())) {
 				const auto r14x = (r8x * r13x[j]).projection () ;
-				self.mMatching[i].mMin.mX = MathProc::min_of (self.mMatching[i].mMin.mX ,FLT32 (r14x[0])) ;
-				self.mMatching[i].mMin.mY = MathProc::min_of (self.mMatching[i].mMin.mY ,FLT32 (r14x[1])) ;
-				self.mMatching[i].mMax.mX = MathProc::max_of (self.mMatching[i].mMax.mX ,FLT32 (r14x[0])) ;
-				self.mMatching[i].mMax.mY = MathProc::max_of (self.mMatching[i].mMax.mY ,FLT32 (r14x[1])) ;
+				self.mMapping[i].mMin.mX = MathProc::min_of (self.mMapping[i].mMin.mX ,FLT32 (r14x[0])) ;
+				self.mMapping[i].mMin.mY = MathProc::min_of (self.mMapping[i].mMin.mY ,FLT32 (r14x[1])) ;
+				self.mMapping[i].mMax.mX = MathProc::max_of (self.mMapping[i].mMax.mX ,FLT32 (r14x[0])) ;
+				self.mMapping[i].mMax.mY = MathProc::max_of (self.mMapping[i].mMax.mY ,FLT32 (r14x[1])) ;
 			}
 		}
 	}
@@ -1211,10 +1362,10 @@ public:
 		mWriter.deref << slice ("ply") << GAP ;
 		mWriter.deref << slice ("format ascii 1.0") << GAP ;
 		//@mark
-		const auto r3x = LENGTH (MathProc::ceil (self.mMatching[0].mMin.mX ,FLT32 (1))) ;
-		const auto r4x = LENGTH (MathProc::ceil (self.mMatching[0].mMin.mY ,FLT32 (1))) ;
-		const auto r5x = LENGTH (MathProc::ceil (self.mMatching[0].mMax.mX ,FLT32 (1))) ;
-		const auto r6x = LENGTH (MathProc::ceil (self.mMatching[0].mMax.mY ,FLT32 (1))) ;
+		const auto r3x = LENGTH (MathProc::ceil (self.mMapping[0].mMin.mX ,FLT32 (1))) ;
+		const auto r4x = LENGTH (MathProc::ceil (self.mMapping[0].mMin.mY ,FLT32 (1))) ;
+		const auto r5x = LENGTH (MathProc::ceil (self.mMapping[0].mMax.mX ,FLT32 (1))) ;
+		const auto r6x = LENGTH (MathProc::ceil (self.mMapping[0].mMax.mY ,FLT32 (1))) ;
 		const auto r7x = invoke ([&] () {
 			ImageShape ret ;
 			ret.mCX = r5x - r3x ;
