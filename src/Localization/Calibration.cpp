@@ -327,11 +327,11 @@ public:
 			INDEX iy = self.mPose[r1x[0]].mFrame2 ;
 			assume (ix != NONE) ;
 			assume (iy != NONE) ;
-			work_sfm_view_mat_k (ix ,iy) ;
+			work_sfm_focal_length (ix ,iy) ;
 		}
 	}
 
-	void work_sfm_view_mat_k (CREF<INDEX> frame1 ,CREF<INDEX> frame2) {
+	void work_sfm_focal_length (CREF<INDEX> frame1 ,CREF<INDEX> frame2) {
 		auto &&view1 = self.mView[self.mFrame[frame1].mView1] ;
 		auto &&view2 = self.mView[self.mFrame[frame2].mView1] ;
 		if ifdo (TRUE) {
@@ -417,14 +417,14 @@ public:
 				if (j == jx)
 					continue ;
 				INDEX iy = self.mPose[i].mUseView.map (j) ;
-				work_sfm_view_mat_v (ix ,iy) ;
+				work_sfm_essential (ix ,iy) ;
 				self.mView[j].mMatV = self.mView[jx].mMatV[0] * self.mView[j].mMatV[0] ;
 			}
 			check_epipolar_error (self.mPose[i].mFrame1 ,self.mPose[i].mFrame2) ;
 		}
 	}
 
-	void work_sfm_view_mat_v (CREF<INDEX> frame1 ,CREF<INDEX> frame2) {
+	void work_sfm_essential (CREF<INDEX> frame1 ,CREF<INDEX> frame2) {
 		auto &&view1 = self.mView[self.mFrame[frame1].mView1] ;
 		auto &&view2 = self.mView[self.mFrame[frame2].mView1] ;
 		const auto r1x = invoke ([&] () {
@@ -482,69 +482,68 @@ public:
 			return move (ret) ;
 		}) ;
 		const auto r14x = r7x[1].transpose () * r13x * r8x[1] ;
-		const auto r15x = r14x ;
-		const auto r16x = decompose_epipolar (r1x ,r4x ,r15x) ;
-		const auto r17x = r16x.mT * Vector::axis_w () ;
-		const auto r18x = r17x.homogenize ().normalize () ;
-		const auto r19x = r18x * view1.mBaseline ;
-		const auto r20x = TranslationMatrix (r19x) ;
-		const auto r21x = r20x * r16x.mR.transpose () ;
-		view2.mMatV = r21x ;
-		Singleton<Console>::instance ().debug (Format (slice ("mView[$1].mBaseline = $2")) (view1.mName ,view1.mBaseline)) ;
-		Singleton<Console>::instance ().debug (Format (slice ("mView[$1].mTranslation = [$2 ,$3 ,$4]")) (view2.mName ,r17x[0] ,r17x[1] ,r17x[2])) ;
-	}
-
-	KRTResult decompose_epipolar (CREF<Array<Vector>> point1 ,CREF<Array<Vector>> point2 ,CREF<Matrix> mat_e) const {
-		KRTResult ret ;
-		const auto r1x = invoke ([&] () {
-			Array<Buffer2<FLT64>> ret = Array<Buffer2<FLT64>> (4) ;
-			ret[0][0] = -1 ;
-			ret[0][1] = -1 ;
-			ret[1][0] = +1 ;
-			ret[1][1] = -1 ;
-			ret[2][0] = -1 ;
-			ret[2][1] = +1 ;
-			ret[3][0] = +1 ;
-			ret[3][1] = +1 ;
+		const auto r15x = MatrixProc::solve_svd (r14x) ;
+		const auto r16x = invoke ([&] () {
+			Array<KRTResult> ret = Array<KRTResult> (4) ;
+			for (auto &&i : iter (0 ,ret.size ())) {
+				const auto r17x = MathProc::sign (ByteProc::any_bit (BYTE (i) ,BYTE (0X02))) ;
+				const auto r18x = MathProc::sign (ByteProc::any_bit (BYTE (i) ,BYTE (0X01))) ;
+				const auto r19x = invoke ([&] () {
+					Matrix ret = Matrix::identity () ;
+					ret[0][0] = 0 ;
+					ret[0][1] = -r17x ;
+					ret[1][0] = r17x ;
+					ret[1][1] = 0 ;
+					return move (ret) ;
+				}) ;
+				const auto r20x = r15x.mU * Vector::axis_z () * r18x ;
+				const auto r21x = r15x.mU * r19x * r15x.mV.transpose () ;
+				const auto r22x = MathProc::inverse (r21x.det ()) ;
+				const auto r23x = r21x * DiagMatrix (r22x ,r22x ,r22x) ;
+				ret[i].mK = CrossProductMatrix (r20x) ;
+				ret[i].mT = TranslationMatrix (r20x) ;
+				ret[i].mR = r23x ;
+			}
 			return move (ret) ;
 		}) ;
-		const auto r2x = MatrixProc::solve_svd (mat_e) ;
+		const auto r24x = triangulate_select (r1x ,r4x ,r16x) ;
+		const auto r25x = r24x.mT * Vector::axis_w () ;
+		const auto r26x = r25x.homogenize ().normalize () ;
+		const auto r27x = r26x * view1.mBaseline ;
+		const auto r28x = TranslationMatrix (r27x) ;
+		const auto r29x = r28x * r24x.mR.transpose () ;
+		view2.mMatV = r29x ;
+		const auto r30x = view2.mMatV[0] * Vector::axis_z () ;
+		Singleton<Console>::instance ().debug (Format (slice ("mView[$1].mDirection = [$2 ,$3 ,$4]")) (view1.mName ,r30x[0] ,r30x[1] ,r30x[2])) ;
+		Singleton<Console>::instance ().debug (Format (slice ("mView[$1].mTranslation = [$2 ,$3 ,$4]")) (view2.mName ,r25x[0] ,r25x[1] ,r25x[2])) ;
+	}
+
+	KRTResult triangulate_select (CREF<Array<Vector>> point1 ,CREF<Array<Vector>> point2 ,CREF<Array<KRTResult>> candiate) const {
+		KRTResult ret ;
 		auto rax = FLT64 (0) ;
-		for (auto &&i : r1x.range ()) {
+		for (auto &&i : candiate.range ()) {
+			const auto r1x = candiate[i].mT * Vector::axis_w () ;
+			const auto r2x = candiate[i].mR ;
 			const auto r3x = invoke ([&] () {
-				Matrix ret = Matrix::identity () ;
-				ret[0][0] = 0 ;
-				ret[0][1] = -r1x[i][0] ;
-				ret[1][0] = r1x[i][0] ;
-				ret[1][1] = 0 ;
-				return move (ret) ;
-			}) ;
-			const auto r4x = r2x.mU * Vector::axis_z () * r1x[i][1] ;
-			const auto r5x = r2x.mU * r3x * r2x.mV.transpose () ;
-			const auto r6x = MathProc::inverse (r5x.det ()) ;
-			const auto r7x = r5x * DiagMatrix (r6x ,r6x ,r6x) ;
-			const auto r8x = invoke ([&] () {
 				FLT64 ret = 0 ;
 				for (auto &&i : point1.range ()) {
-					const auto r9x = point1[i] ;
-					const auto r10x = point2[i] ;
-					const auto r11x = -(r7x * r10x).normalize () ;
-					const auto r12x = Matrix (r9x ,r11x ,r9x ^ r11x ,Vector::axis_w ()) ;
-					const auto r13x = r12x.inverse () * r4x ;
-					if (r13x[0] <= 0)
+					const auto r4x = point1[i] ;
+					const auto r5x = point2[i] ;
+					const auto r6x = -(r2x * r5x).normalize () ;
+					const auto r7x = Matrix (r4x ,r6x ,r4x ^ r6x ,Vector::axis_w ()) ;
+					const auto r8x = r7x.inverse () * r1x ;
+					if (r8x[0] <= 0)
 						continue ;
-					if (r13x[1] <= 0)
+					if (r8x[1] <= 0)
 						continue ;
 					ret += 1 ;
 				}
 				return move (ret) ;
 			}) ;
-			if (rax >= r8x)
+			if (rax >= r3x)
 				continue ;
-			ret.mK = CrossProductMatrix (r4x) ;
-			ret.mT = TranslationMatrix (r4x) ;
-			ret.mR = r7x ;
-			rax = r8x ;
+			ret = candiate[i] ;
+			rax = r3x ;
 		}
 		assume (rax > 0) ;
 		return move (ret) ;
@@ -557,7 +556,7 @@ public:
 		for (auto &&i : self.mPose.range ()) {
 			INDEX ix = self.mPose[i].mFrame1 ;
 			for (auto &&j : self.mBlock.range ()) {
-				work_sfm_pose_mat_v (ix ,j) ;
+				work_sfm_projection (ix ,j) ;
 				self.mBlock[j].mUseFrame.add (ix) ;
 				self.mFrame[ix].mUseBlock.add (j) ;
 			}
@@ -574,11 +573,11 @@ public:
 		}
 	}
 
-	void work_sfm_pose_mat_v (CREF<INDEX> frame1 ,CREF<INDEX> block1) {
+	void work_sfm_projection (CREF<INDEX> frame1 ,CREF<INDEX> block1) {
 		auto &&pose1 = self.mPose[self.mFrame[frame1].mPose1] ;
 		auto &&view1 = self.mView[self.mFrame[frame1].mView1] ;
 		const auto r1x = SolverProc::solve_pnp (self.mFrame[frame1].mPoint2D ,self.mBlock[block1].mPoint3D ,view1.mMatK ,view1.mDist) ;
-		const auto r2x = r1x * view1.mMatV[1] ;
+		const auto r2x = r1x.inverse () * view1.mMatV[1] ;
 		pose1.mMatV = r2x ;
 		pose1.mUsingMatV = TRUE ;
 	}
@@ -800,11 +799,11 @@ public:
 					const auto view_dist = (&self.mFunc[self.mView[jx].mParam2]) ;
 					const auto view_mat_v = (&self.mFunc[self.mView[jx].mParam3]) ;
 					const auto pose_mat_v = (&self.mFunc[self.mPose[ix].mParam4]) ;
-					const auto point_3d = (&self.mFunc[r6x]) ;
-					self.mProblem->AddResidualBlock (r9x ,r5x ,view_mat_k ,view_dist ,view_mat_v ,pose_mat_v ,point_3d) ;
+					const auto point2 = (&self.mFunc[r6x]) ;
+					self.mProblem->AddResidualBlock (r9x ,r5x ,view_mat_k ,view_dist ,view_mat_v ,pose_mat_v ,point2) ;
 					if (opt_point_3d)
 						continue ;
-					self.mProblem->SetParameterBlockConstant (point_3d) ;
+					self.mProblem->SetParameterBlockConstant (point2) ;
 				}
 			}
 		}
@@ -1405,19 +1404,19 @@ public:
 		Point2F mPoint2D ;
 		FLT64 mWeight ;
 
-		explicit ResidualErrorPinhole (CREF<Point2F> point_2d ,CREF<FLT64> weight)
-			:mPoint2D (point_2d) ,mWeight (weight) {}
+		explicit ResidualErrorPinhole (CREF<Point2F> point1 ,CREF<FLT64> weight)
+			:mPoint2D (point1) ,mWeight (weight) {}
 
 		template <typename T>
-		BOOL operator() (const T *view_mat_k ,const T *view_dist ,const T *view_mat_v ,const T *pose_mat_v ,const T *point_3d ,T *residuals) const {
+		BOOL operator() (const T *view_mat_k ,const T *view_dist ,const T *view_mat_v ,const T *pose_mat_v ,const T *point2 ,T *residuals) const {
 			const auto pose_mat_v_r = (&pose_mat_v[0]) ;
 			const auto pose_mat_v_t = (&pose_mat_v[3]) ;
 			const auto view_mat_v_r = (&view_mat_v[0]) ;
 			const auto view_mat_v_t = (&view_mat_v[3]) ;
 			auto rax = Buffer3<T> () ;
-			rax[0] = point_3d[0] ;
-			rax[1] = point_3d[1] ;
-			rax[2] = point_3d[2] ;
+			rax[0] = point2[0] ;
+			rax[1] = point2[1] ;
+			rax[2] = point2[2] ;
 			const auto r1x = rax ;
 			ceres::AngleAxisRotatePoint (pose_mat_v_r ,(&r1x[0]) ,(&rax[0])) ;
 			rax[0] += pose_mat_v_t[0] ;
@@ -1462,8 +1461,8 @@ public:
 			return 2 ;
 		}
 
-		imports DEF<ceres::CostFunction *> create (CREF<Point2F> point_2d ,CREF<FLT64> weight) {
-			const auto r1x = new ResidualErrorPinhole (point_2d ,weight) ;
+		imports DEF<ceres::CostFunction *> create (CREF<Point2F> point1 ,CREF<FLT64> weight) {
+			const auto r1x = new ResidualErrorPinhole (point1 ,weight) ;
 			return new ceres::AutoDiffCostFunction<ResidualErrorPinhole ,2 ,4 ,5 ,6 ,6 ,3> (r1x) ;
 		}
 	} ;

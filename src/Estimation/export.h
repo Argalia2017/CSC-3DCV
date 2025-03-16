@@ -13,7 +13,7 @@ struct SolverProcHolder implement Interface {
 	virtual Matrix decode_rotation (CREF<Buffer3<FLT64>> mat_r) const = 0 ;
 	virtual Array<FLT64> encode_matrix (CREF<Matrix> mat_a) const = 0 ;
 	virtual Matrix decode_matrix (CREF<Array<FLT64>> mat_a) const = 0 ;
-	virtual Matrix solve_pnp (CREF<Array<Point2F>> point_2d ,CREF<Array<Point3F>> point_3d ,CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist) const = 0 ;
+	virtual Matrix solve_pnp (CREF<Array<Point2F>> point1 ,CREF<Array<Point3F>> point2 ,CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist) const = 0 ;
 	virtual Vector redistortion (CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist ,CREF<Vector> point) const = 0 ;
 	virtual Vector undistortion (CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist ,CREF<Vector> point) const = 0 ;
 } ;
@@ -40,8 +40,8 @@ public:
 		return SolverProcHolder::hold (instance ())->decode_matrix (mat_a) ;
 	}
 
-	static Matrix solve_pnp (CREF<Array<Point2F>> point_2d ,CREF<Array<Point3F>> point_3d ,CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist) {
-		return SolverProcHolder::hold (instance ())->solve_pnp (point_2d ,point_3d ,mat_k ,dist) ;
+	static Matrix solve_pnp (CREF<Array<Point2F>> point1 ,CREF<Array<Point3F>> point2 ,CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist) {
+		return SolverProcHolder::hold (instance ())->solve_pnp (point1 ,point2 ,mat_k ,dist) ;
 	}
 
 	static Vector redistortion (CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist ,CREF<Vector> point) {

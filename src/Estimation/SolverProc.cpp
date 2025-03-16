@@ -48,20 +48,20 @@ public:
 		return move (ret) ;
 	}
 
-	Matrix solve_pnp (CREF<Array<Point2F>> point_2d ,CREF<Array<Point3F>> point_3d ,CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist) const override {
+	Matrix solve_pnp (CREF<Array<Point2F>> point1 ,CREF<Array<Point3F>> point2 ,CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist) const override {
 		const auto r1x = invoke ([&] () {
-			std::vector<cv::Point2d> ret = std::vector<cv::Point2d> (point_2d.size ()) ;
-			for (auto &&i : iter (0 ,point_2d.size ())) {
-				const auto r2x = Vector (point_2d[i]) ;
+			std::vector<cv::Point2d> ret = std::vector<cv::Point2d> (point1.size ()) ;
+			for (auto &&i : iter (0 ,point1.size ())) {
+				const auto r2x = Vector (point1[i]) ;
 				ret[i].x = r2x[0] ;
 				ret[i].y = r2x[1] ;
 			}
 			return move (ret) ;
 		}) ;
 		const auto r3x = invoke ([&] () {
-			std::vector<cv::Point3d> ret = std::vector<cv::Point3d> (point_3d.size ()) ;
-			for (auto &&i : iter (0 ,point_3d.size ())) {
-				const auto r4x = Vector (point_3d[i]) ;
+			std::vector<cv::Point3d> ret = std::vector<cv::Point3d> (point2.size ()) ;
+			for (auto &&i : iter (0 ,point2.size ())) {
+				const auto r4x = Vector (point2[i]) ;
 				ret[i].x = r4x[0] ;
 				ret[i].y = r4x[1] ;
 				ret[i].z = r4x[2] ;
@@ -109,7 +109,6 @@ public:
 		ret[2][2] = r8x.at<double> (2 ,2) ;
 		ret[2][3] = rbx.at<double> (2) ;
 		ret[3][3] = 1 ;
-		ret = ret.inverse () ;
 		return move (ret) ;
 	}
 
