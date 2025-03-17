@@ -14,7 +14,6 @@ struct CameraView {
 	BOOL mConstMatV ;
 	FLT64 mBaseline ;
 	FLT64 mRelative ;
-	Vector mNormal ;
 	INDEX mParam1 ;
 	INDEX mParam2 ;
 	INDEX mParam3 ;
