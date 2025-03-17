@@ -14,6 +14,7 @@ struct CameraView {
 	BOOL mConstMatV ;
 	FLT64 mBaseline ;
 	FLT64 mRelative ;
+	Vector mNormal ;
 	INDEX mParam1 ;
 	INDEX mParam2 ;
 	INDEX mParam3 ;
@@ -38,10 +39,9 @@ struct CameraPose {
 struct CameraFrame {
 	INDEX mPose1 ;
 	INDEX mView1 ;
-	INDEX mTime1 ;
-	Set<INDEX> mUseBlock ;
+	INDEX mBlock1 ;
 	String<STR> mImageFile ;
-	Image<Color3B> mImage ;
+	String<STR> mDepthFile ;
 	Array<Point2F> mPoint2D ;
 	Array<FLT32> mPointDepth ;
 	Array<Vector> mPointRay ;
