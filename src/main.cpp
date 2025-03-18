@@ -27,8 +27,8 @@ exports int main (int argc ,DEF<char **> argv) {
 		ConfigProc::set_data_dire (r2x) ;
 		const auto r3x = CurrentTime () ;
 		if ifdo (TRUE) {
-			auto rax = Calibration (NULL) ;
-			rax.execute () ;
+			//auto rax = Calibration (NULL) ;
+			//rax.execute () ;
 			auto rbx = Binocular (NULL) ;
 			rbx.execute () ;
 		}
