@@ -46,7 +46,7 @@ struct CameraFrame {
 } ;
 
 struct CameraBlock {
-	INDEX mTime1 ;
+	String<STR> mName ;
 	Set<INDEX> mUseFrame ;
 	Array<Point3F> mPoint3D ;
 	DuplexMatrix mMatP ;

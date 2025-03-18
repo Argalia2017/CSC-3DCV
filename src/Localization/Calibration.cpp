@@ -293,7 +293,7 @@ public:
 		if ifdo (TRUE) {
 			self.mBlock = ArrayList<CameraBlock> () ;
 			INDEX ix = self.mBlock.insert () ;
-			self.mBlock[ix].mTime1 = ix ;
+			self.mBlock[ix].mName = String<STR>::make (AlignedText (ix ,2)) ;
 			self.mBlock[ix].mUseFrame = Set<INDEX> () ;
 			self.mBlock[ix].mPoint3D = self.mBoard.extract () ;
 			self.mBlock[ix].mMatP = Matrix::identity () ;
@@ -1401,7 +1401,7 @@ public:
 		const auto r1x = self.mDataPath.child (slice ("ply")) ;
 		FileProc::build_dire (r1x) ;
 		for (auto &&i : self.mBlock.range ()) {
-			const auto r2x = r1x.child (Format (slice ("pointcloud_$1.ply")) (self.mBlock[i].mTime1)) ;
+			const auto r2x = r1x.child (Format (slice ("pointcloud_$1.ply")) (self.mBlock[i].mName)) ;
 			auto mWriter = StreamFileTextWriter (r2x) ;
 			mWriter.deref << slice ("ply") << GAP ;
 			mWriter.deref << slice ("format ascii 1.0") << GAP ;
