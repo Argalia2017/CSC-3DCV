@@ -55,8 +55,4 @@
 
 #ifdef __CSC_API_WITH_OPENCV__
 #include <csc_image.opencv.inl>
-
-#ifdef __CSC_PLATFORM_X64__
-#pragma comment (lib ,"opencv_world470.lib")
-#endif
 #endif

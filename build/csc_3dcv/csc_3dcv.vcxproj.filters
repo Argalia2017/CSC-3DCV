@@ -52,6 +52,9 @@
     <ClCompile Include="..\..\src\Localization\PoseGraph.cpp">
       <Filter>Localization</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\Localization\StereoCorrection.cpp">
+      <Filter>Localization</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\util.h" />
@@ -76,7 +79,6 @@
     <ClInclude Include="..\..\src\Localization\export.h">
       <Filter>Localization</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Localization\Calibration.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Common">

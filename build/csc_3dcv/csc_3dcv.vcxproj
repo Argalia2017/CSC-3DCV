@@ -89,6 +89,7 @@
     <ClCompile Include="..\..\src\inl.cpp" />
     <ClCompile Include="..\..\src\Localization\Calibration.cpp" />
     <ClCompile Include="..\..\src\Localization\PoseGraph.cpp" />
+    <ClCompile Include="..\..\src\Localization\StereoCorrection.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\Mapping\MarchingCube.cpp" />
     <ClCompile Include="..\..\src\Mapping\Polyfit.cpp" />
@@ -102,7 +103,6 @@
     <ClInclude Include="..\..\src\Common\export.h" />
     <ClInclude Include="..\..\src\Detection\export.h" />
     <ClInclude Include="..\..\src\Estimation\export.h" />
-    <ClInclude Include="..\..\src\Localization\Calibration.h" />
     <ClInclude Include="..\..\src\Localization\export.h" />
     <ClInclude Include="..\..\src\Mapping\export.h" />
     <ClInclude Include="..\..\src\Registration\export.h" />
