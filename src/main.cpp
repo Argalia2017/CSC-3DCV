@@ -29,6 +29,8 @@ exports int main (int argc ,DEF<char **> argv) {
 		if ifdo (TRUE) {
 			auto rax = Calibration (NULL) ;
 			rax.execute () ;
+			auto rbx = Binocular (NULL) ;
+			rbx.execute () ;
 		}
 		const auto r4x = CurrentTime () ;
 		const auto r5x = ToolProc::format_time (r4x - r3x) ;

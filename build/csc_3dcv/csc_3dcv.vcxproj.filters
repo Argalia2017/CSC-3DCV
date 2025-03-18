@@ -52,7 +52,7 @@
     <ClCompile Include="..\..\src\Localization\PoseGraph.cpp">
       <Filter>Localization</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\Localization\StereoCorrection.cpp">
+    <ClCompile Include="..\..\src\Localization\Binocular.cpp">
       <Filter>Localization</Filter>
     </ClCompile>
   </ItemGroup>

@@ -89,7 +89,7 @@
     <ClCompile Include="..\..\src\inl.cpp" />
     <ClCompile Include="..\..\src\Localization\Calibration.cpp" />
     <ClCompile Include="..\..\src\Localization\PoseGraph.cpp" />
-    <ClCompile Include="..\..\src\Localization\StereoCorrection.cpp" />
+    <ClCompile Include="..\..\src\Localization\Binocular.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\Mapping\MarchingCube.cpp" />
     <ClCompile Include="..\..\src\Mapping\Polyfit.cpp" />

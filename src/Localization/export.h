@@ -100,4 +100,29 @@ public:
 		return CalibrationHolder::hold (thiz)->execute () ;
 	}
 } ;
+
+struct BinocularLayout ;
+
+struct BinocularHolder implement Interface {
+	imports OfThis<AutoRef<BinocularLayout>> create () ;
+	imports VFat<BinocularHolder> hold (VREF<BinocularLayout> that) ;
+	imports CFat<BinocularHolder> hold (CREF<BinocularLayout> that) ;
+
+	virtual void initialize () = 0 ;
+	virtual void execute () = 0 ;
+} ;
+
+class Binocular implement OfThis<AutoRef<BinocularLayout>> {
+public:
+	implicit Binocular () = default ;
+
+	explicit Binocular (CREF<typeof (NULL)>) {
+		mThis = BinocularHolder::create () ;
+		BinocularHolder::hold (thiz)->initialize () ;
+	}
+
+	void execute () {
+		return BinocularHolder::hold (thiz)->execute () ;
+	}
+} ;
 } ;
