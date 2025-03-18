@@ -9,7 +9,7 @@
 #include <csc_begin.h>
 
 namespace CSC3DCV {
-struct CameraBiView {
+struct CameraBinoView {
 	INDEX mView1 ;
 	DuplexMatrix mMatK ;
 	DuplexMatrix mMatV ;
@@ -20,7 +20,7 @@ struct CameraBiView {
 struct BinocularLayout {
 	Path mDataPath ;
 	ArrayList<CameraView> mView ;
-	Array<CameraBiView> mBiView ;
+	Array<CameraBinoView> mBinoView ;
 	Set<String<STR>> mViewNameSet ;
 	ArrayList<CameraPose> mPose ;
 	Set<String<STR>> mPoseNameSet ;
@@ -143,12 +143,12 @@ public:
 		const auto r5x = (self.mView[r1x[0]].mMatK[0][0][0] + self.mView[r1x[1]].mMatK[0][0][0]) / 2 ;
 		const auto r6x = (self.mView[r1x[0]].mMatK[0][1][1] + self.mView[r1x[1]].mMatK[0][1][1]) / 2 ;
 		const auto r7x = Vector (FLT64 (self.mView[r1x[0]].mShape.mCX) ,FLT64 (self.mView[r1x[0]].mShape.mCY) ,0 ,2).projection () ;
-		self.mBiView = Array<CameraBiView> (self.mView.length ()) ;
+		self.mBinoView = Array<CameraBinoView> (self.mView.length ()) ;
 		for (auto &&i : self.mView.range ()) {
-			self.mBiView[i].mView1 = i ;
-			self.mBiView[i].mMatK = PerspectiveMatrix (r5x ,r6x ,r7x[0] ,r7x[1]) ;
-			self.mBiView[i].mMatV = self.mView[i].mMatV ;
-			self.mBiView[i].mRemap = Image<Point2F> (self.mView[i].mShape) ;
+			self.mBinoView[i].mView1 = i ;
+			self.mBinoView[i].mMatK = PerspectiveMatrix (r5x ,r6x ,r7x[0] ,r7x[1]) ;
+			self.mBinoView[i].mMatV = self.mView[i].mMatV ;
+			self.mBinoView[i].mRemap = Image<Point2F> (self.mView[i].mShape) ;
 		}
 		for (auto &&i : iter (0 ,2)) {
 			INDEX ix = r1x[i] ;
@@ -156,19 +156,19 @@ public:
 			const auto r9x = self.mView[ix].mMatV[0] * Vector::axis_z () ;
 			const auto r10x = ViewMatrixZXY (r9x ,r4x) ;
 			const auto r11x = TranslationMatrix (r8x) ;
-			self.mBiView[ix].mMatV = r11x * r10x ;
-			const auto r12x = self.mBiView[ix].mRemap.cy () ;
+			self.mBinoView[ix].mMatV = r11x * r10x ;
+			const auto r12x = self.mBinoView[ix].mRemap.cy () ;
 #pragma omp parallel for
 			for (INDEX j = 0 ; j < r12x ; j++) {
-				for (auto &&k : iter (0 ,self.mBiView[ix].mRemap.cx ())) {
+				for (auto &&k : iter (0 ,self.mBinoView[ix].mRemap.cx ())) {
 					const auto r13x = Pixel ({k ,j}) ;
 					const auto r14x = Vector (r13x) ;
-					const auto r15x = self.mBiView[ix].mMatK[1] * r14x ;
-					const auto r16x = self.mBiView[ix].mMatV[0] * r15x ;
+					const auto r15x = self.mBinoView[ix].mMatK[1] * r14x ;
+					const auto r16x = self.mBinoView[ix].mMatV[0] * r15x ;
 					const auto r17x = self.mView[ix].mMatV[1] * r16x ;
 					const auto r18x = (self.mView[ix].mMatK[0] * r17x).projection () ;
 					const auto r19x = SolverProc::redistortion (self.mView[ix].mMatK ,self.mView[ix].mDist ,r18x) ;
-					self.mBiView[ix].mRemap[r13x] = r19x.xyz () ;
+					self.mBinoView[ix].mRemap[r13x] = r19x.xyz () ;
 				}
 			}
 		}
@@ -192,7 +192,7 @@ public:
 				rax.fill (self.mDefaultColor) ;
 				const auto r8x = Vector (FLT64 (rax.cx ()) ,FLT64 (rax.cy ()) ,0 ,1) ;
 				for (auto &&k : rax.range ()) {
-					const auto r9x = self.mBiView[j].mRemap[k] ;
+					const auto r9x = self.mBinoView[j].mRemap[k] ;
 					if (!(r9x.mX >= 0 && r9x.mX <= r8x[0]))
 						continue ;
 					if (!(r9x.mY >= 0 && r9x.mY <= r8x[1]))
@@ -213,8 +213,8 @@ public:
 		assume (r1x.length () == 2) ;
 		INDEX ix = r1x[0] ;
 		INDEX iy = r1x[1] ;
-		self.mBiView[ix].mError = NormalError () ;
-		self.mBiView[iy].mError = NormalError () ;
+		self.mBinoView[ix].mError = NormalError () ;
+		self.mBinoView[iy].mError = NormalError () ;
 		const auto r2x = self.mDataPath.child (self.mImageGroup) ;
 		const auto r3x = r2x.child (slice ("check")) ;
 		FileProc::build_dire (r3x) ;
@@ -240,8 +240,8 @@ public:
 			auto rdx = FLT64 (+infinity) ;
 			for (auto &&j : r9x.range ()) {
 				const auto r11x = MathProc::abs (r9x[j].mY - r10x[j].mY) ;
-				self.mBiView[ix].mError += r11x ;
-				self.mBiView[iy].mError += r11x ;
+				self.mBinoView[ix].mError += r11x ;
+				self.mBinoView[iy].mError += r11x ;
 				if ifdo (TRUE) {
 					if (jx != NONE)
 						if (rcx >= r11x)
@@ -286,9 +286,9 @@ public:
 				}
 			}
 		}
-		Singleton<Console>::instance ().debug (slice ("mMaxError = ") ,self.mBiView[ix].mError.mMaxError) ;
-		Singleton<Console>::instance ().debug (slice ("mAvgError = ") ,self.mBiView[ix].mError.mAvgError) ;
-		Singleton<Console>::instance ().debug (slice ("mStdError = ") ,self.mBiView[ix].mError.mStdError) ;
+		Singleton<Console>::instance ().debug (slice ("mMaxError = ") ,self.mBinoView[ix].mError.mMaxError) ;
+		Singleton<Console>::instance ().debug (slice ("mAvgError = ") ,self.mBinoView[ix].mError.mAvgError) ;
+		Singleton<Console>::instance ().debug (slice ("mStdError = ") ,self.mBinoView[ix].mError.mStdError) ;
 		Singleton<Console>::instance ().trace () ;
 	}
 } ;
