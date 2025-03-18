@@ -279,8 +279,7 @@ public:
 			self.mFrame[ret].mImageFile = r3x ;
 			self.mFrame[ret].mDepthFile = slice ("") ;
 			self.mFrame[ret].mPoint2D = Array<Point2F> () ;
-			self.mFrame[ret].mPointDepth = Array<FLT32> () ;
-			self.mFrame[ret].mPointRay = Array<Vector> () ;
+			self.mFrame[ret].mPoint3D = Array<Point3F> () ;
 		}
 		return move (ret) ;
 	}
@@ -309,8 +308,7 @@ public:
 			auto rax = Image<Color3B> (ImageProc::load_image (self.mFrame[i].mImageFile)) ;
 			assume (rax.shape () == r1x) ;
 			self.mFrame[i].mPoint2D = self.mBoard.detect (rax) ;
-			self.mFrame[i].mPointDepth = Array<FLT32> (self.mFrame[i].mPoint2D.size ()) ;
-			self.mFrame[i].mPointRay = Array<Vector> (self.mFrame[i].mPoint2D.size ()) ;
+			self.mFrame[i].mPoint3D = Array<Point3F> (self.mFrame[i].mPoint2D.size ()) ;
 		}
 	}
 
@@ -840,9 +838,9 @@ public:
 			auto rbx = NormalError () ;
 			INDEX ix = self.mPose[i].mUseView.map (view1) ;
 			INDEX iy = self.mPose[i].mUseView.map (view2) ;
-			for (auto &&j : self.mFrame[ix].mPointRay.range ()) {
-				const auto r1x = Vector (self.mFrame[ix].mPointRay[j]) ;
-				const auto r2x = Vector (self.mFrame[iy].mPointRay[j]) ;
+			for (auto &&j : self.mFrame[ix].mPoint3D.range ()) {
+				const auto r1x = Vector (self.mFrame[ix].mPoint3D[j]) ;
+				const auto r2x = Vector (self.mFrame[iy].mPoint3D[j]) ;
 				const auto r3x = (self.mView[view1].mMatK[0] * r1x).projection () ;
 				const auto r4x = (self.mView[view2].mMatK[0] * r2x).projection () ;
 				const auto r5x = (self.mPose[i].mMatH * r4x).projection () ;
@@ -1083,23 +1081,21 @@ public:
 				self.mBlock[i].mPoint3D[j].mX = FLT32 (self.mFunc[r24x + 0]) ;
 				self.mBlock[i].mPoint3D[j].mY = FLT32 (self.mFunc[r24x + 1]) ;
 				self.mBlock[i].mPoint3D[j].mZ = FLT32 (self.mFunc[r24x + 2]) ;
-				const auto r25x = Vector (self.mBlock[i].mPoint3D[j]) ;
-				for (auto &&k : self.mBlock[i].mUseFrame) {
-					INDEX ix = self.mFrame[k].mPose1 ;
-					INDEX jx = self.mFrame[k].mView1 ;
-					const auto r26x = self.mView[jx].mMatV[1] * self.mPose[ix].mMatV[1] ;
-					const auto r27x = (r26x * r25x).homogenize ().magnitude () ;
-					self.mFrame[k].mPointDepth[j] = FLT32 (r27x) ;
-				}
 			}
 		}
 		for (auto &&i : self.mFrame.range ()) {
-			INDEX ix = self.mFrame[i].mView1 ;
+			INDEX ix = self.mFrame[i].mPose1 ;
+			INDEX jx = self.mFrame[i].mView1 ;
+			INDEX kx = self.mFrame[i].mBlock1 ;
+			const auto r25x = self.mView[jx].mMatV[1] * self.mPose[ix].mMatV[1] ;
 			for (auto &&j : self.mFrame[i].mPoint2D.range ()) {
-				const auto r28x = Vector (self.mFrame[i].mPoint2D[j]) ;
-				const auto r29x = SolverProc::undistortion (self.mView[ix].mMatK ,self.mView[ix].mDist ,r28x) ;
-				const auto r30x = (self.mView[ix].mMatK[1] * r29x).normalize () ;
-				self.mFrame[i].mPointRay[j] = r30x ;
+				const auto r26x = Vector (self.mFrame[i].mPoint2D[j]) ;
+				const auto r27x = SolverProc::undistortion (self.mView[jx].mMatK ,self.mView[jx].mDist ,r26x) ;
+				const auto r28x = (self.mView[jx].mMatK[1] * r27x).normalize () ;
+				const auto r29x = Vector (self.mBlock[kx].mPoint3D[j]) ;
+				const auto r30x = (r25x * r29x).homogenize ().magnitude () ;
+				const auto r31x = r28x * r30x ;
+				self.mFrame[i].mPoint3D[j] = r31x.xyz () ;
 			}
 		}
 	}
@@ -1508,12 +1504,11 @@ public:
 				}
 				if ifdo (TRUE) {
 					for (auto &&k : self.mFrame[ix].mPoint2D.range ()) {
-						const auto r14x = self.mFrame[ix].mPointRay[k] ;
-						const auto r15x = r14x * self.mFrame[ix].mPointDepth[k] + Vector::axis_w () ;
-						const auto r16x = r3x * r15x ;
-						mWriter.deref << r16x[0] << slice (" ") ;
-						mWriter.deref << r16x[1] << slice (" ") ;
-						mWriter.deref << r16x[2] << GAP ;
+						const auto r14x = Vector (self.mFrame[ix].mPoint3D[k]) ;
+						const auto r15x = r3x * r14x ;
+						mWriter.deref << r15x[0] << slice (" ") ;
+						mWriter.deref << r15x[1] << slice (" ") ;
+						mWriter.deref << r15x[2] << GAP ;
 						mWriter.deref << VAL32 (self.mPose[i].mColor.mR) << slice (" ") ;
 						mWriter.deref << VAL32 (self.mPose[i].mColor.mG) << slice (" ") ;
 						mWriter.deref << VAL32 (self.mPose[i].mColor.mB) << GAP ;
@@ -1521,7 +1516,8 @@ public:
 				}
 				if ifdo (FALSE) {
 					for (auto &&k : self.mFrame[ix].mPoint2D.range ()) {
-						const auto r17x = self.mFrame[ix].mPointRay[k] ;
+						const auto r16x = Vector (self.mFrame[ix].mPoint3D[k]) ;
+						const auto r17x = r16x.normalize () ;
 						const auto r18x = self.mView[j].mRelative * MathProc::inverse (r17x[2]) ;
 						const auto r19x = r17x * r18x + Vector::axis_w () ;
 						const auto r20x = r3x * r19x ;

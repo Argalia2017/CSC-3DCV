@@ -42,8 +42,7 @@ struct CameraFrame {
 	String<STR> mImageFile ;
 	String<STR> mDepthFile ;
 	Array<Point2F> mPoint2D ;
-	Array<FLT32> mPointDepth ;
-	Array<Vector> mPointRay ;
+	Array<Point3F> mPoint3D ;
 } ;
 
 struct CameraBlock {
