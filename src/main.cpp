@@ -25,11 +25,17 @@ exports int main (int argc ,DEF<char **> argv) {
 		r1x.trace () ;
 		ConfigProc::set_data_dire (r2x) ;
 		const auto r3x = CurrentTime () ;
-		if ifdo (TRUE) {
+		if ifdo (FALSE) {
 			auto rax = Calibration (NULL) ;
 			rax.execute () ;
-			//auto rbx = Binocular (NULL) ;
-			//rbx.execute () ;
+		}
+		if ifdo (FALSE) {
+			auto rax = Binocular (NULL) ;
+			rax.execute () ;
+		}
+		if ifdo (TRUE) {
+			auto rax = Display (NULL) ;
+			rax.execute () ;
 		}
 		const auto r4x = CurrentTime () ;
 		const auto r5x = ToolProc::format_time (r4x - r3x) ;

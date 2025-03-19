@@ -64,7 +64,7 @@ struct FeatureHolder implement Interface {
 	imports CFat<FeatureHolder> hold (CREF<FeatureLayout> that) ;
 
 	virtual void initialize () = 0 ;
-	virtual void execute () = 0 ;
+	virtual void process (CREF<Image<Color3B>> image) = 0 ;
 } ;
 
 class Feature implement OfThis<AutoRef<FeatureLayout>> {
@@ -76,8 +76,38 @@ public:
 		FeatureHolder::hold (thiz)->initialize () ;
 	}
 
-	void execute () {
-		return FeatureHolder::hold (thiz)->execute () ;
+	void process (CREF<Image<Color3B>> image) {
+		return FeatureHolder::hold (thiz)->process (image) ;
+	}
+} ;
+
+struct LSDLayout ;
+
+struct LSDHolder implement Interface {
+	imports OfThis<AutoRef<LSDLayout>> create () ;
+	imports VFat<LSDHolder> hold (VREF<LSDLayout> that) ;
+	imports CFat<LSDHolder> hold (CREF<LSDLayout> that) ;
+
+	virtual void initialize () = 0 ;
+	virtual void process (CREF<Image<Color3B>> image) = 0 ;
+	virtual Array<Line2F> detect () = 0 ;
+} ;
+
+class LSD implement OfThis<AutoRef<LSDLayout>> {
+public:
+	implicit LSD () = default ;
+
+	explicit LSD (CREF<typeof (NULL)>) {
+		mThis = LSDHolder::create () ;
+		LSDHolder::hold (thiz)->initialize () ;
+	}
+
+	void process (CREF<Image<Color3B>> image) {
+		return LSDHolder::hold (thiz)->process (image) ;
+	}
+
+	Array<Line2F> detect () {
+		return LSDHolder::hold (thiz)->detect () ;
 	}
 } ;
 } ;

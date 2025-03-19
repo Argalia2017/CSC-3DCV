@@ -11,7 +11,7 @@ public:
 
 	}
 
-	void execute () override {
+	void process (CREF<Image<Color3B>> image) override {
 
 	}
 } ;

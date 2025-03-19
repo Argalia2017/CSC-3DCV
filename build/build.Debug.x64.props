@@ -3,21 +3,23 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_PropertySheetDisplayName>build.Debug.x64</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName>build.Release.x64</_PropertySheetDisplayName>
     <OutDir>$(SolutionDir)lib\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
-    <IncludePath>D:\Documents\C++\csc_3dcv\ext\CSC\src\csc;$(IncludePath)</IncludePath>
+    <IncludePath>D:\Depends\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Depends\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>D:\Depends\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)ext\CSC\src\csc;$(SolutionDir)ext\LSD;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <OpenMPSupport>true</OpenMPSupport>
       <PreprocessorDefinitions>_UNITTEST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link />
     <Link>
-      <AdditionalLibraryDirectories>D:\Depends\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
 </Project>
