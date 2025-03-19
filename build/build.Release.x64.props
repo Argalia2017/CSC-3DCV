@@ -3,7 +3,6 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_PropertySheetDisplayName>build.Release.x64</_PropertySheetDisplayName>
     <OutDir>$(SolutionDir)lib\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <IncludePath>D:\Depends\include;$(IncludePath)</IncludePath>
@@ -19,7 +18,7 @@
     </ClCompile>
     <Link />
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\$(Configuration)\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
 </Project>
