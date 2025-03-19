@@ -263,9 +263,9 @@ public:
 				if ifdo (TRUE) {
 					auto rex = ImageProc::peek_image (rax ,TYPE<cv::Mat>::expr) ;
 					for (auto &&k : Array<INDEX> ({jx ,jy})) {
-						const auto r14x = cv::Point2f (0 ,r10x[k].mY) ;
-						const auto r15x = cv::Point2f (FLT32 (rex.cols) - 1 ,r10x[k].mY) ;
-						const auto r16x = cv::Point2f (r9x[k].mX ,r9x[k].mY) ;
+						const auto r14x = cv::Point2i (0 ,VAL32 (r10x[k].mY)) ;
+						const auto r15x = cv::Point2i (rex.cols - 1 ,VAL32 (r10x[k].mY)) ;
+						const auto r16x = cv::Point2i (VAL32 (r9x[k].mX) ,VAL32 (r9x[k].mY)) ;
 						cv::line (rex ,r14x ,r15x ,r12x ,VAL32 (1) ,cv::LINE_AA) ;
 						cv::circle (rex ,r16x ,VAL32 (2) ,r13x ,cv::FILLED) ;
 					}
@@ -275,9 +275,9 @@ public:
 				if ifdo (TRUE) {
 					auto rex = ImageProc::peek_image (rbx ,TYPE<cv::Mat>::expr) ;
 					for (auto &&k : Array<INDEX> ({jx ,jy})) {
-						const auto r18x = cv::Point2f (0 ,r9x[k].mY) ;
-						const auto r19x = cv::Point2f (FLT32 (rex.cols) - 1 ,r9x[k].mY) ;
-						const auto r20x = cv::Point2f (r10x[k].mX ,r10x[k].mY) ;
+						const auto r18x = cv::Point2i (0 ,VAL32 (r9x[k].mY)) ;
+						const auto r19x = cv::Point2i (rex.cols - 1 ,VAL32 (r9x[k].mY)) ;
+						const auto r20x = cv::Point2i (VAL32 (r10x[k].mX) ,VAL32 (r10x[k].mY)) ;
 						cv::line (rex ,r18x ,r19x ,r12x ,VAL32 (1) ,cv::LINE_AA) ;
 						cv::circle (rex ,r20x ,VAL32 (2) ,r13x ,cv::FILLED) ;
 					}
