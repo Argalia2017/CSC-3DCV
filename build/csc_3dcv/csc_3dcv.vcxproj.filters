@@ -37,10 +37,7 @@
     <ClCompile Include="..\..\src\Rendering\Windows.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\Mapping\VoxelMatrix.cpp">
-      <Filter>Mapping</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\Estimation\DepthEstimation.cpp">
+    <ClCompile Include="..\..\src\Estimation\BinocularDepth.cpp">
       <Filter>Estimation</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\Estimation\SolverProc.cpp">
@@ -54,6 +51,12 @@
     </ClCompile>
     <ClCompile Include="..\..\src\Localization\Binocular.cpp">
       <Filter>Localization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Detection\LSD.cpp">
+      <Filter>Detection</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Mapping\VoxelMatrix.cpp">
+      <Filter>Mapping</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

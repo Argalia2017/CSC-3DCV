@@ -83,8 +83,9 @@
     <ClCompile Include="..\..\src\Detection\Aruco.cpp" />
     <ClCompile Include="..\..\src\Detection\Board.cpp" />
     <ClCompile Include="..\..\src\Detection\Feature.cpp" />
+    <ClCompile Include="..\..\src\Detection\LSD.cpp" />
     <ClCompile Include="..\..\src\Detection\Phase.cpp" />
-    <ClCompile Include="..\..\src\Estimation\DepthEstimation.cpp" />
+    <ClCompile Include="..\..\src\Estimation\BinocularDepth.cpp" />
     <ClCompile Include="..\..\src\Estimation\SolverProc.cpp" />
     <ClCompile Include="..\..\src\inl.cpp" />
     <ClCompile Include="..\..\src\Localization\Calibration.cpp" />

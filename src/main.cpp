@@ -8,7 +8,6 @@ using namespace CSC3DCV ;
 
 /*
 1. 提前计算基线的长度
-2. 实现多个标定板的结构
 */
 
 exports int main (int argc ,DEF<char **> argv) {
