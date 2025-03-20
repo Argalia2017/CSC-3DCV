@@ -2,6 +2,7 @@
 
 #include "Common/export.h"
 #include "Localization/export.h"
+#include "Estimation/export.h"
 #include "Rendering/export.h"
 
 using namespace CSC3DCV ;
@@ -34,6 +35,10 @@ exports int main (int argc ,DEF<char **> argv) {
 			rax.execute () ;
 		}
 		if ifdo (TRUE) {
+			auto rax = HomographyDepth (NULL) ;
+			rax.execute () ;
+		}
+		if ifdo (FALSE) {
 			auto rax = Display (NULL) ;
 			rax.execute () ;
 		}

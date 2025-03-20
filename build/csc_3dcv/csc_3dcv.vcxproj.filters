@@ -58,6 +58,9 @@
     <ClCompile Include="..\..\src\Mapping\VoxelMatrix.cpp">
       <Filter>Mapping</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\Estimation\HomographyDepth.cpp">
+      <Filter>Estimation</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\util.h" />

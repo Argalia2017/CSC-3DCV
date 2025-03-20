@@ -1,4 +1,6 @@
-﻿#include "../util.h"
+﻿#pragma once
+
+#include "../util.h"
 
 namespace CSC3DCV {
 struct SolverProcLayout ;
@@ -50,6 +52,31 @@ public:
 
 	static Vector undistortion (CREF<DuplexMatrix> mat_k ,CREF<Array<FLT64>> dist ,CREF<Vector> point) {
 		return SolverProcHolder::hold (instance ())->undistortion (mat_k ,dist ,point) ;
+	}
+} ;
+
+struct HomographyDepthLayout ;
+
+struct HomographyDepthHolder implement Interface {
+	imports OfThis<AutoRef<HomographyDepthLayout>> create () ;
+	imports VFat<HomographyDepthHolder> hold (VREF<HomographyDepthLayout> that) ;
+	imports CFat<HomographyDepthHolder> hold (CREF<HomographyDepthLayout> that) ;
+
+	virtual void initialize () = 0 ;
+	virtual void execute () = 0 ;
+} ;
+
+class HomographyDepth implement OfThis<AutoRef<HomographyDepthLayout>> {
+public:
+	implicit HomographyDepth () = default ;
+
+	explicit HomographyDepth (CREF<typeof (NULL)>) {
+		mThis = HomographyDepthHolder::create () ;
+		HomographyDepthHolder::hold (thiz)->initialize () ;
+	}
+
+	void execute () {
+		return HomographyDepthHolder::hold (thiz)->execute () ;
 	}
 } ;
 } ;

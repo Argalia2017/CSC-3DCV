@@ -84,6 +84,7 @@
     <ClCompile Include="..\..\src\Detection\LSD.cpp" />
     <ClCompile Include="..\..\src\Detection\Phase.cpp" />
     <ClCompile Include="..\..\src\Estimation\BinocularDepth.cpp" />
+    <ClCompile Include="..\..\src\Estimation\HomographyDepth.cpp" />
     <ClCompile Include="..\..\src\Estimation\SolverProc.cpp" />
     <ClCompile Include="..\..\src\inl.cpp" />
     <ClCompile Include="..\..\src\Localization\Calibration.cpp" />

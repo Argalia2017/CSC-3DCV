@@ -54,6 +54,7 @@ public:
 		work_binocular_view () ;
 		work_binocular_remap () ;
 		check_binocular_error () ;
+		save_test_json () ;
 	}
 
 	void load_data_json () {
@@ -290,6 +291,100 @@ public:
 		Singleton<Console>::instance ().debug (slice ("mAvgError = ") ,self.mBinoView[ix].mError.mAvgError) ;
 		Singleton<Console>::instance ().debug (slice ("mStdError = ") ,self.mBinoView[ix].mError.mStdError) ;
 		Singleton<Console>::instance ().trace () ;
+	}
+
+	void save_test_json () {
+		Singleton<Console>::instance ().trace () ;
+		Singleton<Console>::instance ().trace (slice ("save_test_json")) ;
+		const auto r1x = self.mDataPath.child (slice ("test.json")) ;
+		auto mWriter = StreamFileTextWriter (r1x) ;
+		auto mComma = Comma (slice ("\t") ,slice (",") ,slice ("\r\n")) ;
+		mWriter.deref << slice ("{") ;
+		mComma++ ;
+		if ifdo (TRUE) {
+			const auto r2x = Format (slice ("$1_$2$3")) ;
+			const auto r3x = self.mDataPath.child (self.mPose[0].mGroup) ;
+			mWriter.deref << mComma ;
+			mWriter.deref << slice ("\"mLView\":{") ;
+			mComma++ ;
+			if ifdo (TRUE) {
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("\"mName\":") << slice ("\"") << self.mView[0].mName << slice ("\"") ;
+				const auto r4x = r3x.child (r2x (self.mPose[0].mName ,self.mView[0].mName ,self.mImageExtension)) ;
+				const auto r5x = StringProc::stru8_from_strs (r4x) ;
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("\"mImageFile\":") << EscapeText::from (r5x) ;
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("\"mMatK\":[") ;
+				mComma++ ;
+				mComma.tight () ;
+				const auto r6x = SolverProc::encode_matrix (self.mBinoView[0].mMatK[0]) ;
+				for (auto &&j : r6x.range ()) {
+					mWriter.deref << mComma ;
+					mWriter.deref << r6x[j] ;
+				}
+				mComma-- ;
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("]") ;
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("\"mMatV\":[") ;
+				mComma++ ;
+				mComma.tight () ;
+				const auto r7x = SolverProc::encode_matrix (self.mBinoView[0].mMatV[0]) ;
+				for (auto &&j : r7x.range ()) {
+					mWriter.deref << mComma ;
+					mWriter.deref << r7x[j] ;
+				}
+				mComma-- ;
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("]") ;
+			}
+			mComma-- ;
+			mWriter.deref << mComma ;
+			mWriter.deref << slice ("}") ;
+			mWriter.deref << mComma ;
+			mWriter.deref << slice ("\"mRView\":{") ;
+			mComma++ ;
+			if ifdo (TRUE) {
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("\"mName\":") << slice ("\"") << self.mView[1].mName << slice ("\"") ;
+				const auto r8x = r3x.child (r2x (self.mPose[0].mName ,self.mView[1].mName ,self.mImageExtension)) ;
+				const auto r9x = StringProc::stru8_from_strs (r8x) ;
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("\"mImageFile\":") << EscapeText::from (r9x) ;
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("\"mMatK\":[") ;
+				mComma++ ;
+				mComma.tight () ;
+				const auto r10x = SolverProc::encode_matrix (self.mBinoView[1].mMatK[0]) ;
+				for (auto &&j : r10x.range ()) {
+					mWriter.deref << mComma ;
+					mWriter.deref << r10x[j] ;
+				}
+				mComma-- ;
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("]") ;
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("\"mMatV\":[") ;
+				mComma++ ;
+				mComma.tight () ;
+				const auto r11x = SolverProc::encode_matrix (self.mBinoView[1].mMatV[0]) ;
+				for (auto &&j : r11x.range ()) {
+					mWriter.deref << mComma ;
+					mWriter.deref << r11x[j] ;
+				}
+				mComma-- ;
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("]") ;
+			}
+			mComma-- ;
+			mWriter.deref << mComma ;
+			mWriter.deref << slice ("}") ;
+		}
+		mComma-- ;
+		mWriter.deref << mComma ;
+		mWriter.deref << slice ("}") ;
+		mWriter.flush () ;
 	}
 } ;
 

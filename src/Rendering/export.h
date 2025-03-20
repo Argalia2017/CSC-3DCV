@@ -1,4 +1,6 @@
-﻿#include "../util.h"
+﻿#pragma once
+
+#include "../util.h"
 
 namespace CSC3DCV {
 struct DisplayLayout ;
