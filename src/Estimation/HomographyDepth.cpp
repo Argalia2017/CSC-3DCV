@@ -8,7 +8,7 @@
 #define NOMINMAX
 #endif
 
-#ifndef WIN32_LEAN_AND_MEAN
+#ifndef WIN32_LEAN_AND_MEAN 
 #define WIN32_LEAN_AND_MEAN
 #endif
 
@@ -175,7 +175,7 @@ public:
 			const auto r8x = self.mRViewMatV[1] * r7x * self.mLViewMatV[0] ;
 			const auto r9x = r8x.homogenize () + Matrix::axis_w () ;
 			const auto r10x = self.mRViewMatK[0] * r9x * self.mLViewMatK[1] ;
-#pragma omp parallel for
+#pragma omp parallel for num_threads (12)
 			for (INDEX i = 0 ; i < r1x.mCY ; i++) {
 				for (auto &&j : iter (0 ,r1x.mCX)) {
 					const auto r11x = Pixel ({j ,i}) ;

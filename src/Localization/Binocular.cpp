@@ -159,7 +159,7 @@ public:
 			const auto r11x = TranslationMatrix (r8x) ;
 			self.mBinoView[ix].mMatV = r11x * r10x ;
 			const auto r12x = self.mBinoView[ix].mRemap.cy () ;
-#pragma omp parallel for
+#pragma omp parallel for num_threads (12)
 			for (INDEX j = 0 ; j < r12x ; j++) {
 				for (auto &&k : iter (0 ,self.mBinoView[ix].mRemap.cx ())) {
 					const auto r13x = Pixel ({k ,j}) ;
@@ -181,7 +181,7 @@ public:
 		const auto r1x = self.mDataPath.child (self.mImageGroup) ;
 		FileProc::build_dire (r1x) ;
 		const auto r2x = self.mPose.length () ;
-#pragma omp parallel for
+#pragma omp parallel for num_threads (12)
 		for (INDEX i = 0 ; i < r2x ; i++) {
 			const auto r3x = Format (slice ("$1_$2$3")) ;
 			const auto r4x = self.mDataPath.child (self.mPose[i].mGroup) ;
