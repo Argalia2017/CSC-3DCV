@@ -5,10 +5,6 @@ VisualStudioVersion = 17.12.35506.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "csc_3dcv", "build\csc_3dcv\csc_3dcv.vcxproj", "{8F5E7BA9-CC0C-4A92-9736-94BBF05052BE}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ext", "ext", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LSD", "ext\LSD\build\LSD.vcxproj", "{379090F6-4ECA-4D48-8708-B7F79116F5A3}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -23,20 +19,9 @@ Global
 		{8F5E7BA9-CC0C-4A92-9736-94BBF05052BE}.Release|x64.ActiveCfg = Release|x64
 		{8F5E7BA9-CC0C-4A92-9736-94BBF05052BE}.Release|x64.Build.0 = Release|x64
 		{8F5E7BA9-CC0C-4A92-9736-94BBF05052BE}.Release|x86.ActiveCfg = Release|x64
-		{379090F6-4ECA-4D48-8708-B7F79116F5A3}.Debug|x64.ActiveCfg = Debug|x64
-		{379090F6-4ECA-4D48-8708-B7F79116F5A3}.Debug|x64.Build.0 = Debug|x64
-		{379090F6-4ECA-4D48-8708-B7F79116F5A3}.Debug|x86.ActiveCfg = Debug|Win32
-		{379090F6-4ECA-4D48-8708-B7F79116F5A3}.Debug|x86.Build.0 = Debug|Win32
-		{379090F6-4ECA-4D48-8708-B7F79116F5A3}.Release|x64.ActiveCfg = Release|x64
-		{379090F6-4ECA-4D48-8708-B7F79116F5A3}.Release|x64.Build.0 = Release|x64
-		{379090F6-4ECA-4D48-8708-B7F79116F5A3}.Release|x86.ActiveCfg = Release|Win32
-		{379090F6-4ECA-4D48-8708-B7F79116F5A3}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{379090F6-4ECA-4D48-8708-B7F79116F5A3} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AB0851A0-0847-48AC-A235-8907FB2BFD43}
