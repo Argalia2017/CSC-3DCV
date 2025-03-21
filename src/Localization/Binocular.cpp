@@ -258,7 +258,7 @@ public:
 					rdx = r11x ;
 				}
 			}
-			if ifdo (TRUE) {
+			if ifdo (FALSE) {
 				const auto r12x = cv::Scalar (0 ,255 ,0 ,255) ;
 				const auto r13x = cv::Scalar (0 ,0 ,255 ,255) ;
 				if ifdo (TRUE) {
@@ -286,6 +286,28 @@ public:
 					ImageProc::save_image (r21x ,rbx) ;
 				}
 			}
+			if ifdo (TRUE) {
+				auto rex = NormalError () ;
+				const auto r22x = self.mPose[i].mMatV[1] * Vector::axis_z () ;
+				const auto r23x = self.mPose[i].mMatV[1] * Vector::axis_w () ;
+				const auto r24x = self.mBinoView[ix].mMatV[0] * Vector::axis_w () ;
+				const auto r25x = self.mBinoView[iy].mMatV[0] * Vector::axis_w () ;
+				const auto r26x = r22x * (r23x - r25x) ;
+				const auto r27x = DiagMatrix (r26x ,r26x ,r26x) + SymmetryMatrix (r25x - r24x ,r22x) ;
+				const auto r28x = self.mBinoView[ix].mMatV[1] * r27x * self.mBinoView[iy].mMatV[0] ;
+				const auto r29x = r28x.homogenize () + Matrix::axis_w () ;
+				const auto r30x = self.mBinoView[ix].mMatK[0] * r29x * self.mBinoView[iy].mMatK[1] ;
+				for (auto &&j : r10x.range ()) {
+					const auto r31x = Vector (r9x[j]) ;
+					const auto r32x = Vector (r10x[j]) ;
+					const auto r33x = (r30x * r32x).projection () ;
+					const auto r34x = (r31x - r33x).magnitude () ;
+					rex += r34x ;
+				}
+				Singleton<Console>::instance ().debug (Format (slice ("Homo[$1].mMaxError = $2")) (i ,rex.mMaxError)) ;
+				Singleton<Console>::instance ().debug (Format (slice ("Homo[$1].mAvgError = $2")) (i ,rex.mAvgError)) ;
+				Singleton<Console>::instance ().debug (Format (slice ("Homo[$1].mStdError = $2")) (i ,rex.mStdError)) ;
+			}
 		}
 		Singleton<Console>::instance ().debug (slice ("mMaxError = ") ,self.mBinoView[ix].mError.mMaxError) ;
 		Singleton<Console>::instance ().debug (slice ("mAvgError = ") ,self.mBinoView[ix].mError.mAvgError) ;
@@ -303,7 +325,7 @@ public:
 		mComma++ ;
 		if ifdo (TRUE) {
 			const auto r2x = Format (slice ("$1_$2$3")) ;
-			const auto r3x = self.mDataPath.child (self.mPose[0].mGroup) ;
+			const auto r3x = self.mDataPath.child (self.mImageGroup) ;
 			mWriter.deref << mComma ;
 			mWriter.deref << slice ("\"mLView\":{") ;
 			mComma++ ;
@@ -372,6 +394,26 @@ public:
 				for (auto &&j : r11x.range ()) {
 					mWriter.deref << mComma ;
 					mWriter.deref << r11x[j] ;
+				}
+				mComma-- ;
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("]") ;
+			}
+			mComma-- ;
+			mWriter.deref << mComma ;
+			mWriter.deref << slice ("}") ;
+			mWriter.deref << mComma ;
+			mWriter.deref << slice ("\"mFPose\":{") ;
+			mComma++ ;
+			if ifdo (TRUE) {
+				mWriter.deref << mComma ;
+				mWriter.deref << slice ("\"mMatV\":[") ;
+				mComma++ ;
+				mComma.tight () ;
+				const auto r12x = SolverProc::encode_matrix (self.mPose[0].mMatV[0]) ;
+				for (auto &&j : r12x.range ()) {
+					mWriter.deref << mComma ;
+					mWriter.deref << r12x[j] ;
 				}
 				mComma-- ;
 				mWriter.deref << mComma ;

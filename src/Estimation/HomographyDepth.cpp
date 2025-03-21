@@ -80,19 +80,24 @@ public:
 			const auto r10x = r7x.child (slice ("mImageFile")).parse (String<STR> ()) ;
 			self.mRViewImage = ImageProc::load_image (r10x) ;
 		}
+		if ifdo (TRUE) {
+			const auto r11x = r2x.child (slice ("mFPose")) ;
+			const auto r12x = r11x.child (slice ("mMatV")).parse (FLT64 (0) ,16) ;
+			self.mPoseMatV = SolverProc::decode_matrix (r12x) ;
+		}
 	}
 
 	void set_first_plane () {
-		self.mPlaneNormal = Vector::axis_z () ;
-		self.mPlaneCenter = Vector (0 ,0 ,5000 ,1) ;
+		self.mPlaneNormal = self.mPoseMatV[1] * Vector::axis_z () ;
+		self.mPlaneCenter = self.mPoseMatV[1] * Vector::axis_w () ;
 		assume (self.mLViewImage.shape () == self.mRViewImage.shape ()) ;
 		self.mRemapImage = ImageProc::make_image (self.mLViewImage.shape ()) ;
 	}
 
 	void set_keyboard_hook () {
 		mCurrentLayout = Ref<HomographyDepthLayout>::reference (self) ;
-		auto hHook = SetWindowsHookEx (WH_KEYBOARD_LL ,keyboard_callback ,GetModuleHandle (NULL) ,0);
-		assume (hHook != 0) ;
+		const auto r1x = SetWindowsHookEx (WH_KEYBOARD_LL ,keyboard_callback ,GetModuleHandle (NULL) ,0);
+		assume (r1x != 0) ;
 	}
 
 	static LRESULT CALLBACK keyboard_callback (int nCode ,WPARAM wParam ,LPARAM lParam) {
@@ -141,35 +146,35 @@ public:
 		if ifdo (TRUE) {
 			if (!self.mSKeyDown)
 				discard ;
-			const auto r2x = RotationMatrix (Vector::axis_x () ,+r1x) ;
-			self.mPlaneNormal = r2x * self.mPlaneNormal ;
+			const auto r3x = RotationMatrix (Vector::axis_x () ,+r1x) ;
+			self.mPlaneNormal = r3x * self.mPlaneNormal ;
 		}
 		if ifdo (TRUE) {
 			if (!self.mAKeyDown)
 				discard ;
-			const auto r2x = RotationMatrix (Vector::axis_y () ,+r1x) ;
-			self.mPlaneNormal = r2x * self.mPlaneNormal ;
+			const auto r4x = RotationMatrix (Vector::axis_y () ,+r1x) ;
+			self.mPlaneNormal = r4x * self.mPlaneNormal ;
 		}
 		if ifdo (TRUE) {
 			if (!self.mDKeyDown)
 				discard ;
-			const auto r2x = RotationMatrix (Vector::axis_y () ,-r1x) ;
-			self.mPlaneNormal = r2x * self.mPlaneNormal ;
+			const auto r5x = RotationMatrix (Vector::axis_y () ,-r1x) ;
+			self.mPlaneNormal = r5x * self.mPlaneNormal ;
 		}
 	}
 
 	void display () {
 		if ifdo (TRUE) {
 			const auto r1x = self.mRemapImage.shape () ;
-			const auto r2x = self.mLViewMatV[0] * self.mPlaneNormal ;
-			const auto r3x = self.mLViewMatV[0] * self.mPlaneCenter ;
-			const auto r4x = self.mLViewMatV[0] * Vector::axis_w () ;
-			const auto r5x = self.mRViewMatV[0] * Vector::axis_w () ;
+			const auto r2x = self.mPlaneNormal ;
+			const auto r3x = self.mPlaneCenter ;
+			const auto r4x = self.mRViewMatV[0] * Vector::axis_w () ;
+			const auto r5x = self.mLViewMatV[0] * Vector::axis_w () ;
 			const auto r6x = r2x * (r3x - r5x) ;
-			const auto r7x = DiagMatrix (r6x ,r6x ,r6x ,0) + SymmetryMatrix (r5x - r4x ,r2x) ;
-			const auto r8x = self.mLViewMatV[1] * r7x * self.mRViewMatV[0] ;
+			const auto r7x = DiagMatrix (r6x ,r6x ,r6x) + SymmetryMatrix (r5x - r4x ,r2x) ;
+			const auto r8x = self.mRViewMatV[1] * r7x * self.mLViewMatV[0] ;
 			const auto r9x = r8x.homogenize () + Matrix::axis_w () ;
-			const auto r10x = self.mLViewMatK[0] * r9x * self.mLViewMatK[1] ;
+			const auto r10x = self.mRViewMatK[0] * r9x * self.mLViewMatK[1] ;
 #pragma omp parallel for
 			for (INDEX i = 0 ; i < r1x.mCY ; i++) {
 				for (auto &&j : iter (0 ,r1x.mCX)) {

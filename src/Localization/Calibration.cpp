@@ -1062,11 +1062,11 @@ public:
 			INDEX ix = self.mFrame[self.mPose[i].mFrame1].mView1 ;
 			INDEX iy = self.mFrame[self.mPose[i].mFrame2].mView1 ;
 			const auto r15x = self.mPose[i].mMatV[1] * Vector::axis_z () ;
-			const auto r16x = -(r15x * self.mPose[i].mMatV[1] * Vector::axis_w ()) ;
+			const auto r16x = self.mPose[i].mMatV[1] * Vector::axis_w () ;
 			const auto r17x = self.mView[ix].mMatV[0] * Vector::axis_w () ;
 			const auto r18x = self.mView[iy].mMatV[0] * Vector::axis_w () ;
-			const auto r19x = -(r15x * r18x + r16x) ;
-			const auto r20x = DiagMatrix (r19x ,r19x ,r19x ,0) + SymmetryMatrix (r18x - r17x ,r15x) ;
+			const auto r19x = r15x * (r16x - r18x) ;
+			const auto r20x = DiagMatrix (r19x ,r19x ,r19x) + SymmetryMatrix (r18x - r17x ,r15x) ;
 			const auto r21x = self.mView[ix].mMatV[1] * r20x * self.mView[iy].mMatV[0] ;
 			const auto r22x = r21x.homogenize () + Matrix::axis_w () ;
 			self.mPose[i].mMatH = self.mView[ix].mMatK[0] * r22x * self.mView[iy].mMatK[1] ;
