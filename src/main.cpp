@@ -34,11 +34,11 @@ exports int main (int argc ,DEF<char **> argv) {
 			auto rax = Binocular (NULL) ;
 			rax.execute () ;
 		}
-		if ifdo (TRUE) {
+		if ifdo (FALSE) {
 			auto rax = HomographyDepth (NULL) ;
 			rax.execute () ;
 		}
-		if ifdo (FALSE) {
+		if ifdo (TRUE) {
 			auto rax = Display (NULL) ;
 			rax.execute () ;
 		}
