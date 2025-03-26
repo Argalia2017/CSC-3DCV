@@ -15,9 +15,6 @@
     <ClCompile Include="..\..\src\Detection\Phase.cpp">
       <Filter>Detection</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\Rendering\Display.cpp">
-      <Filter>Rendering</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\Registration\GaussionSplatting.cpp">
       <Filter>Registration</Filter>
     </ClCompile>
@@ -60,6 +57,12 @@
     </ClCompile>
     <ClCompile Include="..\..\src\Estimation\HomographyDepth.cpp">
       <Filter>Estimation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Registration\PlaneRendering.cpp">
+      <Filter>Registration</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Registration\PlaneSplitting.cpp">
+      <Filter>Registration</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

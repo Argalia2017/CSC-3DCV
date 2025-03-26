@@ -95,7 +95,8 @@
     <ClCompile Include="..\..\src\Mapping\Polyfit.cpp" />
     <ClCompile Include="..\..\src\Mapping\VoxelMatrix.cpp" />
     <ClCompile Include="..\..\src\Registration\GaussionSplatting.cpp" />
-    <ClCompile Include="..\..\src\Rendering\Display.cpp" />
+    <ClCompile Include="..\..\src\Registration\PlaneRendering.cpp" />
+    <ClCompile Include="..\..\src\Registration\PlaneSplitting.cpp" />
     <ClCompile Include="..\..\src\Rendering\Windows.cpp" />
     <ClCompile Include="..\..\src\test.cpp" />
   </ItemGroup>

@@ -7,17 +7,17 @@
 #include <csc_begin.h>
 
 namespace CSC3DCV {
-struct DisplayLayout {
+struct PlaneSplittingLayout {
 	Path mVideoPath ;
 	Path mFramePath ;
 	Ref<cv::VideoCapture> mVideoCapture ;
 	Image<Color3B> mCurrImage ;
-	Image<Color3B> mDisplayImage ;
+	Image<Color3B> mPlaneSplittingImage ;
 	LSD mLSDEngine ;
 	Array<Line2F> mCurrLine ;
 } ;
 
-class DisplayImplHolder final implement Fat<DisplayHolder ,DisplayLayout> {
+class PlaneSplittingImplHolder final implement Fat<PlaneSplittingHolder ,PlaneSplittingLayout> {
 public:
 	void initialize () override {
 		self.mVideoPath = Path (slice ("D:/Documents/C++/csc_3dcv/data/5")) ;
@@ -42,9 +42,9 @@ public:
 			self.mLSDEngine.process (self.mCurrImage) ;
 			self.mCurrLine = self.mLSDEngine.detect () ;
 			if ifdo (TRUE) {
-				if (self.mDisplayImage.shape () == self.mCurrImage.shape ())
+				if (self.mPlaneSplittingImage.shape () == self.mCurrImage.shape ())
 					discard ;
-				self.mDisplayImage = ImageProc::make_image (self.mCurrImage.shape ()) ;
+				self.mPlaneSplittingImage = ImageProc::make_image (self.mCurrImage.shape ()) ;
 			}
 			if ifdo (TRUE) {
 				const auto r9x = self.mFramePath.child (Format (slice ("$1.txt")) (AlignedText (mFrame ,5))) ;
@@ -61,8 +61,8 @@ public:
 				mWriter.flush () ;
 			}
 			if ifdo (TRUE) {
-				self.mDisplayImage.fill (COLOR_BLACK) ;
-				auto rbx = ImageProc::peek_image (self.mDisplayImage ,TYPE<cv::Mat>::expr) ;
+				self.mPlaneSplittingImage.fill (COLOR_BLACK) ;
+				auto rbx = ImageProc::peek_image (self.mPlaneSplittingImage ,TYPE<cv::Mat>::expr) ;
 				const auto r4x = cv::Scalar (0 ,0 ,255 ,255) ;
 				for (auto &&i : self.mCurrLine) {
 					const auto r5x = cv::Point2i (VAL32 (i.mMin.mX) ,VAL32 (i.mMin.mY)) ;
@@ -80,17 +80,17 @@ public:
 	}
 } ;
 
-exports OfThis<AutoRef<DisplayLayout>> DisplayHolder::create () {
-	OfThis<AutoRef<DisplayLayout>> ret ;
-	ret.mThis = AutoRef<DisplayLayout>::make () ;
+exports OfThis<AutoRef<PlaneSplittingLayout>> PlaneSplittingHolder::create () {
+	OfThis<AutoRef<PlaneSplittingLayout>> ret ;
+	ret.mThis = AutoRef<PlaneSplittingLayout>::make () ;
 	return move (ret) ;
 }
 
-exports VFat<DisplayHolder> DisplayHolder::hold (VREF<DisplayLayout> that) {
-	return VFat<DisplayHolder> (DisplayImplHolder () ,that) ;
+exports VFat<PlaneSplittingHolder> PlaneSplittingHolder::hold (VREF<PlaneSplittingLayout> that) {
+	return VFat<PlaneSplittingHolder> (PlaneSplittingImplHolder () ,that) ;
 }
 
-exports CFat<DisplayHolder> DisplayHolder::hold (CREF<DisplayLayout> that) {
-	return CFat<DisplayHolder> (DisplayImplHolder () ,that) ;
+exports CFat<PlaneSplittingHolder> PlaneSplittingHolder::hold (CREF<PlaneSplittingLayout> that) {
+	return CFat<PlaneSplittingHolder> (PlaneSplittingImplHolder () ,that) ;
 }
 } ;

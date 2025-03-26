@@ -51,11 +51,11 @@ public:
 		Singleton<Console>::instance ().info () ;
 		Singleton<Console>::instance ().info (slice ("HomographyDepth::execute")) ;
 		read_test_json () ;
-		set_first_plane () ;
-		set_keyboard_hook () ;
+		sync_first_plane () ;
+		sync_keyboard_hook () ;
 		while (TRUE) {
 			work_manual_plane () ;
-			display () ;
+			sync_display () ;
 		}
 	}
 
@@ -87,14 +87,14 @@ public:
 		}
 	}
 
-	void set_first_plane () {
+	void sync_first_plane () {
 		self.mPlaneNormal = self.mPoseMatV[1] * Vector::axis_z () ;
 		self.mPlaneCenter = self.mPoseMatV[1] * Vector::axis_w () ;
 		assume (self.mLViewImage.shape () == self.mRViewImage.shape ()) ;
 		self.mRemapImage = ImageProc::make_image (self.mLViewImage.shape ()) ;
 	}
 
-	void set_keyboard_hook () {
+	void sync_keyboard_hook () {
 		mCurrentLayout = Ref<HomographyDepthLayout>::reference (self) ;
 		const auto r1x = SetWindowsHookEx (WH_KEYBOARD_LL ,keyboard_callback ,GetModuleHandle (NULL) ,0);
 		assume (r1x != 0) ;
@@ -163,7 +163,7 @@ public:
 		}
 	}
 
-	void display () {
+	void sync_display () {
 		if ifdo (TRUE) {
 			const auto r1x = self.mRemapImage.shape () ;
 			const auto r2x = self.mPlaneNormal ;

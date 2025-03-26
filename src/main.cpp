@@ -3,6 +3,7 @@
 #include "Common/export.h"
 #include "Localization/export.h"
 #include "Estimation/export.h"
+#include "Registration/export.h"
 #include "Rendering/export.h"
 
 using namespace CSC3DCV ;
@@ -38,8 +39,12 @@ exports int main (int argc ,DEF<char **> argv) {
 			auto rax = HomographyDepth (NULL) ;
 			rax.execute () ;
 		}
+		if ifdo (FALSE) {
+			auto rax = PlaneSplitting (NULL) ;
+			rax.execute () ;
+		}
 		if ifdo (TRUE) {
-			auto rax = Display (NULL) ;
+			auto rax = PlaneRendering (NULL) ;
 			rax.execute () ;
 		}
 		const auto r4x = CurrentTime () ;
