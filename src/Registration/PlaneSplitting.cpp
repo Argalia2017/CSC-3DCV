@@ -61,13 +61,13 @@ public:
 				mWriter.flush () ;
 			}
 			if ifdo (TRUE) {
-				self.mPlaneSplittingImage.fill (COLOR_BLACK) ;
+				self.mPlaneSplittingImage.splice (0 ,0 ,self.mCurrImage) ;
 				auto rbx = ImageProc::peek_image (self.mPlaneSplittingImage ,TYPE<cv::Mat>::expr) ;
 				const auto r4x = cv::Scalar (0 ,0 ,255 ,255) ;
 				for (auto &&i : self.mCurrLine) {
 					const auto r5x = cv::Point2i (VAL32 (i.mMin.mX) ,VAL32 (i.mMin.mY)) ;
 					const auto r6x = cv::Point2i (VAL32 (i.mMax.mX) ,VAL32 (i.mMax.mY)) ;
-					cv::line (rbx ,r5x ,r6x ,r4x ,VAL32 (2) ,cv::LINE_8) ;
+					cv::line (rbx ,r5x ,r6x ,r4x ,VAL32 (1) ,cv::LINE_AA) ;
 				}
 				const auto r7x = self.mFramePath.child (Format (slice ("$1.bmp")) (AlignedText (mFrame ,5))) ;
 				const auto r8x = StringProc::stra_from_strs (r7x) ;

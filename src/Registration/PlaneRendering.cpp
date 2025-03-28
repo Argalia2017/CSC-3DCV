@@ -108,7 +108,7 @@ public:
 		for (auto &&i : self.mPoseTLine2D) {
 			const auto r3x = cv::Point2i (VAL32 (i.mMin.mX) ,VAL32 (i.mMin.mY)) ;
 			const auto r4x = cv::Point2i (VAL32 (i.mMax.mX) ,VAL32 (i.mMax.mY)) ;
-			cv::line (rax ,r3x ,r4x ,r2x ,VAL32 (1) ,cv::LINE_8) ;
+			cv::line (rax ,r3x ,r4x ,r2x ,VAL32 (1) ,cv::LINE_AA) ;
 		}
 		const auto r5x = String<STR>::make (self.mPose2File ,slice ("-near.bmp")) ;
 		const auto r6x = StringProc::stra_from_strs (r5x) ;
