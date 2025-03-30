@@ -69,14 +69,18 @@ public:
 			return Optional<Array<Point2F>>::error (r4x.code ()) ;
 		const auto r6x = r4x.fetch () ;
 		Array<Point2F> ret = Array<Point2F> (self.mBoardShape.size ()) ;
-		if (r6x[0].x < r6x[1].x) {
+		auto act = TRUE ;
+		if ifdo (act) {
+			if (r6x[0].x >= r6x[1].x)
+				discard ;
 			for (auto &&i : iter (0 ,r6x.size ())) {
 				INDEX ix = i ;
 				ret[ix] = cvt_csc_point2f (r6x[i]) ;
 				ret[ix].mX *= r1x ;
 				ret[ix].mY *= r1x ;
 			}
-		} else {
+		}
+		if ifdo (act) {
 			for (auto &&i : iter (0 ,r6x.size ())) {
 				INDEX ix = INDEX (r6x.size ()) - 1 - i ;
 				ret[ix] = cvt_csc_point2f (r6x[i]) ;

@@ -31,12 +31,14 @@ struct HomographyDepthLayout {
 	Image<Color3B> mRemapImage ;
 	Vector mPlaneNormal ;
 	Vector mPlaneCenter ;
-	BOOL mWKeyDown ;
-	BOOL mSKeyDown ;
-	BOOL mAKeyDown ;
-	BOOL mDKeyDown ;
-	BOOL mQKeyDown ;
-	BOOL mEKeyDown ;
+	BOOL mWKeyAction ;
+	BOOL mSKeyAction ;
+	BOOL mAKeyAction ;
+	BOOL mDKeyAction ;
+	BOOL mQKeyAction ;
+	BOOL mEKeyAction ;
+	BOOL mShiftAction ;
+	BOOL mSpaceAction ;
 } ;
 
 static Ref<HomographyDepthLayout> mCurrentLayout ;
@@ -88,8 +90,16 @@ public:
 	}
 
 	void sync_first_plane () {
-		self.mPlaneNormal = self.mPoseMatV[1] * Vector::axis_z () ;
-		self.mPlaneCenter = self.mPoseMatV[1] * Vector::axis_w () ;
+		self.mPlaneNormal = Vector::axis_z () ;
+		const auto r1x = self.mLViewMatV[0] * Vector::axis_z () ;
+		const auto r2x = self.mLViewMatV[0] * Vector::axis_w () ;
+		const auto r3x = self.mRViewMatV[0] * Vector::axis_z () ;
+		const auto r4x = self.mRViewMatV[0] * Vector::axis_w () ;
+		const auto r5x = (r1x ^ r3x).normalize () ;
+		const auto r6x = Matrix (r1x ,r3x ,r5x ,r2x) ;
+		const auto r7x = r6x.inverse () * r4x ;
+		const auto r8x = r1x * r7x[0] + Vector::axis_w () ;
+		self.mPlaneCenter = r8x ;
 		assume (self.mLViewImage.shape () == self.mRViewImage.shape ()) ;
 		self.mRemapImage = ImageProc::make_image (self.mLViewImage.shape ()) ;
 	}
@@ -101,65 +111,68 @@ public:
 	}
 
 	static LRESULT CALLBACK keyboard_callback (int nCode ,WPARAM wParam ,LPARAM lParam) {
-		if (nCode >= 0) {
-			KBDLLHOOKSTRUCT *kb = (KBDLLHOOKSTRUCT *) lParam;
-			if (kb->vkCode == 'W') {
-				mCurrentLayout->mWKeyDown = wParam == WM_KEYDOWN ;
+		if ifdo (TRUE) {
+			if (nCode < 0)
+				discard ;
+			if (wParam != WM_KEYDOWN)
+				discard ;
+			const auto r1x = (KBDLLHOOKSTRUCT *) lParam ;
+			if (r1x->vkCode == 'W') {
+				mCurrentLayout->mWKeyAction = TRUE ;
 			}
-			if (kb->vkCode == 'S') {
-				mCurrentLayout->mSKeyDown = wParam == WM_KEYDOWN ;
+			if (r1x->vkCode == 'S') {
+				mCurrentLayout->mSKeyAction = TRUE ;
 			}
-			if (kb->vkCode == 'A') {
-				mCurrentLayout->mAKeyDown = wParam == WM_KEYDOWN ;
+			if (r1x->vkCode == 'A') {
+				mCurrentLayout->mAKeyAction = TRUE ;
 			}
-			if (kb->vkCode == 'D') {
-				mCurrentLayout->mDKeyDown = wParam == WM_KEYDOWN ;
+			if (r1x->vkCode == 'D') {
+				mCurrentLayout->mDKeyAction = TRUE ;
 			}
-			if (kb->vkCode == 'Q') {
-				mCurrentLayout->mQKeyDown = wParam == WM_KEYDOWN ;
+			if (r1x->vkCode == 'Q') {
+				mCurrentLayout->mQKeyAction = TRUE ;
 			}
-			if (kb->vkCode == 'E') {
-				mCurrentLayout->mEKeyDown = wParam == WM_KEYDOWN ;
+			if (r1x->vkCode == 'E') {
+				mCurrentLayout->mEKeyAction = TRUE ;
+			}
+			if (r1x->vkCode == VK_LSHIFT || r1x->vkCode == VK_RSHIFT) {
+				mCurrentLayout->mShiftAction = TRUE ;
+			}
+			if (r1x->vkCode == VK_SPACE) {
+				mCurrentLayout->mSpaceAction = TRUE ;
 			}
 		}
 		return CallNextHookEx (NULL ,nCode ,wParam ,lParam);
 	}
 
 	void work_manual_plane () {
-		if ifdo (TRUE) {
-			if (!self.mQKeyDown)
-				discard ;
-			self.mPlaneCenter[2] += 10 ;
+		const auto r1x = mCurrentLayout->mShiftAction ? 1 : 10 ;
+		if ifdo (self.mQKeyAction) {
+			self.mPlaneCenter[2] += r1x ;
 		}
-		if ifdo (TRUE) {
-			if (!self.mEKeyDown)
-				discard ;
-			self.mPlaneCenter[2] -= 10 ;
+		if ifdo (self.mEKeyAction) {
+			self.mPlaneCenter[2] -= r1x ;
 		}
-		const auto r1x = FLT64 (1) * MATH_R ;
-		if ifdo (TRUE) {
-			if (!self.mWKeyDown)
-				discard ;
-			const auto r2x = RotationMatrix (Vector::axis_x () ,-r1x) ;
-			self.mPlaneNormal = r2x * self.mPlaneNormal ;
-		}
-		if ifdo (TRUE) {
-			if (!self.mSKeyDown)
-				discard ;
-			const auto r3x = RotationMatrix (Vector::axis_x () ,+r1x) ;
+		const auto r2x = FLT64 (1) * MATH_R ;
+		if ifdo (self.mWKeyAction) {
+			const auto r3x = RotationMatrix (Vector::axis_x () ,-r2x) ;
 			self.mPlaneNormal = r3x * self.mPlaneNormal ;
 		}
-		if ifdo (TRUE) {
-			if (!self.mAKeyDown)
-				discard ;
-			const auto r4x = RotationMatrix (Vector::axis_y () ,+r1x) ;
+		if ifdo (self.mSKeyAction) {
+			const auto r4x = RotationMatrix (Vector::axis_x () ,+r2x) ;
 			self.mPlaneNormal = r4x * self.mPlaneNormal ;
 		}
-		if ifdo (TRUE) {
-			if (!self.mDKeyDown)
-				discard ;
-			const auto r5x = RotationMatrix (Vector::axis_y () ,-r1x) ;
+		if ifdo (self.mAKeyAction) {
+			const auto r5x = RotationMatrix (Vector::axis_y () ,+r2x) ;
 			self.mPlaneNormal = r5x * self.mPlaneNormal ;
+		}
+		if ifdo (self.mDKeyAction) {
+			const auto r6x = RotationMatrix (Vector::axis_y () ,-r2x) ;
+			self.mPlaneNormal = r6x * self.mPlaneNormal ;
+		}
+		if ifdo (self.mSpaceAction) {
+			self.mPlaneNormal = self.mPoseMatV[1] * Vector::axis_z () ;
+			self.mPlaneCenter = self.mPoseMatV[1] * Vector::axis_w () ;
 		}
 	}
 
