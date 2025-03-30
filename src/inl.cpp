@@ -28,8 +28,6 @@
 #include <csc_file.inl>
 #include <csc_thread.inl>
 
-#define __CSC_API_WITH_SYS__
-
 #ifdef __CSC_COMPILER_MSVC__
 #define __CSC_API_WITH_EIGEN__
 #define __CSC_API_WITH_OPENCV__
@@ -37,7 +35,6 @@
 
 #include <csc_math.cache.inl>
 
-#ifdef __CSC_API_WITH_SYS__
 #ifdef __CSC_SYSTEM_WINDOWS__
 #include <csc_runtime.windows.inl>
 #include <csc_file.windows.inl>
@@ -46,7 +43,6 @@
 #ifdef __CSC_SYSTEM_LINUX__
 #include <csc_runtime.linux.inl>
 #include <csc_file.linux.inl>
-#endif
 #endif
 
 #ifdef __CSC_API_WITH_EIGEN__

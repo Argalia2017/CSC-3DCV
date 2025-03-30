@@ -42,7 +42,7 @@ public:
 		self.mBuffer = UniqueRef<FLAG> ([&] (VREF<FLAG> me) {
 			me = FLAG (lsd ((&rax) ,(&self.mGrayImage[0]) ,r1x ,r2x)) ;
 		} ,[&] (VREF<FLAG> me) {
-			lsd_cleanup (csc_pointer_t (me)) ;
+			lsd_cleanup (csc_handle_t (me)) ;
 		}) ;
 		const auto r3x = self.mBuffer.deref ;
 		Array<Line2F> ret = Array<Line2F> (rax) ;
